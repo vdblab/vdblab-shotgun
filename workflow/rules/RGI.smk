@@ -1,7 +1,7 @@
 include: "common.smk"
 
 
-configfile: os.path.join(workflow.basedir, "../config.yaml")
+configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
 
 
 allele_mappings = f"rgi/{config['sample']}.allele_mapping_data.txt"

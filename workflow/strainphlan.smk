@@ -6,7 +6,7 @@ from pathlib import Path
 from glob import glob
 
 
-configfile: os.path.join(workflow.basedir, "config/config.yaml")
+configfile: os.path.join(workflow.basedir, "../config/config.yaml")
 
 
 envvars:
