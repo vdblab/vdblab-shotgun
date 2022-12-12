@@ -1,0 +1,7 @@
+name: pigz
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pigz=2.6

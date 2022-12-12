@@ -1,0 +1,129 @@
+{
+    "__default__" :
+    {
+        "name"      : "JOBNAME.{rule}.{wildcards}",
+        "output"    : "logs/{rule}.{wildcards}.out",
+        "error"     : "logs/{rule}.{wildcards}.err",
+        "memory"    : 4,
+        "threads"   : "1",
+        "walltime"  : "12:00"
+    },
+
+
+    "initial_fastqc_run"    :
+    {
+        "memory"    : 2,
+        "threads"   : "4",
+        "walltime"  : "01:00"
+    },
+
+    "bbmap_run" :
+    {
+        "memory"    : 4,
+		"threads"   : "8",
+		"walltime"	: "08:00"
+    },
+
+    "bbmap_fix" :
+    {
+        "memory"    : 4,
+		"threads"   : "8",
+		"walltime"	: "08:00"
+    },
+
+
+	"kneaddata_run"	:
+	{
+		"memory"    : 12,
+        "threads"   : "8",
+        "walltime"  : "20:00"
+    },
+
+
+	"compress_fastq_pair"	:
+	{
+		"memory"    : 12,
+        "threads"   : "1",
+        "walltime"  : "20:00"
+    },
+
+
+
+    "fastqc_run"    :
+    {
+        "memory"    : 2,
+        "threads"   : "4",
+        "walltime"  : "01:00"
+    },
+
+    "metaphlan3_run"   :
+    {
+        "memory"    : 4,
+        "threads"   : "8",
+        "walltime"  : "20:00"
+    },
+
+    "sample2markers_run"   :
+    {
+        "memory"    : 3,
+        "threads"   : "8",
+        "walltime"  : "48:00"
+    },
+
+    "identify_clades_run"   :
+    {
+        "memory"    : 3,
+        "threads"   : "8",
+        "walltime"  : "48:00"
+    },
+
+    "StrainPhlAn_run"   :
+    {
+        "memory"    : 3,
+        "threads"   : "8",
+        "walltime"  : "48:00"
+    },
+
+    "humann3_run_uniref90"   :
+    {
+        "memory"    : 6,
+        "threads"   : "25",
+        "walltime"  : "40:00"
+    },
+
+    "renormalize"   :
+    {
+        "memory"    : 25,
+        "threads"   : "1",
+        "walltime"  : "01:00"
+    },
+ 
+    "regroup_genefam_2_KO"   :
+    {
+        "memory"    : 40,
+        "threads"   : "1",
+        "walltime"  : "01:00"
+    },
+
+    "renormalize_KO"   :
+    {
+        "memory"    : 20,
+        "threads"   : "1",
+        "walltime"  : "01:00"
+    },
+ 
+    "join_table"   :
+    {
+        "memory"    : 25,
+        "threads"   : "1",
+        "walltime"  : "01:00"
+    },   
+
+    "join_table_genefam"   :
+    {
+        "memory"    : 20,
+        "threads"   : "1",
+        "walltime"  : "1:00"
+    }
+
+}

@@ -1,0 +1,8 @@
+name: kneaddata
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - kneaddata=0.10.0
+  - bmtagger=3.101

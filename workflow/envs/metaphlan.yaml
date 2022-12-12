@@ -1,0 +1,7 @@
+name: metaphlan
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - metaphlan=3.1.0

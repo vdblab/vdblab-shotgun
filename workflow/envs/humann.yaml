@@ -1,0 +1,7 @@
+name: humann
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - humann=3.1.1

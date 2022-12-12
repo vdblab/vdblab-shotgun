@@ -1,0 +1,211 @@
+import os
+import json
+import yaml
+import shutil
+
+from pathlib import Path
+from snakemake.utils import validate
+
+
+include: "rules/common.smk"
+
+
+configfile: os.path.join(workflow.basedir, "runconfig.yaml")
+
+
+envvars:
+    "TMPDIR",
+
+
+config["pipeline_version"] = get_pipeline_version()
+
+validate(config, os.path.join(workflow.basedir, "runconfig.schema.yaml"))
+
+SHARDS = make_shard_names(config["nshards"])
+
+
+onstart:
+    with open("config_used.yml", "w") as outfile:
+        yaml.dump(config, outfile)
+
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+
+localrules:
+    all,
+
+
+#
+# Preprocess Module
+#
+module preprocess:
+    snakefile:
+        "rules/preprocess.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from preprocess as preprocess_*
+
+
+#
+# Biobakery Module
+#
+module biobakery:
+    snakefile:
+        "rules/biobakery.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from biobakery as biobakery_*
+
+
+use rule humann3_run_uniref90 from biobakery as biobakery_humann3_run_uniref90 with:
+    input:
+        fastq="kneaddata/{sample}_knead_cat.fastq.gz",
+        metaphlan_profile=config["mpa_profile"],
+        choco_db=config["choco_db"],
+        uniref90_db=config["uniref90_db"],
+
+
+use rule all from biobakery as biobakery_all with:
+    input:
+        pabun_cpm=f"humann/{config['sample']}_humann3_pathabundance_cpm.tsv",
+        ko_cpm=f"humann/{config['sample']}_humann3_KO_cpm.tsv",
+
+
+use rule cat_pair from biobakery as biobakery_cat_pair with:
+    input:
+        R1="hostdepleted/{sample}_1.fastq.gz",
+        R2="hostdepleted/{sample}_2.fastq.gz",
+
+
+#
+# Kraken Module
+#
+module kraken:
+    snakefile:
+        "rules/kraken.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from kraken as kraken_*
+
+
+use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
+    # because the concat rule exists in both the preprocessing and kraken
+    # snakefiles, we override the ins and outs of one of them.  Since the new
+    # outputs aren't in rule all, this clips the rule from the dag
+    input:
+        R1=touch("input_F"),
+        R2=touch("input_R"),
+    output:
+        R1=temp(touch("output_F")),
+        R2=temp(touch("output_R")),
+
+
+use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
+    input:
+        R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
+        R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
+        db=config["kraken2_db"],
+    output:
+        out="kraken2/{sample}_shard{shard}_kraken2.out",
+        unclass_R1="kraken2/{sample}_shard{shard}_kraken2_unclassified_1.fastq",
+        unclass_R2="kraken2/{sample}_shard{shard}_kraken2_unclassified_2.fastq",
+        report=temp("kraken2/{sample}_shard{shard}_kraken2.report"),
+    log:
+        e="logs/kraken_{sample}_shard{shard}.e",
+
+
+use rule compress_kraken_unclassified from kraken as kraken_compress_kraken_unclassified with:
+    input:
+        R1=[
+            f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_1.fastq"
+            for shard in SHARDS
+        ],
+        R2=[
+            f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_2.fastq"
+            for shard in SHARDS
+        ],
+
+
+use rule kraken_merge_shards from kraken as kraken_kraken_merge_shards with:
+    input:
+        #reports = rules.kraken_kraken_standard_run.output.report,
+        reports=[f"kraken2/{{sample}}_shard{shard}_kraken2.report" for shard in SHARDS],
+    output:
+        out="kraken2/{sample}_kraken2.report",
+    # this ensures that the sample wildcard never ends with _shard001
+    # needing this probably means I could specify file names more cleanly :/
+    wildcard_constraints:
+        sample=".+(?<!shard\d\d\d)",
+
+
+#
+# Assembly Module
+#
+module assembly:
+    snakefile:
+        "rules/assembly.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from assembly as assembly_*
+
+
+use rule SPAdes_run from assembly as assembly_SPAdes_run with:
+    input:
+        R1="hostdepleted/{sample}_1.fastq.gz",
+        R2="hostdepleted/{sample}_2.fastq.gz",
+
+
+#
+# Utils Module
+#
+module utils:
+    snakefile:
+        "../common/utils.smk"
+    config:
+        config
+
+
+#
+# RGI Module
+#
+module rgi:
+    snakefile:
+        "rules/RGI.smk"
+    config:
+        config
+
+
+use rule * from rgi as rgi_*
+
+
+use rule RGI from rgi as rgi_RGI with:
+    input:
+        R1="hostdepleted/{sample}_1.fastq.gz",
+        R2="hostdepleted/{sample}_2.fastq.gz",
+        db=config["CARD_db_json"],
+
+
+rule all:
+    input:
+        rules.preprocess_all.input,
+        rules.biobakery_all.input,
+        rules.kraken_all.input,
+        rules.rgi_all.input,
+    default_target: True

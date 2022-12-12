@@ -1,0 +1,28 @@
+custom_data:
+  trimming_images:
+    section_name: "Sample Quality"
+sp:
+  trimming_images:
+    fn: "*.png"
+ignore_images: false
+
+read_count_multiplier: 0.001
+read_count_prefix: "K"
+read_count_desc: "thousands"
+top_modules:
+  - "fastqc"
+
+# using the above to group the images together doesn't work.
+# also, I can't tell why it seems to prefer the file name like
+# "search_host_content" rather than the ID I have it "contamination"
+custom_content:
+  order:
+    - contamination
+    - trimming
+    - fastqc_adapters
+    - search_host_content
+    - dada2_trimming_report
+    - dada2_stats
+    - dada2_error_estimation_F
+    - dada2_error_estimation_R
+    - trimming_images

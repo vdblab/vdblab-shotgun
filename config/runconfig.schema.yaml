@@ -1,0 +1,104 @@
+---
+$schema: "https://json-schema.org/draft/2020-12/schema"
+
+description: vdb_shotgun config schema
+
+type: object
+
+properties:
+  # inputs
+  sample:
+    type: [string, number]
+  R1:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    uniqueItems: true
+  R2:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    uniqueItems: true
+
+  # run parameters
+  nshards:
+    type: integer
+    minimum: 1
+    default: 1
+  check_contigs:
+    type: boolean
+    default: true
+  contig_annotation_thresh:
+    type: integer
+    default: 1000
+  dedup_reads:
+    type: boolean
+    default: true
+  fourstep_hostremoval:
+    type: boolean
+    default: false
+  metawrap_contam_thresh:
+    type: integer
+    default: 10
+  metawrap_compl_thresh:
+    type: integer
+    default: 90
+
+  # databases
+  adapters_fasta:
+    type: string
+  bowtie2_human_index_base:
+    type: string
+  bowtie2_mouse_index_base:
+    type: string
+  snap_human_index_dir:
+    type: string
+  snap_mouse_index_dir:
+    type: string
+  bmtagger_human:
+    type: string
+  bmtagger_mouse:
+    type: string
+  choco_db:
+    type: string
+  uniref90_db:
+    type: string
+  utility_mapping_db:
+    type: string
+  metaphlan_db:
+    type: string
+  blast_16s_db_nsq:
+    type: string
+  kraken2_db:
+    type: string
+  kaiju_nodes:
+    type: string
+  kaiju_fmi:
+    type: string
+  metaerg_db_dir:
+    type: string
+  cazi_db:
+    type: string
+  CARD_db_json:
+    type: string
+
+required:
+  - sample
+  - R1
+  - R2
+  - adapters_fasta
+  - bmtagger_human
+  - bmtagger_mouse
+  - choco_db
+  - uniref90_db
+  - utility_mapping_db
+  - metaphlan_db
+  - blast_16s_db_nsq
+  - kraken2_db
+  - kaiju_nodes
+  - kaiju_fmi
+  - metaerg_db_dir
+  - cazi_db
+  - CARD_db_json
