@@ -61,7 +61,7 @@ rule cat_pair:
     output:
         joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
     conda:
-        "../../common/envs/base.yaml"
+        "../envs/base.yaml"
     log:
         e="logs/cat_pair_{sample}.e",
     shell:

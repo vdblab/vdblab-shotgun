@@ -34,6 +34,14 @@ localrules:
     all,
 
 
+
+# we have to fix some inputs to downstream applications if we are running all together:
+# we do this for the assembly because that config entry is referenced many times in the binning and annotation workflows
+# for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
+if config["stage"] == "all":
+    config["assembly"] = f"{config['sample']}.assembly.fasta"
+
+
 #
 # Preprocess Module
 #
@@ -123,8 +131,6 @@ module rgi:
 use rule * from rgi as rgi_*
 
 
-
-
 #
 # Binning Module
 #
@@ -136,6 +142,22 @@ module binning:
 
 
 use rule * from binning as binning_*
+
+#
+# annotation Module
+#
+module annotate:
+    snakefile:
+        "rules/annotate.smk"
+    config:
+        config
+
+
+use rule * from annotate as annotate_*
+
+
+
+
 
 
 # put all the logic here to connect pipeline stages (eg setting biobakery to using preprocessed results rather than config's R1 and R2
@@ -156,15 +178,15 @@ if config["stage"] == "all":
             R2="hostdepleted/{sample}_2.fastq.gz",
 
     use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
-    # because the concat rule exists in both the preprocessing and kraken
-    # snakefiles, we override the ins and outs of one of them.  Since the new
-    # outputs aren't in rule all, this clips the rule from the dag
-    input:
-        R1=touch("input_F"),
-        R2=touch("input_R"),
-    output:
-        R1=temp(touch("output_F")),
-        R2=temp(touch("output_R")),
+        # because the concat rule exists in both the preprocessing and kraken
+        # snakefiles, we override the ins and outs of one of them.  Since the new
+        # outputs aren't in rule all, this clips the rule from the dag
+        input:
+            R1=touch("input_F"),
+            R2=touch("input_R"),
+        output:
+            R1=temp(touch("output_F")),
+            R2=temp(touch("output_R")),
 
 
     use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
@@ -205,6 +227,9 @@ if config["stage"] == "all":
             sample=".+(?<!shard\d\d\d)",
 
 
+
+
+
 outputs = {
     "all": [
         rules.preprocess_all.input,
@@ -232,6 +257,9 @@ outputs = {
     ],
     "binning": [
         rules.binning_all.input,
+    ],
+    "annotate": [
+        rules.annotate_all.input,
     ],
 }
 

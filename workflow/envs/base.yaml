@@ -1,0 +1,9 @@
+# This exists to satisfy the linter, which wants a conda env for every rule.
+# picked python  3.10 because thats what we are running in the base conda env containing snakemake itself
+name: base
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10

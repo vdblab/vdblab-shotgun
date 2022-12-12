@@ -1,4 +1,5 @@
----
+## Inputs
+assembly: ""
 ## bbmap
 adapters_fasta: "/data/brinkvd/newresources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
 
@@ -72,9 +73,9 @@ docker_krona: "docker://nanozoo/krona:2.7.1--e7615f7"
 
 docker_metaerg: "docker://docker.io/nickp60/metaerg:1.2.3"
 # this one cant bin
-docker_metawrap: "docker://nanozoo/metawrap:v1.3--a7eb9af"
+docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
 # this one cant refine bins due to missing checkm db
-docker_metawrap_refine: "docker://quay.io/biocontainers/metawrap:1.2--0"
+docker_metawrap_refine: "docker://ghcr.io/vdblab/metawrap:1.3"
 docker_optitype: "docker://fred2/optitype"
 docker_rgi: "docker://ghcr.io/vdblab/rgi:6.0.0"
 docker_snap: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"

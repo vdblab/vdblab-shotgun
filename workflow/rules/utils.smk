@@ -65,7 +65,7 @@ rule concat_R1_R2:
         R1="",
         R2="",
     conda:
-        "./envs/base.yaml"
+        "../envs/base.yaml"
     log:
         e="logs/concat_r1_r2_{sample}.e",
     shell:

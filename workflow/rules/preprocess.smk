@@ -433,6 +433,6 @@ rule merge_logs_for_multiqc:
         e="logs/merge_logs_{sample}.e",
         o="logs/merge_logs_{sample}.o",
     conda:
-        "../../common/envs/base.yaml"
+        "../envs/base.yaml"
     script:
         "../scripts/merge_logs.py"
