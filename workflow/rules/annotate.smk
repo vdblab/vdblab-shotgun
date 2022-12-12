@@ -2,7 +2,7 @@ import os
 import sys
 
 
-configfile: os.path.join(workflow.basedir, "runconfig.yaml")
+configfile: os.path.join(workflow.basedir, "config/config.yaml")
 
 
 assembly_base = os.path.basename(config["assembly"])
