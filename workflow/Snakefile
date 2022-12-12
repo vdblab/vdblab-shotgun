@@ -17,8 +17,6 @@ envvars:
     "TMPDIR",
 
 
-config["pipeline_version"] = get_pipeline_version()
-
 validate(config, os.path.join(workflow.basedir, "config/runconfig.schema.yaml"))
 
 SHARDS = make_shard_names(config["nshards"])

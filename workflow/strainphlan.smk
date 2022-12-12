@@ -5,15 +5,8 @@ import yaml
 from pathlib import Path
 from glob import glob
 
-pipeline_version = (
-    subprocess.check_output(["git", "describe", "--always"], cwd=workflow.basedir)
-    .decode("utf-8")
-    .strip()
-)
-config["pipeline_version"] = pipeline_version
 
-
-configfile: os.path.join(workflow.basedir, "runconfig.yaml")
+configfile: os.path.join(workflow.basedir, "config/config.yaml")
 
 
 envvars:

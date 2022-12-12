@@ -10,14 +10,6 @@ from snakemake.utils import validate
 include: "common.smk"
 
 
-# configfile: os.path.join(workflow.basedir, "../runconfig.yaml")
-
-
-config["pipeline_version"] = get_pipeline_version()
-
-# validate(config, os.path.join(workflow.current_basedir, "../runconfig.schema.yaml"))
-
-
 onstart:
     with open("config_used.yml", "w") as outfile:
         yaml.dump(config, outfile)
