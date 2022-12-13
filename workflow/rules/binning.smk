@@ -11,7 +11,7 @@ include: "common.smk"
 
 # the str is needed as when running from github workflow.current_basedir is a Githubfile, not a string or a path so os.path objects
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
-validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
+validate(config, os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"))
 
 
 envvars:
@@ -125,7 +125,7 @@ rule metawrap_refine_binning:
         checkm_db=config["checkm_db"],
     # this is a different container that has checkm installed
     container:
-        config["docker_metawrap_refine"]
+        config["docker_metawrap"]
     threads: 32
     # give it 82 gb memory because checkm estimates pplacer will need 40GB per core, and we want this to run reasonably fast
     resources:

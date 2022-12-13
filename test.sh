@@ -3,25 +3,26 @@ set -eux
 
 mode=$1
 
+common_args="--snakefile workflow/Snakefile --profile ${SNAKEPROFILE} --restart-times 0 --cores 32"
 case $mode in
 
   full | all)
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --snakefile workflow/Snakefile \
-	  --directory tmpall/ \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
+          --directory tmpall/ \
 	  --config \
 	  sample=473 \
-	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
-	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
+	  R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
 	  multiqc_config=${PWD}/multiqc_config.yaml nshards=1 \
 	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
 	  stage=all
       ;;
   preprocess )
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmppre/   \
 	  --config \
 	  sample=473  \
@@ -34,8 +35,8 @@ case $mode in
       ;;
   biobakery | bb)
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmpbio/ \
 	  --config \
 	  sample=473  \
@@ -47,6 +48,7 @@ case $mode in
   mtx )
       snakemake \
 	  --profile ${SNAKEPROFILE} \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --snakefile workflow/Snakefile_mtx \
           --directory tmpmtx/ \
           --config \
@@ -58,8 +60,8 @@ case $mode in
 
   kraken | kraken2 )
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmpkraken/ \
 	  --config \
 	  sample=473  \
@@ -70,9 +72,8 @@ case $mode in
       ;;
   assembly)
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --cores 32 --singularity-args "-B ${PWD}" \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmpassembly/ \
 	  --config sample=473 \
 	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
@@ -81,11 +82,8 @@ case $mode in
       ;;
   bin)
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --cores 32 --singularity-args "-B ${PWD},/data/brinkvd/" \
-	  --snakefile workflow/Snakefile \
-	  --directory tmpbinning/ \
-	  --restart-times 0 \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --config sample=473 \
 	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
 	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
@@ -94,9 +92,8 @@ case $mode in
       ;;
   annotate)
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --cores 32 --singularity-args "-B ${PWD}" \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmpannotate/ \
 	  --config sample=473 \
 	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
@@ -105,9 +102,8 @@ case $mode in
 
   rgi )
       snakemake \
-	  --profile ${SNAKEPROFILE} \
-	  --singularity-args "--bind $PWD" \
-	  --snakefile workflow/Snakefile \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --directory tmprgi/ \
 	  --config sample=473 \
 	  R1=$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz \
