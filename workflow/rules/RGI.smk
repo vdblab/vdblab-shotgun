@@ -3,6 +3,8 @@ include: "common.smk"
 
 configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
 
+envvars:
+    "TMPDIR",
 
 
 allele_mappings = f"rgi/{config['sample']}.allele_mapping_data.txt"
@@ -30,6 +32,7 @@ rule RGI:
         )[0],
         CARD_VER=os.path.basename(os.path.dirname(config["CARD_db_json"])),
         CARD_DB_DIR=lambda wildcards, input: os.path.dirname(input["db"]),
+        tmpdir=os.environ["TMPDIR"],
     conda:
         "../envs/RGI.yaml"
     container:
@@ -43,6 +46,8 @@ rule RGI:
         o="rgi/{sample}.o",
     shell:
         """
+        # RGI uses samtools which will use TMPDIR. here we make sure that exists
+        mkdir -p {params.tmpdir}
         # --wildcard_index {params.CARD_DB_DIR}/wildcard/index-for-model-sequences.txt
         # --wildcard_annotation {params.CARD_DB_DIR}/wildcard_database_{params.CARD_VER}.fasta
 

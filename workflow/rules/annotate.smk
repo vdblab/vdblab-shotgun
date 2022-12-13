@@ -16,7 +16,7 @@ content = []
 file_content = []
 contig_ids = []
 contig_ids_in_file = []
-seqs_per_file = 25
+seqs_per_file = 100
 fids = []
 
 
@@ -68,7 +68,7 @@ rule annotate_orfs:
     input:
         assembly="tmp/{batch}.fasta",
     output:
-        gff="annotation_{batch}/data/all.gff",
+        gff="annotation/annotation_{batch}/data/all.gff",
     resources:
         mem_mb=8 * 1024,
         runtime=2 * 60,
@@ -240,7 +240,7 @@ def aggregate_metaerg_results(wildcards):
     """
     checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
     return expand(
-        "annotation_{batch}/data/all.gff",
+        "annotation/annotation_{batch}/data/all.gff",
         batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
     )
 
@@ -287,6 +287,6 @@ rule clean_up:
         touch("{sample}.cleaned_dirs"),
     shell:
         """
-        find . -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        find . -name "annotation/annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
         rm -r tmp/
         """

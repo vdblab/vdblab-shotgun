@@ -2,6 +2,27 @@
 set -eux
 
 mode=$1
+rawdataset=$2
+case $rawdataset in
+    tiny)
+	R1=[$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
+	R2=[$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
+	;;
+    small)
+	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
+	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
+	;;
+    medium)
+	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz]
+	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz]
+	;;
+    *)
+	echo -e "unknown dataset; please chose from tiny. Exiting\n"
+	exit 1
+	;;
+esac
+
+
 
 common_args="--snakefile workflow/Snakefile --profile ${SNAKEPROFILE} --restart-times 0 --cores 32"
 case $mode in
@@ -13,10 +34,10 @@ case $mode in
           --directory tmpall/ \
 	  --config \
 	  sample=473 \
-	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
-	  R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
+	  R1=$R1 \
+	  R2=$R2 \
 	  multiqc_config=${PWD}/multiqc_config.yaml nshards=1 \
-	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
+	  dedup_reads=False \
 	  stage=all
       ;;
   preprocess )
