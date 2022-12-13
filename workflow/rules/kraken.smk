@@ -10,7 +10,8 @@ from snakemake.utils import validate
 include: "common.smk"
 
 
-configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
+configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
+validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
 
 
 envvars:
@@ -226,7 +227,7 @@ rule kraken2krona:
         o="logs/kraken2krona_{sample}.o",
     shell:
         """
-        kreport2krona.py.py --report-file {input.report} \
+        kreport2krona.py --report-file {input.report} \
         --output {output.report} > {log.o} 2> {log.e}
         """
 

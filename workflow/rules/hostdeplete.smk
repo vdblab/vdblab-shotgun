@@ -10,7 +10,8 @@ from snakemake.utils import validate
 include: "common.smk"
 
 
-configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
+configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
+validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
 
 
 
