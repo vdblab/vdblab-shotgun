@@ -9,7 +9,6 @@ from snakemake.utils import validate
 
 include: "common.smk"
 
-print(workflow.current_basedir)
 configfile: os.path.join(workflow.current_basedir, "../../config/config.yaml")
 
 
@@ -17,7 +16,6 @@ envvars:
     "TMPDIR",
 
 
-validate(config, os.path.join(workflow.current_basedir, "../../config/config.schema.yaml"))
 
 SHARDS = make_shard_names(config["nshards"])
 

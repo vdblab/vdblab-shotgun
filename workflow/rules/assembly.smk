@@ -17,7 +17,6 @@ envvars:
     "TMPDIR",
 
 
-validate(config, os.path.join(workflow.basedir, "../../config/config.schema.yaml"))
 
 SHARDS = make_shard_names(config["nshards"])
 
