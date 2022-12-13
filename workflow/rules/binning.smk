@@ -9,7 +9,7 @@ from snakemake.utils import validate
 
 include: "common.smk"
 
-configfile: os.path.join(workflow.current_basedir, "../../config/config.yaml")
+configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
 
 
 envvars:
@@ -125,7 +125,7 @@ rule metawrap_refine_binning:
         runtime="12:00",
     shell:
         """
-        checkm data setRoot {params.checkm_db}
+        export  CHECKM_DATA_PATH={params.checkm_db}
         metawrap bin_refinement -o {params.outdir} -t {threads} -A {params.binput_dirs[0]} -B {params.binput_dirs[1]} -C {params.binput_dirs[2]} -c {params.completeness} -x {params.contamination}
         echo -e "#id: 'metawrap'\n#plot_type: 'table'\n#section_name: 'Bin Refinement'" > {output.stats}_mqc.tsv && cat {output.stats} >> {output.stats}_mqc.tsv
         """

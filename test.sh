@@ -75,8 +75,8 @@ case $mode in
 	  --snakefile workflow/Snakefile \
 	  --directory tmpassembly/ \
 	  --config sample=473 \
-	  R1=[${PWD}/tmppre/trimmed/473_shard001_trim_R1.fastq.gz] \
-	  R2=[${PWD}/tmppre/trimmed/473_shard001_trim_R2.fastq.gz] \
+	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
+	  R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
 	  stage=assembly
       ;;
   bin)
@@ -86,9 +86,9 @@ case $mode in
 	  --snakefile workflow/Snakefile \
 	  --directory tmpbinning/ \
 	  --config sample=473 \
-	  assembly=${PWD}/tmpassembly/473.assembly.fasta \
-	  R1=[${PWD}/tmppre/trimmed/473_shard001_trim_R1.fastq.gz] \
-	  R2=[${PWD}/tmppre/trimmed/473_shard001_trim_R2.fastq.gz] \
+	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
+	  R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
 	  stage=binning
       ;;
   annotate)
