@@ -1,0 +1,39 @@
+---
+name: Run Full Integration Test
+env:
+  TMPDIR: /tmp/
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: snakemake/snakemake:stable
+      options: --privileged  --workdir /github/workspace --rm -e TMPDIR
+      volumes:
+        - /github/workspace/:/github/workspace/
+    name: Test Pipelines
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Test shotgun up to dedup
+        run: >
+          snakemake
+          --directory .test/
+          --snakefile workflow/Snakefile
+          --cores 1
+          --jobs 1
+          --resources mem_mb=5000
+          --use-singularity
+          --singularity-prefix /github/workspace/.singularity/
+          --config
+          sample=test
+          R1=['shotgun/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz']
+          R2=['shotgun/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz']
+          stage=preprocess
+          --force dedup/473_R1.fastq.gz
