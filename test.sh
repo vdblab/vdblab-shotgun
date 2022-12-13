@@ -82,9 +82,10 @@ case $mode in
   bin)
       snakemake \
 	  --profile ${SNAKEPROFILE} \
-	  --cores 32 --singularity-args "-B ${PWD}" \
+	  --cores 32 --singularity-args "-B ${PWD},/data/brinkvd/" \
 	  --snakefile workflow/Snakefile \
 	  --directory tmpbinning/ \
+	  --restart-times 0 \
 	  --config sample=473 \
 	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
 	  R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \

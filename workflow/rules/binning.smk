@@ -101,6 +101,10 @@ rule metawrap_binning:
 
 
 rule metawrap_refine_binning:
+    """The names for the params binput_dirs is due to the crazy naming of the output of metawrap.
+    The only consistant file we can use as a trigger is the <tool>.done file, but the refine module needs the dir beneath it under a path like
+    metawrap/rawbinning_473/concoct/concoct_bins/concoct_bins
+    """
     input:
         binputs=binstats,
     output:
@@ -112,7 +116,7 @@ rule metawrap_refine_binning:
         bin3=f"metawrap/refined_binning_{{sample}}/{BINNING_TOOLS[2]}_bins.stats",
     params:
         outdir=lambda wc, output: os.path.dirname(output.stats),
-        binput_dirs=lambda wc, input: [os.path.dirname(x) for x in input.binputs],
+        binput_dirs=lambda wc, input: [os.path.join(os.path.dirname(x), os.path.basename(os.path.dirname(x))) for x in input.binputs],
         completeness=config["metawrap_compl_thresh"],
         contamination=config["metawrap_contam_thresh"],
         checkm_db=config["checkm_db"],
@@ -120,8 +124,9 @@ rule metawrap_refine_binning:
     container:
         config["docker_metawrap_refine"]
     threads: 32
+    # give it 82 gb memory because checkm estimates pplacer will need 40GB per core, and we want this to run reasonably fast
     resources:
-        mem_mb=32 * 1024,
+        mem_mb=82 * 1024,
         runtime="12:00",
     shell:
         """
