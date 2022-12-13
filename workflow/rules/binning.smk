@@ -117,6 +117,7 @@ rule metawrap_refine_binning:
         binput_dirs=lambda wc, input: [os.path.dirname(x) for x in input.binputs],
         completeness=config["metawrap_compl_thresh"],
         contamination=config["metawrap_contam_thresh"],
+        checkm_db=config["checkm_db"],
     # this is a different container that has checkm installed
     container:
         config["docker_metawrap_refine"]
@@ -126,6 +127,7 @@ rule metawrap_refine_binning:
         runtime="12:00",
     shell:
         """
+        checkm data setRoot {params.checkm_db}
         metawrap bin_refinement -o {params.outdir} -t {threads} -A {params.binput_dirs[0]} -B {params.binput_dirs[1]} -C {params.binput_dirs[2]} -c {params.completeness} -x {params.contamination}
         echo -e "#id: 'metawrap'\n#plot_type: 'table'\n#section_name: 'Bin Refinement'" > {output.stats}_mqc.tsv && cat {output.stats} >> {output.stats}_mqc.tsv
         """

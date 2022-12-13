@@ -9,6 +9,9 @@ uniref90_db: "/data/brinkvd/newresources/dbs/uniref90_diamond/v201901b/"
 utility_mapping_db: "/data/brinkvd/newresources/dbs/utility_mapping/utility_mapping/"
 metaphlan_db: "/data/brinkvd/newresources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
 
+## CheckM
+checkm_db: "/data/brinkvd/newresources/dbs/checkm/2015_01_16/"
+
 ## 4-step host depletion
 fourstep_hostremoval: true
 bowtie2_human_index_base: "/data/brinkvd/newresources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
