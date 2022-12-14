@@ -9,14 +9,19 @@ from snakemake.utils import validate
 
 include: "common.smk"
 
+
 # the str is needed as when running from github workflow.current_basedir is a Githubfile, not a string or a path so os.path objects
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
-validate(config, os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"))
+
+
+validate(
+    config,
+    os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"),
+)
 
 
 envvars:
     "TMPDIR",
-
 
 
 SHARDS = make_shard_names(config["nshards"])
@@ -54,6 +59,7 @@ contigs = (
     f'metawrap/refined_binning_{config["sample"]}/metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.contigs',
 )
 covermreports = f'coverm/{config["sample"]}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.coverage_mqc.tsv'
+
 
 rule all:
     input:
@@ -119,7 +125,7 @@ rule metawrap_refine_binning:
         bin3=f"metawrap/refined_binning_{{sample}}/{BINNING_TOOLS[2]}_bins.stats",
     params:
         outdir=lambda wc, output: os.path.dirname(output.stats),
-        binput_dirs=lambda wc, input: [os.path.join(os.path.dirname(x), os.path.basename(os.path.dirname(x))) for x in input.binputs],
+        binput_dirs=lambda wc, input: [os.path.dirname(x) for x in input.binputs],
         completeness=config["metawrap_compl_thresh"],
         contamination=config["metawrap_contam_thresh"],
         checkm_db=config["checkm_db"],
@@ -137,6 +143,7 @@ rule metawrap_refine_binning:
         metawrap bin_refinement -o {params.outdir} -t {threads} -A {params.binput_dirs[0]} -B {params.binput_dirs[1]} -C {params.binput_dirs[2]} -c {params.completeness} -x {params.contamination}
         echo -e "#id: 'metawrap'\n#plot_type: 'table'\n#section_name: 'Bin Refinement'" > {output.stats}_mqc.tsv && cat {output.stats} >> {output.stats}_mqc.tsv
         """
+
 
 rule coverm:
     """ This calculates bin coverage.  The bin stats file is used as the

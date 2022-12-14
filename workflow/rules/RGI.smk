@@ -3,6 +3,7 @@ include: "common.smk"
 
 configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
 
+
 envvars:
     "TMPDIR",
 

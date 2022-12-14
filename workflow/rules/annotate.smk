@@ -6,6 +6,7 @@ import glob
 
 configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
 
+
 assenbly_base = os.path.basename(config["assembly"])
 # onstart:
 # dbcan is very slow but very parallelizable.

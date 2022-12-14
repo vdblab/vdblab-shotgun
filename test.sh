@@ -24,13 +24,13 @@ esac
 
 
 
-common_args="--snakefile workflow/Snakefile --profile ${SNAKEPROFILE} --restart-times 0 --cores 32"
+common_args="--snakefile workflow/Snakefile --profile ${SNAKEPROFILE} --rerun-incomplete --restart-times 0 --cores 32"
 case $mode in
 
   full | all)
       snakemake \
 	  $common_args \
-	  --singularity-args "-B ${PWD},/data/brinkvd/" \
+	  --singularity-args "-B ${PWD},/data/brinkvd/,/scratch/" \
           --directory tmpall/ \
 	  --config \
 	  sample=473 \
