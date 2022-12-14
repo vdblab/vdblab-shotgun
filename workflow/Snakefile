@@ -17,7 +17,12 @@ envvars:
     "TMPDIR",
 
 
-validate(config, os.path.join(workflow.basedir, "../config/config.schema.yaml"))
+validate(
+    config,
+    str(workflow.main_snakefile).replace(
+        "workflow/Snakefile", "config/config.schema.yaml"
+    ),
+)
 
 SHARDS = make_shard_names(config["nshards"])
 
@@ -32,6 +37,13 @@ onstart:
 
 localrules:
     all,
+
+
+# we have to fix some inputs to downstream applications if we are running all together:
+# we do this for the assembly because that config entry is referenced many times in the binning and annotation workflows
+# for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
+if config["stage"] == "all":
+    config["assembly"] = f"{config['sample']}.assembly.fasta"
 
 
 #
@@ -64,12 +76,6 @@ module biobakery:
 use rule * from biobakery as biobakery_*
 
 
-use rule cat_pair from biobakery as biobakery_cat_pair with:
-    input:
-        R1="hostdepleted/{sample}_1.fastq.gz",
-        R2="hostdepleted/{sample}_2.fastq.gz",
-
-
 #
 # Kraken Module
 #
@@ -85,56 +91,6 @@ module kraken:
 use rule * from kraken as kraken_*
 
 
-use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
-    # because the concat rule exists in both the preprocessing and kraken
-    # snakefiles, we override the ins and outs of one of them.  Since the new
-    # outputs aren't in rule all, this clips the rule from the dag
-    input:
-        R1=touch("input_F"),
-        R2=touch("input_R"),
-    output:
-        R1=temp(touch("output_F")),
-        R2=temp(touch("output_R")),
-
-
-use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
-    input:
-        R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
-        R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
-        db=config["kraken2_db"],
-    output:
-        out="kraken2/{sample}_shard{shard}_kraken2.out",
-        unclass_R1="kraken2/{sample}_shard{shard}_kraken2_unclassified_1.fastq",
-        unclass_R2="kraken2/{sample}_shard{shard}_kraken2_unclassified_2.fastq",
-        report=temp("kraken2/{sample}_shard{shard}_kraken2.report"),
-    log:
-        e="logs/kraken_{sample}_shard{shard}.e",
-
-
-use rule compress_kraken_unclassified from kraken as kraken_compress_kraken_unclassified with:
-    input:
-        R1=[
-            f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_1.fastq"
-            for shard in SHARDS
-        ],
-        R2=[
-            f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_2.fastq"
-            for shard in SHARDS
-        ],
-
-
-use rule kraken_merge_shards from kraken as kraken_kraken_merge_shards with:
-    input:
-        #reports = rules.kraken_kraken_standard_run.output.report,
-        reports=[f"kraken2/{{sample}}_shard{shard}_kraken2.report" for shard in SHARDS],
-    output:
-        out="kraken2/{sample}_kraken2.report",
-    # this ensures that the sample wildcard never ends with _shard001
-    # needing this probably means I could specify file names more cleanly :/
-    wildcard_constraints:
-        sample=".+(?<!shard\d\d\d)",
-
-
 #
 # Assembly Module
 #
@@ -148,12 +104,6 @@ module assembly:
 
 
 use rule * from assembly as assembly_*
-
-
-use rule SPAdes_run from assembly as assembly_SPAdes_run with:
-    input:
-        R1="hostdepleted/{sample}_1.fastq.gz",
-        R2="hostdepleted/{sample}_2.fastq.gz",
 
 
 #
@@ -179,18 +129,145 @@ module rgi:
 use rule * from rgi as rgi_*
 
 
-use rule RGI from rgi as rgi_RGI with:
-    input:
-        R1="hostdepleted/{sample}_1.fastq.gz",
-        R2="hostdepleted/{sample}_2.fastq.gz",
-        db=config["CARD_db_json"],
+#
+# Binning Module
+#
+module binning:
+    snakefile:
+        "rules/binning.smk"
+    config:
+        config
 
 
-rule all:
-    input:
+use rule * from binning as binning_*
+
+
+#
+# annotation Module
+#
+module annotate:
+    snakefile:
+        "rules/annotate.smk"
+    config:
+        config
+
+
+use rule * from annotate as annotate_*
+
+
+## Notes:
+# put all the logic here to connect pipeline stages (eg setting biobakery to using preprocessed results rather than config's R1 and R2
+# because the concat rule exists in both the preprocessing and kraken
+# snakefiles, we override the ins and outs of one of them.  Since the new
+# outputs aren't in rule all, this clips the rule from the dag
+
+# The wildcard_constraints below ensures that the sample wildcard never ends with _shard001
+# needing this probably means I could specify file names more cleanly :/
+
+if config["stage"] == "all":
+
+    use rule cat_pair from biobakery as biobakery_cat_pair with:
+        input:
+            R1="hostdepleted/{sample}_1.fastq.gz",
+            R2="hostdepleted/{sample}_2.fastq.gz",
+
+    use rule RGI from rgi as rgi_RGI with:
+        input:
+            R1="hostdepleted/{sample}_1.fastq.gz",
+            R2="hostdepleted/{sample}_2.fastq.gz",
+            db=config["CARD_db_json"],
+
+    use rule SPAdes_run from assembly as assembly_SPAdes_run with:
+        input:
+            R1="hostdepleted/{sample}_1.fastq.gz",
+            R2="hostdepleted/{sample}_2.fastq.gz",
+
+    use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
+        input:
+            R1=touch("input_F"),
+            R2=touch("input_R"),
+        output:
+            R1=temp(touch("output_F")),
+            R2=temp(touch("output_R")),
+
+    use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
+        input:
+            R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
+            R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
+            db=config["kraken2_db"],
+        output:
+            out="kraken2/{sample}_shard{shard}_kraken2.out",
+            unclass_R1="kraken2/{sample}_shard{shard}_kraken2_unclassified_1.fastq",
+            unclass_R2="kraken2/{sample}_shard{shard}_kraken2_unclassified_2.fastq",
+            report=temp("kraken2/{sample}_shard{shard}_kraken2.report"),
+        log:
+            e="logs/kraken_{sample}_shard{shard}.e",
+
+    use rule compress_kraken_unclassified from kraken as kraken_compress_kraken_unclassified with:
+        input:
+            R1=[
+                f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_1.fastq"
+                for shard in SHARDS
+            ],
+            R2=[
+                f"kraken2/{{sample}}_shard{shard}_kraken2_unclassified_2.fastq"
+                for shard in SHARDS
+            ],
+
+    use rule kraken_merge_shards from kraken as kraken_kraken_merge_shards with:
+        input:
+            #reports = rules.kraken_kraken_standard_run.output.report,
+            reports=[
+                f"kraken2/{{sample}}_shard{shard}_kraken2.report" for shard in SHARDS
+            ],
+        output:
+            out="kraken2/{sample}_kraken2.report",
+        wildcard_constraints:
+            sample=".+(?<!shard\d\d\d)",
+
+
+else:
+    pass
+
+
+# the above else: pass is needed to make snakefmt happy
+
+
+outputs = {
+    "all": [
         rules.preprocess_all.input,
         rules.biobakery_all.input,
         rules.assembly_all.input,
         rules.kraken_all.input,
         rules.rgi_all.input,
+        rules.binning_all.input,
+        rules.annotate_all.input,
+    ],
+    "preprocess": [
+        rules.preprocess_all.input,
+    ],
+    "biobakery": [
+        rules.biobakery_all.input,
+    ],
+    "assembly": [
+        rules.assembly_all.input,
+    ],
+    "kraken": [
+        rules.kraken_all.input,
+    ],
+    "RGI": [
+        rules.rgi_all.input,
+    ],
+    "binning": [
+        rules.binning_all.input,
+    ],
+    "annotate": [
+        rules.annotate_all.input,
+    ],
+}
+
+
+rule all:
+    input:
+        outputs[config["stage"]],
     default_target: True

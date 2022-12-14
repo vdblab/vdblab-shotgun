@@ -10,14 +10,17 @@ from snakemake.utils import validate
 include: "common.smk"
 
 
-configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
+configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
 
 
 envvars:
     "TMPDIR",
 
 
-validate(config, os.path.join(workflow.current_basedir, "../../config/config.schema.yaml"))
+validate(
+    config,
+    os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"),
+)
 
 SHARDS = make_shard_names(config["nshards"])
 TMPDIR = Path(os.environ["TMPDIR"])
@@ -433,6 +436,6 @@ rule merge_logs_for_multiqc:
         e="logs/merge_logs_{sample}.e",
         o="logs/merge_logs_{sample}.o",
     conda:
-        "../../common/envs/base.yaml"
+        "../envs/base.yaml"
     script:
         "../scripts/merge_logs.py"

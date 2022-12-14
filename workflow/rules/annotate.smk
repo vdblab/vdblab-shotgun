@@ -1,15 +1,28 @@
 import os
 import sys
+from shutil import rmtree
+import glob
 
 
 configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
 
 
-assembly_base = os.path.basename(config["assembly"])
+assenbly_base = os.path.basename(config["assembly"])
+# onstart:
+# dbcan is very slow but very parallelizable.
+# this split up the assembly for any contigs greater than 1000bp
+counter, file_counter = 0, 0
+nbases = 0
+content = []
+file_content = []
+contig_ids = []
+contig_ids_in_file = []
+seqs_per_file = 100
+fids = []
 
 
 localrules:
-    localize,
+    all,
 
 
 if not os.path.exists("logs"):
@@ -31,73 +44,76 @@ abricates = expand(
     ],
 )
 
+outputs = [
+    f"{config['sample']}_antismash.gbk",
+    f"{config['sample']}_antismash.tab",
+    f"{config['sample']}_amrfinder.tab",
+    f"{config['sample']}_cazi_overview.txt",
+    abricates,
+    f"{config['sample']}.cleaned_dirs",
+]
+if config["check_contigs"]:
+    outputs.extend(
+        [f"{config['sample']}_metaerg.gff", f"{config['sample']}_antismash.gbk"]
+    )
+
 
 rule all:
     input:
-        f"{config['sample']}_metaerg.gff",
-        f"{config['sample']}_antismash.gbk",
-        f"{config['sample']}_amrfinder.tab",
-        "cazi_db_scan/done",
-        abricates,
-
-
-rule localize:
-    input:
-        config["assembly"],
-    output:
-        assembly_base,
-    shell:
-        """
-        cp {input} {output}
-        """
+        outputs,
 
 
 rule annotate_orfs:
     container:
         config["docker_metaerg"]
     input:
-        assembly=assembly_base,
+        assembly="tmp/{batch}.fasta",
     output:
-        gff="{sample}_metaerg.gff",
+        gff="annotation/annotation_{batch}/data/all.gff",
     resources:
-        mem_mb=16 * 1024,
-    threads: 32
+        mem_mb=8 * 1024,
+        runtime=2 * 60,
+    threads: 4
     params:
         metaerg_db_dir=config["metaerg_db_dir"],
-        check_contigs=1 if config["check_contigs"] else 0,
-        contig_annotation_thresh=config["contig_annotation_thresh"],
     shell:
         """
-        set -x
-        # get the first (longest) contig name that contains the length
-        maxlength=$(cat {input.assembly} |head -n1 | cut -f 4 -d _)
-        if [ "$maxlength" -lt "{params.contig_annotation_thresh}" ] && [ "{params.check_contigs}" -eq "1" ]
+        # turn off strict so we don't fail even if we have the gff file.
+        # currently the output_report.pl script is failing
+        # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
+        # https://github.com/xiaoli-dong/metaerg/issues/12
+        set -e
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation_{wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
+        # if metaerg successfully packaged everything up
+        if [ -f "annotation_{wildcards.batch}/data/master.gff.txt" ]
         then
-            echo "longest contig less than 1000bp; skipping annotation"
-            touch {output.gff}
+            mv annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
         else
-            rm -r  annotation
-            metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation {input.assembly}
-            mv annotation/data/all.gff {output.gff}
+            # if it successed but failed at output_report.pl, no need to do anything
+            echo "sample likely failed at output_report.pl but gff should be present"
         fi
         """
 
 
 rule antismash:
+    # note that we don't require the web index as antismash can fail on small samples.
     container:
         config["docker_antismash"]
     input:
-        assembly=assembly_base,
-        gff=rules.annotate_orfs.output.gff,
+        assembly=config["assembly"],
+        gff="{sample}_metaerg.gff",
     resources:
-        mem_mb=16000,
+        mem_mb=16 * 1024,
+        runtime=3 * 60,
     threads: 16
     output:
         gbk="{sample}_antismash.gbk",
     shell:
         """
         set +e -x
-        antismash --cpus {threads}  --output-dir antismash {input.assembly} --genefinding-gff {input.gff}
+        antismash --cpus {threads} --allow-long-headers \
+            --output-dir antismash_{wildcards.sample} {input.assembly} \
+            --genefinding-gff {input.gff}
         exitcode=$?
         if [ ! $exitcode -eq 0 ]
         then
@@ -105,7 +121,7 @@ rule antismash:
             touch {output.gbk}
 
         else
-            cat antismash/*.gbk > {output.gbk}
+            cat antismash_{wildcards.sample}/*.gbk > {output.gbk}
         fi
         """
 
@@ -115,13 +131,15 @@ rule tabulate_antismash:
         gbk="{sample}_antismash.gbk",
     output:
         tab="{sample}_antismash.tab",
+    container:
+        config["docker_biopython"]
     script:
-        "scripts/parse_antismash_gbk.py"
+        "../scripts/parse_antismash_gbk.py"
 
 
 rule annotate_abricate:
     input:
-        assembly=assembly_base,
+        assembly=config["assembly"],
     output:
         out="{sample}_abricate_{tool}.tab",
     container:
@@ -136,43 +154,140 @@ rule annotate_abricate:
 
 rule annotate_AMR:
     input:
-        assembly=assembly_base,
+        assembly=config["assembly"],
     output:
         amr="{sample}_amrfinder.tab",
     resources:
         mem_mb=4000,
+        runtime=3 * 60,
     container:
         config["docker_amrfinder"]
     shell:
         """
         amrfinder -n {input.assembly}  --plus  > {output.amr}
-        # /tmp/amrfinder/data/2022-04-04.1/
         """
 
 
-rule annotate_CAZI:
+checkpoint split_assembly:
+    """
+    These dummy inputs are intended to be overwritten when importing the rule
+    """
     input:
-        assembly=assembly_base,
+        R1=config["assembly"],
     output:
-        done="cazi_db_scan/done",
+        directory("tmp"),
     params:
-        cazi_db=config["cazi_db"],
-        check_contigs=1 if config["check_contigs"] else 0,
-        contig_annotation_thresh=config["contig_annotation_thresh"],
+        outdir="tmp/",
+        nseqs=30,
+        minlen=config["contig_annotation_thresh"],
+    container:
+        "docker://pegi3s/seqkit:2.3.0"
+    threads: 4  # see their docs
     resources:
         mem_mb=8000,
-    container:
-        config["docker_dbcan"]
-    threads: 16
+    log:
+        e="logs/split_assembly.e",
+        o="logs/split_assembly.o",
     shell:
         """
-        set -x
-        maxlength=$(cat {input.assembly} |head -n1 | cut -f 4 -d _)
-        if [ "$maxlength" -lt "{params.contig_annotation_thresh}" ] && [ "{params.check_contigs}" -eq "1" ]
-        then
-            echo "longest contig less than 1000bp; skipping CAZI annotation"
-        else
-            run_dbcan {input.assembly} meta --out_dir cazi_db_scan/ -t all --db_dir /app/db --dia_cpu {threads} --hmm_cpu {threads} --eCAMI_jobs {threads} --tf_cpu {threads} --stp_cpu {threads}
-        fi
-        touch cazi_db_scan/done
+        seqkit shuffle {input.R1} --two-pass  |
+        seqkit seq --min-len {params.minlen} --threads {threads} | \
+            seqkit split2 --by-size {params.nseqs} --out-dir {params.outdir}  > {log.o} 2>> {log.e}
+        """
+
+
+rule annotate_CAZI_split:
+    input:
+        assembly="tmp/{batch}.fasta",
+    output:
+        overview="cazi_db_scan/{batch}/overview.txt",
+    params:
+        cazi_db=config["cazi_db"],
+        contig_annotation_thresh=config["contig_annotation_thresh"],
+    resources:
+        mem_mb=4 * 1024,
+        runtime=90,
+    container:
+        config["docker_dbcan"]
+    threads: 2
+    shell:
+        """
+        # turn off strict so we don't fail on empty hmmer outputs within run_dbcan
+        set -e
+        # touch this file so it exists even if this fails
+        # if you can figure out checkpoints that can deal with missing files,
+        # you win!
+        touch {output.overview}
+        run_dbcan {input.assembly} meta --out_dir cazi_db_scan/{wildcards.batch}/ -t all --db_dir /app/db --dia_cpu {threads} --hmm_cpu {threads} --eCAMI_jobs {threads} --tf_cpu {threads} --stp_cpu {threads}   ||  echo "WARNING: no output from this split!"
+        """
+
+
+def aggregate_cazi_results(wildcards):
+    """
+    aggregate the file names of the random number of files
+    generated at the scatter step
+    """
+    checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
+    return expand(
+        "cazi_db_scan/{batch}/overview.txt",
+        batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
+    )
+
+
+def aggregate_metaerg_results(wildcards):
+    """
+    aggregate the file names of the random number of files
+    generated at the scatter step
+    """
+    checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
+    return expand(
+        "annotation/annotation_{batch}/data/all.gff",
+        batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
+    )
+
+
+rule join_CAZI:
+    input:
+        aggregate_cazi_results,
+    output:
+        f"{config['sample']}_cazi_overview.txt",
+    shell:
+        """
+        # deal with header
+        head -n 1 {input[0]} > {output}
+        for f in {input}
+        do
+            tail -n+2 $f >> {output}
+        done
+        """
+
+
+rule join_gffs:
+    input:
+        aggregate_metaerg_results,
+    output:
+        "{sample}_metaerg.gff",
+    shell:
+        """
+        # deal with header
+        head -n 1 {input[0]} > {output}
+        for f in {input}
+        do
+            tail -n+2 $f >> {output}
+        done
+        """
+
+
+rule clean_up:
+    """"{sample}_metaerg.gff" is used as an input to ensure
+    that step is done before we clean.  Untested as of yet
+    """
+    input:
+        agg_file="{sample}_metaerg.gff",
+    output:
+        touch("{sample}.cleaned_dirs"),
+    shell:
+        """
+        find . -name "annotation/annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        rm -r tmp/
         """

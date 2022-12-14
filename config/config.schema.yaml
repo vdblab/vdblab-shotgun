@@ -21,7 +21,9 @@ properties:
       type: string
     minItems: 1
     uniqueItems: true
-
+  stage:
+    type: string
+    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate)$"
   # run parameters
   nshards:
     type: integer
@@ -88,6 +90,7 @@ required:
   - sample
   - R1
   - R2
+  - stage
   - adapters_fasta
   - bmtagger_human
   - bmtagger_mouse

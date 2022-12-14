@@ -10,14 +10,15 @@ from snakemake.utils import validate
 include: "common.smk"
 
 
-configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
+configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
+
+
+validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
 
 
 envvars:
     "TMPDIR",
 
-
-validate(config, os.path.join(workflow.current_basedir, "../../config/config.schema.yaml"))
 
 SHARDS = make_shard_names(config["nshards"])
 
@@ -61,7 +62,7 @@ rule cat_pair:
     output:
         joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
     conda:
-        "../../common/envs/base.yaml"
+        "../envs/base.yaml"
     log:
         e="logs/cat_pair_{sample}.e",
     shell:
