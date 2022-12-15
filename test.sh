@@ -5,8 +5,9 @@ mode=$1
 rawdataset=$2
 case $rawdataset in
     tiny)
-	R1=[$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
-	R2=[$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
+	echo " WARNING: this dataset will raise errors during binning/annotation and will have empty metaphlan results due to its size"
+	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
+	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
 	;;
     small)
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
@@ -31,7 +32,7 @@ case $mode in
       snakemake \
 	  $common_args \
 	  --singularity-args "-B ${PWD},/data/brinkvd/,/scratch/" \
-          --directory tmpall/ \
+          --directory tmpall_${rawdataset}/ \
 	  --config \
 	  sample=473 \
 	  R1=$R1 \

@@ -1,30 +1,30 @@
 ## Inputs
 assembly: ""
 ## bbmap
-adapters_fasta: "/data/brinkvd/newresources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
+adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
 
 ## bioBakery
-choco_db: "/data/brinkvd/newresources/dbs/chocophlan/v201901_v31/"
-uniref90_db: "/data/brinkvd/newresources/dbs/uniref90_diamond/v201901b/"
-utility_mapping_db: "/data/brinkvd/newresources/dbs/utility_mapping/utility_mapping/"
-metaphlan_db: "/data/brinkvd/newresources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
+choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
+uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
+utility_mapping_db: "/data/brinkvd/resources/dbs/utility_mapping/utility_mapping/"
+metaphlan_db: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
 
 ## CheckM
-checkm_db: "/data/brinkvd/newresources/dbs/checkm/2015_01_16/"
+checkm_db: "/data/brinkvd/resources/dbs/checkm/2015_01_16/"
 
 ## 4-step host depletion
 fourstep_hostremoval: true
-bowtie2_human_index_base: "/data/brinkvd/newresources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
-bowtie2_mouse_index_base: "/data/brinkvd/newresources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz"
-snap_human_index_dir: "/data/brinkvd/newresources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
-snap_mouse_index_dir: "/data/brinkvd/newresources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
+bowtie2_human_index_base: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
+bowtie2_mouse_index_base: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz"
+snap_human_index_dir: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
+snap_mouse_index_dir: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
 
 
 ## 16S annotation
-blast_16s_db_nsq: "/data/brinkvd/newresources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
+blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
 
 ## Kraken2
-kraken2_db: "/data/brinkvd/newresources/dbs/kraken/k2_pluspf_20220908/"
+kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
 
 ## kaiju
 kaiju_nodes: "/data/brinkvd/resources/kaiju/nodes.dmp"
@@ -34,12 +34,12 @@ kaiju_fmi: "/data/brinkvd/resources/kaiju/kaiju_db_nr_.fmi"
 nshards: 4
 
 ## CARD
-CARD_db_json: "/data/brinkvd/newresources/dbs/CARD/v3.2.5/card.json"
+CARD_db_json: "/data/brinkvd/resources/dbs/CARD/v3.2.5/card.json"
 
 ## Annotation
-metaerg_db_dir: "/data/brinkvd/newresources/dbs/metaerg/2022/db"
+metaerg_db_dir: "/data/brinkvd/resources/dbs/metaerg/2022/db"
 
-cazi_db: "/data/brinkvd/newresources/dbCAN2/v11/"
+cazi_db: "/data/brinkvd/resources/dbCAN2/v11/"
 
 # should the length of the contigs be checked?
 # this was implemented to deal with test data and similations with tiny assemblies that caused annotation erros
