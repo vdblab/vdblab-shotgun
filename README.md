@@ -1,4 +1,4 @@
-# Shotgun Pipeline
+# VDB Shotgun Pipeline
 
 ## Prerequisites
 
@@ -235,4 +235,8 @@ For each input species:
 
 The rule DAG for two example input species looks like this:
 
-<img src="https://github.com/vdblab/vdblab-pipelines/raw/main/vdb_shotgun/images/strainphlan_dag.png" alt="StrainPhlAn Shotgun Pipeline DAG" width="500">
+<img src="https://github.com/vdblab/vdblab-shotgun/raw/main/workflow/images/strainphlan_dag.png" alt="StrainPhlAn Shotgun Pipeline DAG" width="500">
+
+
+# Testing and Development
+Please see [`development.md`](https://github.com/vdblab/vdblab-shotgun/raw/main/development.md).
