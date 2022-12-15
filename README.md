@@ -46,7 +46,7 @@ snakemake \
 
 The rule DAG for a single sample looks like this:
 
-<img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/all_dag.png" alt="Main Shotgun Pipeline DAG" width="1000">
+<img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/all_dag.png" alt="Main Shotgun Pipeline DAG" height="600">
 
 
 Different modules of the workflow can be run indenpendently using the `stage` config entry.
@@ -239,4 +239,4 @@ The rule DAG for two example input species looks like this:
 
 
 # Testing and Development
-Please see [`development.md`](https://github.com/vdblab/vdblab-shotgun/raw/main/development.md).
+Please see [`development.md`](development.md).
