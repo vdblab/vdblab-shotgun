@@ -32,3 +32,11 @@ bash test.sh <pipeline_stage> <dataset>
 bash test.sh preprocess tiny
 ```
 The ouput will be in a folder called `tmp<pipeline_stage>_<dataset>`.
+
+## Updating dag figures in README.md
+
+The `test.sh` can also be used to update the figures included in the README by running the following:
+
+
+```
+bash test.sh figs tiny

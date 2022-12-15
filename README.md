@@ -93,7 +93,10 @@ History))
 * 2-step host removal [descibed here](https://doi.org/10.1101/2021.11.23.469039), extended to use both human and mouse genomes
 
 ## Biobakery
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/biobakery_dag.png" alt="Shotgun Biobakery Profiling Pipeline DAG" height="600">
+
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
@@ -112,7 +115,9 @@ snakemake \
 
 
 ## Kraken2/Bracken
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/kraken_dag.png" alt="Shotgun Kraken/Bracken Pipeline DAG" height="600">
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
@@ -129,7 +134,9 @@ snakemake \
 * Kraken2 ([site](https://ccb.jhu.edu/software/kraken2/) | [paper](https://doi.org/10.1186/s13059-019-1891-0))
 
 ## Assembly
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/assembly_dag.png" alt="Shotgun Assembly Pipeline DAG" height="600">
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
@@ -147,7 +154,9 @@ snakemake \
 * MetaQUAST ([site](http://quast.sourceforge.net/metaquast) | [paper](https://doi.org/10.1093/bioinformatics/btv697))
 
 ## Annotation
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/annotate_dag.png" alt="Shotgun Assembly Annotation DAG" height="600">
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
@@ -169,7 +178,9 @@ snakemake \
 * dbCAN ([site](https://github.com/linnabrown/run_dbcan) | [paper](https://doi.org/10.1093/nar/gky418))
 
 ## Binning
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/binning_dag.png" alt="Shotgun Assembly Binning Pipeline DAG" height="600">
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
@@ -184,7 +195,9 @@ snakemake \
 ```
 
 ## RGI
+
 <img src="https://github.com/vdblab/vdblab-shotgun/raw/main/images/rgi_dag.png" alt="Shotgun RGI Pipeline DAG" height="600">
+
 ```sh
 snakemake \
   --profile $SNAKEPROFILE \
