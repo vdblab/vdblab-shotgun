@@ -161,7 +161,7 @@ case $mode in
 	  R2=$R2 \
 	  nshards=2 \
 	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
-	  stage=$stage --dag > ${stage}_dag.dot &&  dot -Tpng ${stage}_dag.dot -o images/${stage}_dag.png
+	  stage=$stage --dag > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
       done
 
       ;;

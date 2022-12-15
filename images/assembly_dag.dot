@@ -1,0 +1,11 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all", color = "0.30 0.6 0.85", style="rounded"];
+	1[label = "assembly_SPAdes_run\nsample: 473", color = "0.38 0.6 0.85", style="rounded"];
+	2[label = "assembly_quast_run", color = "0.18 0.6 0.85", style="rounded"];
+	1 -> 0
+	2 -> 0
+	1 -> 2
+}            
