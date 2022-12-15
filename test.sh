@@ -1,5 +1,7 @@
 #! /bin/bash
-set -eux
+set -ux
+set -o pipefail
+set -o errexit
 
 mode=$1
 rawdataset=$2
@@ -53,7 +55,22 @@ case $mode in
 	  multiqc_config=${PWD}/multiqc_config.yaml \
 	  nshards=2 \
 	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
-	  stage=preprocess
+	  stage=preprocess --notemp -f concatenated/473_R1.fastq.gz concatenated/473_R2.fastq.gz sortmerna/tmp_473_shard001 sortmerna/tmp_473_shard002
+      ;;
+  testpreprocess )
+      snakemake \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
+	  --directory tmppre/   \
+	  --config \
+	  sample=473  \
+	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
+	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	  multiqc_config=${PWD}/multiqc_config.yaml \
+	  nshards=2 \
+	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
+	  stage=preprocess \
+	  --generate-unit-tests
       ;;
   biobakery | bb)
       snakemake \
@@ -132,7 +149,23 @@ case $mode in
 	  R2=$PWD/.test/shotgun/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz \
 	  stage=rgi
       ;;
+  figs )
+      for stage in all preprocess biobakery binning kraken assembly annotate rgi
+      do
+	  snakemake \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
+	  --directory tmprgi/ \
+	  --config sample=473 \
+	  R1=$R1 \
+	  R2=$R2 \
+	  nshards=2 \
+	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+	  stage=$stage --dag > ${stage}_dag.dot &&  dot -Tpng ${stage}_dag.dot -o images/${stage}_dag.png
+      done
+
+      ;;
   *)
-    echo -e "unknown mode; please chose from all, preprocess, biobakery, bin, kraken2, assembly, annotate, rgi. Exiting\n"
+    echo -e "unknown mode; please chose from all, preprocess, biobakery, bin, kraken2, assembly, annotate, rgi, figs. Exiting\n"
     ;;
 esac
