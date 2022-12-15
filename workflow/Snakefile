@@ -255,7 +255,7 @@ outputs = {
     "kraken": [
         rules.kraken_all.input,
     ],
-    "RGI": [
+    "rgi": [
         rules.rgi_all.input,
     ],
     "binning": [

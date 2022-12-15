@@ -1,0 +1,29 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all", color = "0.63 0.6 0.85", style="rounded"];
+	1[label = "biobakery_renormalize_KO", color = "0.25 0.6 0.85", style="rounded"];
+	2[label = "biobakery_regroup_genefam_2_KO", color = "0.04 0.6 0.85", style="rounded"];
+	3[label = "biobakery_humann3_run_uniref90", color = "0.46 0.6 0.85", style="rounded"];
+	4[label = "biobakery_cat_pair\nsample: 473", color = "0.41 0.6 0.85", style="rounded"];
+	5[label = "biobakery_metaphlan_run", color = "0.34 0.6 0.85", style="rounded"];
+	6[label = "biobakery_renormalize_pabun", color = "0.19 0.6 0.85", style="rounded"];
+	7[label = "biobakery_sample2markers_run", color = "0.20 0.6 0.85", style="rounded"];
+	8[label = "biobakery_krona", color = "0.31 0.6 0.85", style="rounded"];
+	9[label = "biobakery_metaphlan2_krona", color = "0.38 0.6 0.85", style="rounded"];
+	1 -> 0
+	5 -> 0
+	6 -> 0
+	7 -> 0
+	8 -> 0
+	2 -> 1
+	3 -> 2
+	4 -> 3
+	5 -> 3
+	4 -> 5
+	3 -> 6
+	5 -> 7
+	9 -> 8
+	5 -> 9
+}            
