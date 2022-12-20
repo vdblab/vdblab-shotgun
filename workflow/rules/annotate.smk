@@ -83,11 +83,12 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation_{wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
+        mkdir -p annotation
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
-        if [ -f "annotation_{wildcards.batch}/data/master.gff.txt" ]
+        if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
         then
-            mv annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
+            mv annotation/annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
         else
             # if it successed but failed at output_report.pl, no need to do anything
             echo "sample likely failed at output_report.pl but gff should be present"
