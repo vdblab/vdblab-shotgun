@@ -268,7 +268,6 @@ if not config["fourstep_hostremoval"]:
             cat {input.R2} | pigz -p {threads} -9 > {output.R2} 2>> {log.e}
             """
 
-
 else:
 
     bowtie2_human_db_name = os.path.basename(config["bowtie2_human_index_base"])
