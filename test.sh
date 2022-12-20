@@ -167,7 +167,7 @@ case $mode in
 	  R2=$R2 \
 	  nshards=2 \
 	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
-	  stage=$stage --dag > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
+	  stage=$stage --dag  | sed "s|color.*rounded\"|color = \"grey\", style=\"rounded\"|g" > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
       done
 
       ;;

@@ -2,13 +2,13 @@ digraph snakemake_dag {
     graph[bgcolor=white, margin=0];
     node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
     edge[penwidth=2, color=grey];
-	0[label = "all", color = "0.21 0.6 0.85", style="rounded"];
-	1[label = "kraken_kraken_standard_run", color = "0.01 0.6 0.85", style="rounded"];
-	2[label = "utils_concat_R1_R2\nsample: 473", color = "0.24 0.6 0.85", style="rounded"];
-	3[label = "kraken_compress_kraken_unclassified", color = "0.19 0.6 0.85", style="rounded"];
-	4[label = "kraken_get_read_len", color = "0.36 0.6 0.85", style="rounded"];
-	5[label = "kraken_bracken\ntaxlevel: G", color = "0.28 0.6 0.85", style="rounded"];
-	6[label = "kraken_bracken\ntaxlevel: S", color = "0.28 0.6 0.85", style="rounded"];
+	0[label = "all", color = "grey", style="rounded"];
+	1[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
+	2[label = "utils_concat_R1_R2\nsample: 473", color = "grey", style="rounded"];
+	3[label = "kraken_compress_kraken_unclassified", color = "grey", style="rounded"];
+	4[label = "kraken_get_read_len", color = "grey", style="rounded"];
+	5[label = "kraken_bracken\ntaxlevel: G", color = "grey", style="rounded"];
+	6[label = "kraken_bracken\ntaxlevel: S", color = "grey", style="rounded"];
 	1 -> 0
 	3 -> 0
 	5 -> 0

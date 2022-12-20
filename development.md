@@ -40,3 +40,4 @@ The `test.sh` can also be used to update the figures included in the README by r
 
 ```
 bash test.sh figs tiny
+```

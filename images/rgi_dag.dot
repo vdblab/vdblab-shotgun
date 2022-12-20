@@ -2,9 +2,9 @@ digraph snakemake_dag {
     graph[bgcolor=white, margin=0];
     node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
     edge[penwidth=2, color=grey];
-	0[label = "all", color = "0.17 0.6 0.85", style="rounded"];
-	1[label = "rgi_RGI\nsample: 473", color = "0.08 0.6 0.85", style="rounded"];
-	2[label = "rgi_plotRGI", color = "0.01 0.6 0.85", style="rounded"];
+	0[label = "all", color = "grey", style="rounded"];
+	1[label = "rgi_RGI\nsample: 473", color = "grey", style="rounded"];
+	2[label = "rgi_plotRGI", color = "grey", style="rounded"];
 	1 -> 0
 	2 -> 0
 	1 -> 2
