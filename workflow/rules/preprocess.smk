@@ -343,21 +343,21 @@ rule merge_primary_host_align_bams:
         config["docker_bowtie2"]
     shell:
         """
-    mkdir -p tmp_{wildcards.sample}_merge
-    for i in {input.bams}
-    do
-    thisbasename=$(basename $i)
-    thisbase=${{thisbasename%.*}}
-    echo "getting passing mapped reads $i"
-    samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
-    echo "sorting $i"
-    samtools sort -o tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam tmp_{wildcards.sample}_merge/${{thisbase}}.bam
-    done
-    echo "merging"
-    samtools merge --threads {threads} -o  {output.bam} tmp_{wildcards.sample}_merge/*.sort.bam
-    samtools index {output.bam}
-    rm -r tmp_{wildcards.sample}_merge/
-    """
+        mkdir -p tmp_{wildcards.sample}_merge
+        for i in {input.bams}
+        do
+        thisbasename=$(basename $i)
+        thisbase=${{thisbasename%.*}}
+        echo "getting passing mapped reads $i"
+        samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
+        echo "sorting $i"
+        samtools sort -o tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam tmp_{wildcards.sample}_merge/${{thisbase}}.bam
+        done
+        echo "merging"
+        samtools merge --threads {threads} -o  {output.bam} tmp_{wildcards.sample}_merge/*.sort.bam
+        samtools index {output.bam}
+        rm -r tmp_{wildcards.sample}_merge/
+        """
 
 
 rule get_all_host_reads:
@@ -391,20 +391,20 @@ rule get_all_host_reads:
         config["docker_bowtie2"]
     shell:
         """
-    for i in {input.human_bams} {input.mouse_bams}
-    do
-        # get the aligned reads
-        samtools view  -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
-        # convert to fq
-        bamToFastq -i tmp_host_{wildcards.sample}.bam -fq tmp_host_{wildcards.sample}.R1.fq -fq2 tmp_host_{wildcards.sample}.R2.fq
-        # add to output (because bamToFastq can't directly concat, nor can it compress output)
-        cat tmp_host_{wildcards.sample}.R1.fq | pigz -p {threads} -9 >> {output.R1}
-        cat tmp_host_{wildcards.sample}.R2.fq | pigz -p {threads} -9 >> {output.R2}
-        # toss the temp bams and fastqs
-        rm tmp_host_{wildcards.sample}.*.fq
-        rm tmp_host_{wildcards.sample}.bam
-    done
-#     """
+        for i in {input.human_bams} {input.mouse_bams}
+        do
+            # get the aligned reads
+            samtools view  -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
+            # convert to fq
+            bamToFastq -i tmp_host_{wildcards.sample}.bam -fq tmp_host_{wildcards.sample}.R1.fq -fq2 tmp_host_{wildcards.sample}.R2.fq
+            # add to output (because bamToFastq can't directly concat, nor can it compress output)
+            cat tmp_host_{wildcards.sample}.R1.fq | pigz -p {threads} -9 >> {output.R1}
+            cat tmp_host_{wildcards.sample}.R2.fq | pigz -p {threads} -9 >> {output.R2}
+            # toss the temp bams and fastqs
+            rm tmp_host_{wildcards.sample}.*.fq
+            rm tmp_host_{wildcards.sample}.bam
+        done
+        #     """
 
 
 rule sortmerna_run:
