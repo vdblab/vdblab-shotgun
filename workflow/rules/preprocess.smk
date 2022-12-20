@@ -207,6 +207,7 @@ rule bbmap_run:
     shell:
         """
         bbduk.sh -Xmx{resources.mem_mb}m \
+            ordered \
             in={input.R1} in2={input.R2} \
             out={output.out_R1} out2={output.out_R2} \
             outm={output.rm_R1} outm2={output.rm_R2} \

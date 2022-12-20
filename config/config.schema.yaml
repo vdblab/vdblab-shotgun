@@ -38,6 +38,10 @@ properties:
   dedup_reads:
     type: boolean
     default: true
+  dedup_platform:
+    type: string
+    default: true
+    pattern: "(NextSeq|HiSeq|MiSeq|NovaSeq|SRA)"
   fourstep_hostremoval:
     type: boolean
     default: false
