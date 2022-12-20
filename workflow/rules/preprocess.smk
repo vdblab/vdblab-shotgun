@@ -34,7 +34,6 @@ onstart:
         os.makedirs("logs")
 
 
-
 localrules:
     all,
 
@@ -46,8 +45,10 @@ cleaned_fastqs = expand(
     read_dir=[1, 2],
 )
 
+
 wildcard_constraints:
-    sample="[^/]+"
+    sample="[^/]+",
+
 
 rule all:
     input:
@@ -225,15 +226,11 @@ rule bbmap_run:
         """
 
 
-
 bowtie2_human_db_name = os.path.basename(config["bowtie2_human_index_base"])
 bowtie2_mouse_db_name = os.path.basename(config["bowtie2_mouse_index_base"])
-snap_human_db_name = os.path.basename(
-    os.path.dirname(config["snap_human_index_dir"])
-)
-snap_mouse_db_name = os.path.basename(
-    os.path.dirname(config["snap_mouse_index_dir"])
-)
+snap_human_db_name = os.path.basename(os.path.dirname(config["snap_human_index_dir"]))
+snap_mouse_db_name = os.path.basename(os.path.dirname(config["snap_mouse_index_dir"]))
+
 
 module fourstep:
     snakefile:
@@ -241,13 +238,16 @@ module fourstep:
     config:
         config
 
+
 module bowtie2:
     snakefile:
         "bowtie2.smk"
     config:
         config
 
+
 use rule * from fourstep as bt_*
+
 
 use rule bowtie2 from bowtie2 as bowtie_human with:
     input:
@@ -270,6 +270,7 @@ use rule bowtie2 from bowtie2 as bowtie_human with:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.o",
 
+
 use rule tally_depletion from fourstep as bt_tally_depletion with:
     input:
         bam01=f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam",
@@ -278,6 +279,7 @@ use rule tally_depletion from fourstep as bt_tally_depletion with:
         bam05=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
         table="hostdepleted/{sample}.hostdepletion.stats.tmp",
+
 
 rule cat_depletion_stats:
     input:
@@ -297,15 +299,12 @@ rule cat_depletion_stats:
 
         """
 
+
 rule merge_fastq_pair:
     input:
-        R1=[
-            f"06-nohuman-nomouse/{{sample}}_shard{shard}.R1.fastq"
-            for shard in SHARDS
-        ],
+        R1=[f"06-nohuman-nomouse/{{sample}}_shard{shard}.R1.fastq" for shard in SHARDS],
         R2=lambda wildcards: [
-            f"06-nohuman-nomouse/{{sample}}_shard{shard}.R2.fastq"
-            for shard in SHARDS
+            f"06-nohuman-nomouse/{{sample}}_shard{shard}.R2.fastq" for shard in SHARDS
         ],
     output:
         R1="hostdepleted/{sample}_1.fastq.gz",
@@ -323,6 +322,7 @@ rule merge_fastq_pair:
         cat {input.R2} | pigz -p {threads} -9 > {output.R2} 2>> {log.e}
         """
 
+
 rule merge_primary_host_align_bams:
     """ Sort the BAMs in a temp folder, then merge.
     The bowtie alignment has all the reads so we use
@@ -330,13 +330,19 @@ rule merge_primary_host_align_bams:
     -F 512 to remove low-quality reads
     """
     input:
-        bams=expand("01-bowtie/{sample}_shard{shard}.{db}.bam", sample=config['sample'], shard=SHARDS, db=bowtie2_human_db_name),
+        bams=expand(
+            "01-bowtie/{sample}_shard{shard}.{db}.bam",
+            sample=config["sample"],
+            shard=SHARDS,
+            db=bowtie2_human_db_name,
+        ),
     output:
         bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
         bai=f"{{sample}}.{bowtie2_human_db_name}.bam.bai",
     container:
         config["docker_bowtie2"]
-    shell:"""
+    shell:
+        """
     mkdir -p tmp_{wildcards.sample}_merge
     for i in {input.bams}
     do
@@ -353,18 +359,38 @@ rule merge_primary_host_align_bams:
     rm -r tmp_{wildcards.sample}_merge/
     """
 
+
 rule get_all_host_reads:
     """ Get all the host-associated reads and convert back to fastqs
     """
     input:
-        human_bams = expand(expand("{id}-bowtie/{sample}_shard{{shard}}.{db}.bam", zip, id=["01","02"], sample=config['sample'], db=[bowtie2_human_db_name, snap_human_db_name]), shard=SHARDS),
-        mouse_bams = expand(expand("{id}-bowtie/{sample}_shard{{shard}}.{db}.bam", zip, id=["04","05"], sample=config['sample'], db=[bowtie2_mouse_db_name, snap_mouse_db_name]), shard=SHARDS),
+        human_bams=expand(
+            expand(
+                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
+                zip,
+                id=["01", "02"],
+                sample=config["sample"],
+                db=[bowtie2_human_db_name, snap_human_db_name],
+            ),
+            shard=SHARDS,
+        ),
+        mouse_bams=expand(
+            expand(
+                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
+                zip,
+                id=["04", "05"],
+                sample=config["sample"],
+                db=[bowtie2_mouse_db_name, snap_mouse_db_name],
+            ),
+            shard=SHARDS,
+        ),
     output:
         R1=f"{{sample}}_all_host_reads_R1.fq.gz",
         R2=f"{{sample}}_all_host_reads_R2.fq.gz",
     container:
         config["docker_bowtie2"]
-    shell:"""
+    shell:
+        """
     for i in {input.human_bams} {input.mouse_bams}
     do
         # get the aligned reads
@@ -453,8 +479,9 @@ rule merge_logs_for_multiqc:
     script:
         "../scripts/merge_logs.py"
 
+
 rule xHLA:
-    #echo -e "{{'subject_id': {wildcards.sample}, 'creation_time': $(date), 'report_version': '1.2', 'report_type': 'hla_typing', 'sample_id': {wildcards.sample}, 'hla': {{}}}}" >> {output.results}
+    # echo -e "{{'subject_id': {wildcards.sample}, 'creation_time': $(date), 'report_version': '1.2', 'report_type': 'hla_typing', 'sample_id': {wildcards.sample}, 'hla': {{}}}}" >> {output.results}
     input:
         bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
     output:
@@ -469,6 +496,7 @@ rule xHLA:
         find .
         """
 
+
 rule clean_extra:
     """Some files here (merged human bam, merged host and merged fastqs)
     are used as triggers
@@ -480,7 +508,7 @@ rule clean_extra:
         host_R1=f"{config['sample']}_all_host_reads_R1.fq.gz",
         host_R2=f"{config['sample']}_all_host_reads_R2.fq.gz",
     output:
-        touch("cleaning.done")
+        touch("cleaning.done"),
     shell:
         """
         rm -r 01-bowtie 02-snap 03-nohuman 04-bowtie 05-snap 06-nohuman-nomouse
