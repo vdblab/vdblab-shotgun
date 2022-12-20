@@ -8,14 +8,17 @@ rawdataset=$2
 case $rawdataset in
     tiny)
 	echo " WARNING: this dataset will raise errors during binning/annotation and will have empty metaphlan results due to its size"
+	nshards=1
 	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
 	;;
     small)
+	nshards=2
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
 	;;
     medium)
+	nshards=2
 	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz]
 	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz]
 	;;
@@ -39,38 +42,49 @@ case $mode in
 	  sample=473 \
 	  R1=$R1 \
 	  R2=$R2 \
-	  multiqc_config=${PWD}/multiqc_config.yaml nshards=1 \
+	  multiqc_config=${PWD}/multiqc_config.yaml nshards=$nshards \
 	  dedup_reads=False \
 	  stage=all
       ;;
   preprocess )
+      # the --notemp is here so we can do the unittests afterward
       snakemake \
 	  $common_args \
 	  --singularity-args "-B ${PWD},/data/brinkvd/" \
-	  --directory tmppre/   \
+          --directory tmppre_${rawdataset}/ \
 	  --config \
 	  sample=473  \
-	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
-	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	  R1=$R1 \
+	  R2=$R2 \
 	  multiqc_config=${PWD}/multiqc_config.yaml \
-	  nshards=2 \
-	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
-	  stage=preprocess --notemp -f concatenated/473_R1.fastq.gz concatenated/473_R2.fastq.gz sortmerna/tmp_473_shard001 sortmerna/tmp_473_shard002
+	  nshards=$nshards \
+	  stage=preprocess
       ;;
   testpreprocess )
       snakemake \
 	  $common_args \
 	  --singularity-args "-B ${PWD},/data/brinkvd/" \
-	  --directory tmppre/   \
+	  --directory tmppre_testing/   \
 	  --config \
 	  sample=473  \
-	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
-	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
-	  multiqc_config=${PWD}/multiqc_config.yaml \
-	  nshards=2 \
-	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
+	  R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
+	  R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	  nshards=$nshards \
 	  stage=preprocess \
 	  --generate-unit-tests
+      ;;
+  testpreprocess_build )
+      snakemake \
+	  $common_args \
+	  --singularity-args "-B ${PWD},/data/brinkvd/" \
+	  --directory tmppre_testing/   \
+	  --notemp \
+	  --config \
+	  sample=473  \
+	  R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
+	  R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	  nshards=$nshards \
+	  stage=preprocess
       ;;
   biobakery | bb)
       snakemake \

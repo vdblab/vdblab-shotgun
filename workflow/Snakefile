@@ -55,7 +55,7 @@ module preprocess:
     config:
         config
     skip_validation:
-        True
+        False
 
 
 use rule * from preprocess as preprocess_*
