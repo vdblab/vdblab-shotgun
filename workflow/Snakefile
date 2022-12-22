@@ -152,6 +152,8 @@ module annotate:
         "rules/annotate.smk"
     config:
         config
+    skip_validation:
+        True
 
 
 use rule * from annotate as annotate_*

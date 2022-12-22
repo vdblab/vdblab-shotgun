@@ -69,7 +69,7 @@ rule annotate_orfs:
     input:
         assembly="tmp/{batch}.fasta",
     output:
-        gff="annotation/annotation_{batch}/data/all.gff",
+        gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
     resources:
         mem_mb=8 * 1024,
         runtime=2 * 60,
@@ -83,7 +83,6 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        mkdir -p annotation
         metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
         if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
@@ -92,6 +91,7 @@ rule annotate_orfs:
         else
             # if it successed but failed at output_report.pl, no need to do anything
             echo "sample likely failed at output_report.pl but gff should be present"
+            mv annotation/annotation_{wildcards.batch}/data/all.gff {output.gff}
         fi
         """
 
@@ -242,7 +242,7 @@ def aggregate_metaerg_results(wildcards):
     """
     checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
     return expand(
-        "annotation/annotation_{batch}/data/all.gff",
+        "annotation/annotation_{batch}/data/either_all_or_master.gff",
         batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
     )
 
