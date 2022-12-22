@@ -7,20 +7,6 @@ import glob
 configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
 
 
-assenbly_base = os.path.basename(config["assembly"])
-# onstart:
-# dbcan is very slow but very parallelizable.
-# this split up the assembly for any contigs greater than 1000bp
-counter, file_counter = 0, 0
-nbases = 0
-content = []
-file_content = []
-contig_ids = []
-contig_ids_in_file = []
-seqs_per_file = 100
-fids = []
-
-
 localrules:
     all,
 
@@ -179,7 +165,7 @@ checkpoint split_assembly:
         directory("tmp"),
     params:
         outdir="tmp/",
-        nseqs=30,
+        nseqs=100,
         minlen=config["contig_annotation_thresh"],
     container:
         "docker://pegi3s/seqkit:2.3.0"
@@ -281,7 +267,7 @@ rule join_gffs:
 
 rule clean_up:
     """"{sample}_metaerg.gff" is used as an input to ensure
-    that step is done before we clean.  Untested as of yet
+    that step is done before we clean.
     """
     input:
         agg_file="{sample}_metaerg.gff",
@@ -289,6 +275,6 @@ rule clean_up:
         touch("{sample}.cleaned_dirs"),
     shell:
         """
-        find . -name "annotation/annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
         rm -r tmp/
         """
