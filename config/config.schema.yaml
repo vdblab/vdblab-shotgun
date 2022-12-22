@@ -40,7 +40,6 @@ properties:
     default: true
   dedup_platform:
     type: string
-    default: true
     pattern: "(NextSeq|HiSeq|MiSeq|NovaSeq|SRA)"
   fourstep_hostremoval:
     type: boolean
@@ -94,6 +93,7 @@ required:
   - sample
   - R1
   - R2
+  - dedup_platform
   - stage
   - adapters_fasta
   - bmtagger_human
