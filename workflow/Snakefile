@@ -39,12 +39,13 @@ localrules:
     all,
 
 
+"""
+we have to fix some inputs to downstream applications if we are running all together:
+we do this for the assembly because that config entry is referenced many times in the binning and annotation workflows
+for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
+"""
 if config["stage"] == "all":
     config["assembly"] = f"{config['sample']}.assembly.fasta"
-
-# we have to fix some inputs to downstream applications if we are running all together:
-# we do this for the assembly because that config entry is referenced many times in the binning and annotation workflows
-# for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
 
 
 #
@@ -56,7 +57,7 @@ module preprocess:
     config:
         config
     skip_validation:
-        True
+        False
 
 
 use rule * from preprocess as preprocess_*
@@ -151,6 +152,8 @@ module annotate:
         "rules/annotate.smk"
     config:
         config
+    skip_validation:
+        True
 
 
 use rule * from annotate as annotate_*
@@ -163,8 +166,8 @@ because the concat rule exists in both the preprocessing and kraken
 snakefiles, we override the ins and outs of one of them.  Since the new
 outputs aren't in rule all, this clips the rule from the dag
 
- The wildcard_constraints below ensures that the sample wildcard never ends with _shard001
- needing this probably means I could specify file names more cleanly :/
+The wildcard_constraints below ensures that the sample wildcard never ends with _shard001
+needing this probably means I could specify file names more cleanly :/
 """
 if config["stage"] == "all":
 

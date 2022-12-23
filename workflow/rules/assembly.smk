@@ -46,6 +46,7 @@ rule all:
     input:
         assemblies,
         quast_outputs,
+        "{sample}.cleaned_assembly_files",
 
 
 rule SPAdes_run:
@@ -125,4 +126,21 @@ rule quast_run:
           --no-icarus \
           --labels {wildcards.sample} \
           > {log.o} 2> {log.e}
+        """
+
+
+rule clean_up:
+    """"{sample}_metaerg.gff" is used as an input to ensure
+    that step is done before we clean.
+    """
+    input:
+        agg_files=[
+            "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
+        ],
+    output:
+        touch("{sample}.cleaned_assembly_files"),
+    shell:
+        """
+        # We dont need any of the spades intermediate files (corrected reads, temp, per-kmer assembly)
+        find spades_{config.sample}/  -type d | xargs --no-run-if-empty rm -r
         """
