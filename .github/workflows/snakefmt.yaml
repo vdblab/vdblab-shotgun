@@ -5,7 +5,9 @@ env:
 
 on:
   pull_request:
-    branches: [main, action-dev]
+    branches: 
+      - main
+      - release/**
 
 jobs:
   build:

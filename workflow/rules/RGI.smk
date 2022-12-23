@@ -33,7 +33,7 @@ rule RGI:
         )[0],
         CARD_VER=os.path.basename(os.path.dirname(config["CARD_db_json"])),
         CARD_DB_DIR=lambda wildcards, input: os.path.dirname(input["db"]),
-        tmpdir=os.environ["TMPDIR"],
+        tmpdir="rgitmp",
     conda:
         "../envs/RGI.yaml"
     container:
@@ -48,6 +48,7 @@ rule RGI:
     shell:
         """
         # RGI uses samtools which will use TMPDIR. here we make sure that exists
+        # on our cluster, certain nodes appear to have
         mkdir -p {params.tmpdir}
         # --wildcard_index {params.CARD_DB_DIR}/wildcard/index-for-model-sequences.txt
         # --wildcard_annotation {params.CARD_DB_DIR}/wildcard_database_{params.CARD_VER}.fasta
@@ -63,6 +64,7 @@ rule RGI:
             --output_file {params.outpre} --threads {threads} \
             --local --clean
         ls rgi
+        rm -r {params.tmpdir}
         """
 
 

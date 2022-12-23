@@ -51,8 +51,7 @@ contig_annotation_thresh: 1000
 dedup_reads: true
 # platform is used to set dedup type; can be NextSeq|HiSeq|MiSeq|NovaSeq|SRA
 # if SRA, optical duplication is disabled because they stopped keeping track
-# of the original read headers
-dedup_platform: "HiSeq"
+# of the original read headers.  dedup_platform is a required param, and as such is omitted here
 
 ## metawrap/checkm
 # percent of allowed contamination
