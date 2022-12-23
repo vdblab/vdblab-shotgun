@@ -309,8 +309,6 @@ rule merge_fastq_pair:
     output:
         R1="hostdepleted/{sample}_1.fastq.gz",
         R2="hostdepleted/{sample}_2.fastq.gz",
-    conda:
-        "../envs/pigz.yaml"
     container:
         config["docker_cutadapt"]
     threads: 16
@@ -481,7 +479,6 @@ rule merge_logs_for_multiqc:
 
 
 rule xHLA:
-    # echo -e "{{'subject_id': {wildcards.sample}, 'creation_time': $(date), 'report_version': '1.2', 'report_type': 'hla_typing', 'sample_id': {wildcards.sample}, 'hla': {{}}}}" >> {output.results}
     input:
         bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
     output:
