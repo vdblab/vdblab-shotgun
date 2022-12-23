@@ -41,26 +41,30 @@ def bbmap_dedup_params_flags(wildcards):
     # should use these flags
     flags = "dedupe optical"
 
-    if "platform" in config and config["platform"] == "NextSeq":
-        # see their docs; this is the recommended command for NextSeq
-        # https://www.biostars.org/p/225338/
-        flags = "dedupe optical spany adjacent"
-
+    if "dedup_platform" in config:
+        if config["dedup_platform"] == "NextSeq":
+            # see their docs; this is the recommended command for NextSeq
+            # https://www.biostars.org/p/225338/
+            flags = "dedupe optical spany adjacent"
+        # if SRA, they tossed the read names so we get errors in bbmap if they
+        # try to parse the SRA names for optical deduplication
+        if config["dedup_platform"] == "SRA":
+            flags = "dedupe"
     return flags
 
 
 def bbmap_dedup_params_dupedist(wildcards):
+    # default for unspecified platform, HiSeq up to 2500, and NextSeq
     dupedist = 40
 
-    if "platform" in config:
-        if config["platform"] == "NovaSeq":
-            dupedist = 12000
+    if config["dedup_platform"] == "NovaSeq":
+        dupedist = 12000
 
-        elif config["platform"] == "HiSeq-3000":
-            dupedist = 2500
+    elif config["dedup_platform"] == "HiSeq-3000":
+        dupedist = 2500
 
-        elif config["platform"] == "HiSeq-4000":
-            dupedist = 2500
+    elif config["dedup_platform"] == "HiSeq-4000":
+        dupedist = 2500
 
     return dupedist
 

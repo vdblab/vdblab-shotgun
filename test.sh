@@ -10,14 +10,17 @@ case $rawdataset in
 	echo " WARNING: this dataset will raise errors during binning/annotation and will have empty metaphlan results due to its size"
 	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
+	addnconf="dedup_platform=HiSeq"
 	;;
     small)
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
+	addnconf="dedup_platform=SRA"
 	;;
     medium)
 	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz]
 	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz]
+	addnconf="dedup_platform=SRA"
 	;;
     *)
 	echo -e "unknown dataset; please chose from tiny. Exiting\n"
@@ -39,6 +42,7 @@ case $mode in
 	  sample=473 \
 	  R1=$R1 \
 	  R2=$R2 \
+	  $addnconf \
 	  multiqc_config=${PWD}/multiqc_config.yaml nshards=1 \
 	  dedup_reads=False \
 	  stage=all
@@ -50,11 +54,12 @@ case $mode in
 	  --directory tmppre/   \
 	  --config \
 	  sample=473  \
+	  $addnconf \
 	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
 	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
 	  multiqc_config=${PWD}/multiqc_config.yaml \
 	  nshards=2 \
-	  dedup_reads=False kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
+	  kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
 	  stage=preprocess --notemp -f concatenated/473_R1.fastq.gz concatenated/473_R2.fastq.gz sortmerna/tmp_473_shard001 sortmerna/tmp_473_shard002
       ;;
   testpreprocess )
@@ -64,6 +69,7 @@ case $mode in
 	  --directory tmppre/   \
 	  --config \
 	  sample=473  \
+	  $addnconf \
 	  R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
 	  R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
 	  multiqc_config=${PWD}/multiqc_config.yaml \
