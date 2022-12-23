@@ -165,7 +165,7 @@ checkpoint split_assembly:
         directory("tmp"),
     params:
         outdir="tmp/",
-        nseqs=100,
+        nseqs=200,
         minlen=config["contig_annotation_thresh"],
     container:
         "docker://pegi3s/seqkit:2.3.0"

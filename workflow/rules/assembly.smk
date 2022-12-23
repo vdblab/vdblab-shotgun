@@ -128,14 +128,15 @@ rule quast_run:
           > {log.o} 2> {log.e}
         """
 
+
 rule clean_up:
     """"{sample}_metaerg.gff" is used as an input to ensure
     that step is done before we clean.
     """
     input:
         agg_files=[
-        "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
-            ]
+            "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
+        ],
     output:
         touch("{sample}.cleaned_assembly_files"),
     shell:
