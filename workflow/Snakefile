@@ -169,7 +169,6 @@ outputs aren't in rule all, this clips the rule from the dag
 The wildcard_constraints below ensures that the sample wildcard never ends with _shard001
 needing this probably means I could specify file names more cleanly :/
 """
-
 if config["stage"] == "all":
 
     use rule cat_pair from biobakery as biobakery_cat_pair with:

@@ -11,16 +11,19 @@ case $rawdataset in
 	nshards=1
 	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz]
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
+	addnconf="dedup_platform=HiSeq"
 	;;
     small)
 	nshards=2
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
+	addnconf="dedup_platform=SRA"
 	;;
     medium)
 	nshards=2
 	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz]
 	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz]
+	addnconf="dedup_platform=SRA"
 	;;
     *)
 	echo -e "unknown dataset; please chose from tiny. Exiting\n"
