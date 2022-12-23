@@ -2,24 +2,24 @@ digraph snakemake_dag {
     graph[bgcolor=white, margin=0];
     node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
     edge[penwidth=2, color=grey];
-	0[label = "all", color = "0.23 0.6 0.85", style="rounded"];
-	1[label = "annotate_antismash", color = "0.21 0.6 0.85", style="rounded"];
-	2[label = "assembly_SPAdes_run\nsample: /lila/home/watersn/GitHub/vdblab-shotgun/tmpassembly/473", color = "0.10 0.6 0.85", style="rounded"];
-	3[label = "annotate_split_assembly", color = "0.55 0.6 0.85", style="rounded"];
-	4[label = "annotate_tabulate_antismash", color = "0.14 0.6 0.85", style="rounded"];
-	5[label = "annotate_annotate_AMR\nsample: 473", color = "0.54 0.6 0.85", style="rounded"];
-	6[label = "annotate_annotate_abricate\nsample: 473\ntool: argannot", color = "0.08 0.6 0.85", style="rounded"];
-	7[label = "annotate_annotate_abricate\nsample: 473\ntool: card", color = "0.08 0.6 0.85", style="rounded"];
-	8[label = "annotate_annotate_abricate\nsample: 473\ntool: ecoh", color = "0.08 0.6 0.85", style="rounded"];
-	9[label = "annotate_annotate_abricate\nsample: 473\ntool: ecoli_vf", color = "0.08 0.6 0.85", style="rounded"];
-	10[label = "annotate_annotate_abricate\nsample: 473\ntool: megares", color = "0.08 0.6 0.85", style="rounded"];
-	11[label = "annotate_annotate_abricate\nsample: 473\ntool: ncbi", color = "0.08 0.6 0.85", style="rounded"];
-	12[label = "annotate_annotate_abricate\nsample: 473\ntool: plasmidfinder", color = "0.08 0.6 0.85", style="rounded"];
-	13[label = "annotate_annotate_abricate\nsample: 473\ntool: resfinder", color = "0.08 0.6 0.85", style="rounded"];
-	14[label = "annotate_annotate_abricate\nsample: 473\ntool: vfdb", color = "0.08 0.6 0.85", style="rounded"];
-	15[label = "annotate_clean_up", color = "0.16 0.6 0.85", style="rounded"];
-	16[label = "annotate_join_gffs\nsample: 473", color = "0.04 0.6 0.85", style="rounded"];
-	17[label = "annotate_join_CAZI", color = "0.43 0.6 0.85", style="rounded"];
+	0[label = "all", color = "grey", style="rounded"];
+	1[label = "annotate_antismash", color = "grey", style="rounded"];
+	2[label = "assembly_SPAdes_run\nsample: /home/watersn/GitHub/vdblab-shotgun/tmpassembly/473", color = "grey", style="rounded"];
+	3[label = "annotate_split_assembly", color = "grey", style="rounded"];
+	4[label = "annotate_tabulate_antismash", color = "grey", style="rounded"];
+	5[label = "annotate_annotate_AMR\nsample: 473", color = "grey", style="rounded"];
+	6[label = "annotate_annotate_abricate\nsample: 473\ntool: argannot", color = "grey", style="rounded"];
+	7[label = "annotate_annotate_abricate\nsample: 473\ntool: card", color = "grey", style="rounded"];
+	8[label = "annotate_annotate_abricate\nsample: 473\ntool: ecoh", color = "grey", style="rounded"];
+	9[label = "annotate_annotate_abricate\nsample: 473\ntool: ecoli_vf", color = "grey", style="rounded"];
+	10[label = "annotate_annotate_abricate\nsample: 473\ntool: megares", color = "grey", style="rounded"];
+	11[label = "annotate_annotate_abricate\nsample: 473\ntool: ncbi", color = "grey", style="rounded"];
+	12[label = "annotate_annotate_abricate\nsample: 473\ntool: plasmidfinder", color = "grey", style="rounded"];
+	13[label = "annotate_annotate_abricate\nsample: 473\ntool: resfinder", color = "grey", style="rounded"];
+	14[label = "annotate_annotate_abricate\nsample: 473\ntool: vfdb", color = "grey", style="rounded"];
+	15[label = "annotate_clean_up", color = "grey", style="rounded"];
+	16[label = "annotate_join_gffs\nsample: 473", color = "grey", style="rounded"];
+	17[label = "annotate_join_CAZI", color = "grey", style="rounded"];
 	1 -> 0
 	4 -> 0
 	5 -> 0
