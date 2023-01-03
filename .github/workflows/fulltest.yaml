@@ -35,5 +35,6 @@ jobs:
           sample=test
           R1=['473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz']
           R2=['473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz']
+          dedup_platform=NovaSeq
           stage=preprocess
           --force dedup/473_R1.fastq.gz

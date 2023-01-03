@@ -190,19 +190,3 @@ rule tally_depletion:
         echo -e "sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned" > {output.table}
         echo -e "{wildcards.sample}\t$human_bowtie\t$human_aligned_bowtie\t$human_snap\t$human_aligned_snap\t$mouse_bowtie\t$mouse_aligned_bowtie\t$mouse_snap\t$mouse_aligned_snap" >> {output.table}
         """
-
-
-rule xHLA:
-    input:
-        bam=f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam",
-    output:
-        results="xHLA/{sample}.json",
-    container:
-        config["docker_hla"]
-    threads: 1
-    shell:
-        """ run.py \
-        --sample_id {wildcards.sample} --input_bam_path {input.bam} \
-        --output_path xHLA
-        find .
-        """

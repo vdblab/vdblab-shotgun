@@ -49,7 +49,9 @@ contig_annotation_thresh: 1000
 
 # deduping reads is optional so we can use a similar codebase for transcriptomics
 dedup_reads: true
-
+# platform is used to set dedup type; can be NextSeq|HiSeq|MiSeq|NovaSeq|SRA
+# if SRA, optical duplication is disabled because they stopped keeping track
+# of the original read headers.  dedup_platform is a required param, and as such is omitted here
 
 ## metawrap/checkm
 # percent of allowed contamination
@@ -65,7 +67,7 @@ docker_antismash: "docker://antismash/standalone:6.1.1"
 docker_bbtools: "docker://staphb/bbtools:38.97"
 docker_biobakery: "docker://ghcr.io/vdblab/biobakery-profiler:20221107"
 docker_biopython: "docker://nanozoo/biopython:1.74--b03961c"
-docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.3.4.1"
+docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
 docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
 docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
 docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
