@@ -20,14 +20,10 @@ validate(
 
 
 onstart:
-    with open("config_used.yml", "w") as outfile:
+    with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
     if not os.path.exists("logs"):
         os.makedirs("logs")
-
-
-localrules:
-    hostdeplete_all,
 
 
 bowtie2_human_db_name = os.path.basename(config["bowtie2_human_index_base"])
@@ -83,9 +79,13 @@ use rule bowtie2 from bowtie2 as bowtie2_human with:
             ".rev.2.bt2",
         ),
     output:
-        bam=f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.bam",
-        unmapped_R1=f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R1.fastq.gz",
-        unmapped_R2=f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R2.fastq.gz",
+        bam=temp(f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.bam"),
+        unmapped_R1=temp(
+            f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R1.fastq.gz"
+        ),
+        unmapped_R2=temp(
+            f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R2.fastq.gz"
+        ),
     log:
         e=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.o",
@@ -102,7 +102,7 @@ use rule snapalign from snap as snapalign_human with:
         R2=f"01-bowtie/{{sample}}.without_{bowtie2_human_db_name}.R2.fastq.gz",
         idx_genome=f"{config['snap_human_index_dir']}Genome",
     output:
-        bam=f"02-snap/{{sample}}.{snap_human_db_name}.bam",
+        bam=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam"),
     log:
         e=f"logs/snap_{{sample}}.{snap_human_db_name}.e",
         o=f"logs/snap_{{sample}}.{snap_human_db_name}.o",
@@ -112,9 +112,9 @@ use rule get_unmapped from snap as get_unmapped_human with:
     input:
         bam=rules.snapalign_human.output.bam,
     output:
-        unmapped_R1=f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R1.fastq",
-        unmapped_R2=f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R2.fastq",
-        flagstat=f"{rules.snapalign_human.output.bam}.flagstat",
+        unmapped_R1=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R1.fastq"),
+        unmapped_R2=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R2.fastq"),
+        flagstat=temp(f"{rules.snapalign_human.output.bam}.flagstat"),
     log:
         e=f"logs/get_unmapped_human_{{sample}}.e",
         o=f"logs/get_unmapped_human_{{sample}}.o",
@@ -134,9 +134,13 @@ use rule bowtie2 from bowtie2 as bowtie2_mouse with:
             ".rev.2.bt2",
         ),
     output:
-        bam=f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam",
-        unmapped_R1=f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R1.fastq.gz",
-        unmapped_R2=f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R2.fastq.gz",
+        bam=temp(f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam"),
+        unmapped_R1=temp(
+            f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R1.fastq.gz"
+        ),
+        unmapped_R2=temp(
+            f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R2.fastq.gz"
+        ),
     log:
         e=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.e",
         o=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.o",
@@ -148,7 +152,7 @@ use rule snapalign from snap as snapalign_mouse with:
         R2=rules.bowtie2_mouse.output.unmapped_R2,
         idx_genome=f"{config['snap_mouse_index_dir']}Genome",
     output:
-        bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
+        bam=temp(f"05-snap/{{sample}}.{snap_mouse_db_name}.bam"),
     log:
         e=f"logs/snap_{{sample}}.{snap_mouse_db_name}.e",
         o=f"logs/snap_{{sample}}.{snap_mouse_db_name}.o",
@@ -158,9 +162,9 @@ use rule get_unmapped from snap as get_unmapped_human_mouse with:
     input:
         bam=rules.snapalign_mouse.output.bam,
     output:
-        unmapped_R1=f"06-nohuman-nomouse/{{sample}}.R1.fastq",
-        unmapped_R2=f"06-nohuman-nomouse/{{sample}}.R2.fastq",
-        flagstat=f"{rules.snapalign_mouse.output.bam}.flagstat",
+        unmapped_R1=temp(f"06-nohuman-nomouse/{{sample}}.R1.fastq"),
+        unmapped_R2=temp(f"06-nohuman-nomouse/{{sample}}.R2.fastq"),
+        flagstat=temp(f"{rules.snapalign_mouse.output.bam}.flagstat"),
     log:
         e=f"logs/get_unmapped_human_mouse_{{sample}}.e",
         o=f"logs/get_unmapped_human_mouse_{{sample}}.o",
