@@ -472,8 +472,8 @@ rule merge_primary_host_align_bams:
             db=bowtie2_human_db_name,
         ),
     output:
-        bam=temp(f"{{sample}}.{bowtie2_human_db_name}.bam"),
-        bai=temp(f"{{sample}}.{bowtie2_human_db_name}.bam.bai"),
+        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
+        bai=f"host/{{sample}}.{bowtie2_human_db_name}.bam.bai",
     container:
         config["docker_bowtie2"]
     shell:
@@ -481,15 +481,18 @@ rule merge_primary_host_align_bams:
         mkdir -p tmp_{wildcards.sample}_merge
         for i in {input.bams}
         do
-        thisbasename=$(basename $i)
-        thisbase=${{thisbasename%.*}}
-        echo "getting passing mapped reads $i"
-        samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
-        echo "sorting $i"
-        samtools sort -o tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam tmp_{wildcards.sample}_merge/${{thisbase}}.bam
+            thisbasename=$(basename $i)
+            thisbase=${{thisbasename%.*}}
+            echo "getting passing mapped reads $i"
+            samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
+            echo "sorting $i"
+            samtools sort -o \
+                tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam \
+                tmp_{wildcards.sample}_merge/${{thisbase}}.bam
         done
         echo "merging"
-        samtools merge --threads {threads} -o  {output.bam} tmp_{wildcards.sample}_merge/*.sort.bam
+        samtools merge --threads {threads} -o {output.bam} \
+            tmp_{wildcards.sample}_merge/*.sort.bam
         samtools index {output.bam}
         rm -r tmp_{wildcards.sample}_merge/
         """
@@ -497,7 +500,7 @@ rule merge_primary_host_align_bams:
 
 rule xHLA:
     input:
-        bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
+        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
     output:
         results="xHLA/{sample}.json",
         workdir=temp(directory("hla-{sample}")),
