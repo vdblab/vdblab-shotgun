@@ -27,7 +27,7 @@ def files_to_trim(wildcards, nshards=1, dedup=False, read_dir=1):
     if nshards > 1:
         return (
             (
-                f"temp/split_fastq/{wildcards.sample}_R{read_dir}.part_{wildcards.shard}.fastq.gz"
+                f"split_fastq/{wildcards.sample}_R{read_dir}.part_{wildcards.shard}.fastq.gz"
             ),
         )
     elif dedup:

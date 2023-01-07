@@ -27,7 +27,7 @@ TMPDIR = Path(os.environ["TMPDIR"])
 
 
 onstart:
-    with open("config_used.yml", "w") as outfile:
+    with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
 
     if not os.path.exists("logs"):
@@ -40,7 +40,7 @@ localrules:
 
 sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
 cleaned_fastqs = expand(
-    "hostdepleted/{sample}_{read_dir}.fastq.gz",
+    "hostdepleted/{sample}_R{read_dir}.fastq.gz",
     sample=config["sample"],
     read_dir=[1, 2],
 )
@@ -53,14 +53,13 @@ wildcard_constraints:
 rule all:
     input:
         clean_fastqs=cleaned_fastqs,
-        #hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary",
         hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
         fastqc_R1_mqc=f"reports/{config['sample']}_R1_fastqc.html",
         fastqc_R2_mqc=f"reports/{config['sample']}_R2_fastqc.html",
-        cleaned="cleaning.done",
+        sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
         hlaresults=f"xHLA/{config['sample']}.json",
-        host_R1=f"{config['sample']}_all_host_reads_R1.fq.gz",
-        host_R2=f"{config['sample']}_all_host_reads_R2.fq.gz",
+        host_R1=f"host/{config['sample']}_all_host_reads_R1.fastq.gz",
+        host_R2=f"host/{config['sample']}_all_host_reads_R2.fastq.gz",
 
 
 module utils:
@@ -114,8 +113,8 @@ rule bbmap_dedup:
         R1="concatenated/{sample}_R1.fastq.gz",
         R2="concatenated/{sample}_R2.fastq.gz",
     output:
-        R1="dedup/{sample}_R1.fastq.gz",
-        R2="dedup/{sample}_R2.fastq.gz",
+        R1=temp("dedup/{sample}_R1.fastq.gz"),
+        R2=temp("dedup/{sample}_R2.fastq.gz"),
         dedup_stats="reports/{sample}_dedup.stats",
     threads: 8
     params:
@@ -171,13 +170,13 @@ use rule split_fastq from utils as utils_split_fastq with:
             wildcards, dedup=config["dedup_reads"], read_dir=2
         ),
     output:
-        R1=expand("temp/split_fastq/{{sample}}_R1.part_{shard}.fastq.gz", shard=SHARDS),
-        R2=expand("temp/split_fastq/{{sample}}_R2.part_{shard}.fastq.gz", shard=SHARDS),
+        R1=temp(expand("split_fastq/{{sample}}_R1.part_{shard}.fastq.gz", shard=SHARDS)),
+        R2=temp(expand("split_fastq/{{sample}}_R2.part_{shard}.fastq.gz", shard=SHARDS)),
     log:
         e="logs/split_fastq_{sample}.e",
         o="logs/split_fastq_{sample}.o",
     params:
-        outdir="temp/split_fastq",
+        outdir="split_fastq",
         nshards=config["nshards"],
 
 
@@ -198,11 +197,11 @@ rule bbmap_run:
         ),
         adapter=config["adapters_fasta"],
     output:
-        out_R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
-        out_R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
-        rm_R1="trimmed/{sample}_shard{shard}_discard_R1.fastq.gz",
-        rm_R2="trimmed/{sample}_shard{shard}_discard_R2.fastq.gz",
-        stats="trimmed/{sample}_shard{shard}_trimmingAQ.txt",
+        out_R1=temp("trimmed/{sample}_shard{shard}_trim_R1.fastq.gz"),
+        out_R2=temp("trimmed/{sample}_shard{shard}_trim_R2.fastq.gz"),
+        rm_R1=temp("trimmed/{sample}_shard{shard}_discard_R1.fastq.gz"),
+        rm_R2=temp("trimmed/{sample}_shard{shard}_discard_R2.fastq.gz"),
+        stats=temp("trimmed/{sample}_shard{shard}_trimmingAQ.txt"),
     threads: 8
     resources:
         mem_mb=4000,
@@ -211,7 +210,7 @@ rule bbmap_run:
     conda:
         "../envs/bbmap.yaml"
     log:
-        "trimmed/{sample}_shard{shard}_bbmap_log.txt",
+        "logs/bbmap_{sample}_shard{shard}.e",
     shell:
         """
         bbduk.sh -Xmx{resources.mem_mb}m \
@@ -264,9 +263,13 @@ use rule bowtie2 from bowtie2 as bowtie_human with:
             ".rev.2.bt2",
         ),
     output:
-        bam=f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam",
-        unmapped_R1=f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R1.fastq.gz",
-        unmapped_R2=f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R2.fastq.gz",
+        bam=temp(f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam"),
+        unmapped_R1=temp(
+            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R1.fastq.gz"
+        ),
+        unmapped_R2=temp(
+            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R2.fastq.gz"
+        ),
     log:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.o",
@@ -279,37 +282,34 @@ use rule tally_depletion from fourstep as bt_tally_depletion with:
         bam04=f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam",
         bam05=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
-        table="hostdepleted/{sample}.hostdepletion.stats.tmp",
+        table=temp("hostdepleted/{sample}_hostdepletion.stats.tmp"),
 
 
 rule cat_depletion_stats:
     input:
         table=[
-            f"hostdepleted/{{sample}}_shard{shard}.hostdepletion.stats.tmp"
+            f"hostdepleted/{{sample}}_shard{shard}_hostdepletion.stats.tmp"
             for shard in SHARDS
         ],
     output:
-        table="hostdepleted/{sample}.hostdepletion.stats",
+        table="reports/{sample}_hostdepletion.stats",
     shell:
         """
         head -n 1 {input.table[0]} > {output.table}
         for i in {input.table}
         do
-        tail  -n+2 $i >> {output.table}
+            tail  -n+2 $i >> {output.table}
         done
-
         """
 
 
 rule merge_fastq_pair:
     input:
         R1=[f"06-nohuman-nomouse/{{sample}}_shard{shard}.R1.fastq" for shard in SHARDS],
-        R2=lambda wildcards: [
-            f"06-nohuman-nomouse/{{sample}}_shard{shard}.R2.fastq" for shard in SHARDS
-        ],
+        R2=[f"06-nohuman-nomouse/{{sample}}_shard{shard}.R2.fastq" for shard in SHARDS],
     output:
-        R1="hostdepleted/{sample}_1.fastq.gz",
-        R2="hostdepleted/{sample}_2.fastq.gz",
+        R1="hostdepleted/{sample}_R1.fastq.gz",
+        R2="hostdepleted/{sample}_R2.fastq.gz",
     container:
         config["docker_cutadapt"]
     threads: 16
@@ -319,43 +319,6 @@ rule merge_fastq_pair:
         """
         cat {input.R1} | pigz -p {threads} -9 > {output.R1} 2> {log.e}
         cat {input.R2} | pigz -p {threads} -9 > {output.R2} 2>> {log.e}
-        """
-
-
-rule merge_primary_host_align_bams:
-    """ Sort the BAMs in a temp folder, then merge.
-    The bowtie alignment has all the reads so we use
-    -f 2 to get reads in proper pair and
-    -F 512 to remove low-quality reads
-    """
-    input:
-        bams=expand(
-            "01-bowtie/{sample}_shard{shard}.{db}.bam",
-            sample=config["sample"],
-            shard=SHARDS,
-            db=bowtie2_human_db_name,
-        ),
-    output:
-        bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
-        bai=f"{{sample}}.{bowtie2_human_db_name}.bam.bai",
-    container:
-        config["docker_bowtie2"]
-    shell:
-        """
-        mkdir -p tmp_{wildcards.sample}_merge
-        for i in {input.bams}
-        do
-        thisbasename=$(basename $i)
-        thisbase=${{thisbasename%.*}}
-        echo "getting passing mapped reads $i"
-        samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
-        echo "sorting $i"
-        samtools sort -o tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam tmp_{wildcards.sample}_merge/${{thisbase}}.bam
-        done
-        echo "merging"
-        samtools merge --threads {threads} -o  {output.bam} tmp_{wildcards.sample}_merge/*.sort.bam
-        samtools index {output.bam}
-        rm -r tmp_{wildcards.sample}_merge/
         """
 
 
@@ -384,8 +347,8 @@ rule get_all_host_reads:
             shard=SHARDS,
         ),
     output:
-        R1=f"{{sample}}_all_host_reads_R1.fq.gz",
-        R2=f"{{sample}}_all_host_reads_R2.fq.gz",
+        R1=f"host/{{sample}}_all_host_reads_R1.fastq.gz",
+        R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
     container:
         config["docker_bowtie2"]
     shell:
@@ -393,8 +356,8 @@ rule get_all_host_reads:
         for i in {input.human_bams} {input.mouse_bams}
         do
             # get the aligned reads
-            samtools view  -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
-            # convert to fq
+            samtools view -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
+            # convert to fastq
             bamToFastq -i tmp_host_{wildcards.sample}.bam -fq tmp_host_{wildcards.sample}.R1.fq -fq2 tmp_host_{wildcards.sample}.R2.fq
             # add to output (because bamToFastq can't directly concat, nor can it compress output)
             cat tmp_host_{wildcards.sample}.R1.fq | pigz -p {threads} -9 >> {output.R1}
@@ -412,14 +375,13 @@ rule sortmerna_run:
         R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
         db=config["blast_16s_db_nsq"].replace(".nsq", ".fna"),
     output:
-        blast="sortmerna/{sample}_shard{shard}_sortmerna.blast.gz",
-        stats="sortmerna/{sample}_shard{shard}_sortmerna.log",
+        blast=temp("sortmerna/{sample}_shard{shard}_sortmerna.blast.gz"),
+        stats=temp("sortmerna/{sample}_shard{shard}_sortmerna.log"),
         work=temp(directory("sortmerna/tmp_{sample}_shard{shard}/")),
     params:
         aligned_prefix=lambda wildcards, output: output["blast"].replace(
             ".blast.gz", ""
         ),
-        dbname=lambda wildcards, output: output["blast"].replace(".blast.gz", ""),
     resources:
         mem_mb=16000,
     threads: 16
@@ -456,12 +418,29 @@ rule sortmerna_run:
         """
 
 
+rule merge_sortmerna_blast:
+    input:
+        blast=expand(
+            "sortmerna/{sample}_shard{shard}_sortmerna.blast.gz",
+            sample=config["sample"],
+            shard=SHARDS,
+        ),
+    output:
+        blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
+    log:
+        e=f"logs/merge_sortmerna_blast_{config['sample']}.e",
+    shell:
+        """
+        cat {input.blast} > {output.blast} 2>> {log.e}
+        """
+
+
 rule merge_logs_for_multiqc:
     input:
         sortmernas=expand(
             "sortmerna/{{sample}}_shard{shard}_sortmerna.log", shard=SHARDS
         ),
-        knead="hostdepleted/{sample}.hostdepletion.stats",
+        knead="reports/{sample}_hostdepletion.stats",
         bbtrim=expand("trimmed/{{sample}}_shard{shard}_trimmingAQ.txt", shard=SHARDS),
     output:
         sortmerna_report="reports/{sample}_sortmerna.stats",
@@ -479,35 +458,57 @@ rule merge_logs_for_multiqc:
         "../scripts/merge_logs.py"
 
 
+rule merge_primary_host_align_bams:
+    """ Sort the BAMs in a temp folder, then merge.
+    The bowtie alignment has all the reads so we use
+    -f 2 to get reads in proper pair and
+    -F 512 to remove low-quality reads
+    """
+    input:
+        bams=expand(
+            "01-bowtie/{sample}_shard{shard}.{db}.bam",
+            sample=config["sample"],
+            shard=SHARDS,
+            db=bowtie2_human_db_name,
+        ),
+    output:
+        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
+        bai=f"host/{{sample}}.{bowtie2_human_db_name}.bam.bai",
+    container:
+        config["docker_bowtie2"]
+    shell:
+        """
+        mkdir -p tmp_{wildcards.sample}_merge
+        for i in {input.bams}
+        do
+            thisbasename=$(basename $i)
+            thisbase=${{thisbasename%.*}}
+            echo "getting passing mapped reads $i"
+            samtools view  -f 2 -F 512 -b -o tmp_{wildcards.sample}_merge/${{thisbase}}.bam $i
+            echo "sorting $i"
+            samtools sort -o \
+                tmp_{wildcards.sample}_merge/${{thisbase}}.sort.bam \
+                tmp_{wildcards.sample}_merge/${{thisbase}}.bam
+        done
+        echo "merging"
+        samtools merge --threads {threads} -o {output.bam} \
+            tmp_{wildcards.sample}_merge/*.sort.bam
+        samtools index {output.bam}
+        rm -r tmp_{wildcards.sample}_merge/
+        """
+
+
 rule xHLA:
     input:
-        bam=f"{{sample}}.{bowtie2_human_db_name}.bam",
+        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
     output:
         results="xHLA/{sample}.json",
+        workdir=temp(directory("hla-{sample}")),
     container:
         config["docker_hla"]
     threads: 1
     shell:
         """run.py \
         --sample_id {wildcards.sample} --input_bam_path {input.bam} \
-        --output_path xHLA ||  touch {output.results}
-        find .
-        """
-
-
-rule clean_extra:
-    """Some files here (merged human bam, merged host and merged fastqs)
-    are used as triggers
-    """
-    input:
-        R1=f"hostdepleted/{config['sample']}_1.fastq.gz",
-        R2=f"hostdepleted/{config['sample']}_2.fastq.gz",
-        bam=f"{config['sample']}.{bowtie2_human_db_name}.bam",
-        host_R1=f"{config['sample']}_all_host_reads_R1.fq.gz",
-        host_R2=f"{config['sample']}_all_host_reads_R2.fq.gz",
-    output:
-        touch("cleaning.done"),
-    shell:
-        """
-        rm -r 01-bowtie 02-snap 03-nohuman 04-bowtie 05-snap 06-nohuman-nomouse
+        --output_path xHLA || touch {output.results}
         """

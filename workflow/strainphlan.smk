@@ -29,7 +29,7 @@ logger.info(
 
 
 onstart:
-    with open("config_used.yml", "w") as outfile:
+    with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
 
 

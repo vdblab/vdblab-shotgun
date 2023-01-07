@@ -11,7 +11,7 @@ include: "common.smk"
 
 
 onstart:
-    with open("config_used.yml", "w") as outfile:
+    with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
     if not os.path.exists("logs"):
         os.makedirs("logs")
