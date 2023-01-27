@@ -151,8 +151,8 @@ rule bbmap_dedup:
             sed "s|\: *|\t|g" \
             >> {output.dedup_stats}
 
-        # clumpty tends to fail silently. We both catch general cases resulting in an empty file
-        # and cases of misspecified platform (eg trying to do optical deduplicaiton on SRA samples without coordinates)
+        # clumpify tends to fail silently. We both catch general cases resulting in an empty file
+        # and cases of misspecified platform (eg trying to do optical deduplication on SRA samples without coordinates)
         if [ ! -s "{output.R1}" ]
         then
           echo "output file after dedup is empty"

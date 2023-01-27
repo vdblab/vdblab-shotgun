@@ -7,9 +7,14 @@ from pathlib import Path
 # importlib
 import types
 import importlib.machinery
-loader = importlib.machinery.SourceFileLoader('common', 'workflow/rules/common.smk')
+
+loader = importlib.machinery.SourceFileLoader("common", "workflow/rules/common.smk")
 mod = types.ModuleType(loader.name)
 loader.exec_module(mod)
 
 sys.modules["common"] = mod
 from common import *
+
+# TODO: many of the snakemake input/param functions rely on accessing `config`
+# from the global namespace. That won't work defining that globally in this
+# test module because the imported modules have a different namespace.

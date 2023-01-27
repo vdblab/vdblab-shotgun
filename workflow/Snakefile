@@ -228,7 +228,6 @@ if config["stage"] == "all":
         wildcard_constraints:
             sample=".+(?<!shard\d\d\d)",
 
-
 else:
     pass
 
