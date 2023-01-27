@@ -79,9 +79,9 @@ def test_bbmap_dedup_params_flags():
         [{"dedup_platform": "NovaSeq"}, "dedupe optical dupedist=12000"],
         [{"dedup_platform": "NextSeq"}, "dedupe optical spany adjacent dupedist=40"],
         [{"dedup_platform": "HiSeq-3000"}, "dedupe optical dupedist=2500"],
-        [{"dedup_platform": "HiSeq-4000"}, "dedupe optical dupedist=2500"]
+        [{"dedup_platform": "HiSeq-4000"}, "dedupe optical dupedist=2500"],
     ]
-    for i  in test_conditions:
+    for i in test_conditions:
         global config
         config = i[0]
         outcome = i[1]
