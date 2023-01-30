@@ -2,25 +2,43 @@ import os
 
 from pathlib import Path
 
+
 envvars:
-    "TMPDIR"
+    "TMPDIR",
+
 
 tmpdir = Path(os.environ["TMPDIR"])
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
-localrules: all
 
-depths=config["depths"]
-reps=config["reps"]
-samples=[config["sample"]]
+localrules:
+    all,
+
+
+depths = config["depths"]
+reps = config["reps"]
+samples = [config["sample"]]
+
 
 wildcard_constraints:
-    rep="\d+"
+    rep="\d+",
 
-downsampled_fastqs_r1 = expand("ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R1_001.fastq.gz", depth=depths, sample=samples, rep=reps)
-downsampled_fastqs_r2 = expand("ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R2_001.fastq.gz", depth=depths, sample=samples, rep=reps)
+
+downsampled_fastqs_r1 = expand(
+    "ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R1_001.fastq.gz",
+    depth=depths,
+    sample=samples,
+    rep=reps,
+)
+downsampled_fastqs_r2 = expand(
+    "ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R2_001.fastq.gz",
+    depth=depths,
+    sample=samples,
+    rep=reps,
+)
+
 
 rule all:
     input:
@@ -36,7 +54,7 @@ rule downsample_fastq:
         R1="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R1_001.fastq.gz",
         R2="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R2_001.fastq.gz",
     params:
-        tmpdir="ds{depth}_rep{rep}"
+        tmpdir="ds{depth}_rep{rep}",
     container:
         config["docker_seqkit"]
     threads: 4  # see their docs
