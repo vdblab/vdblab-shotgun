@@ -24,6 +24,15 @@ This is a stool shotgun sequencing run deposited on SRA.  It is small but closer
 ## The test script
 Currently the script `test.sh` contains logic to run different pipeline stages.
 
+## Testing python logic
+For python function contained in the `workflow/rules/common.smk` snakefile, we have added a test script `tests/test_common.py`.  To add tests to code, use [pytest](https://docs.pytest.org/en/7.2.x/) syntax.  In short, make a function starting with `test_` with some assertions about expected results.  execute the tests with:
+
+```sh
+pytest --capture=no   tests/test_common.py
+```
+
+The `--capture=no` allows us to see print statements.
+
 #### USAGE:
 
 ```sh

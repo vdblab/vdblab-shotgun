@@ -120,7 +120,6 @@ rule bbmap_dedup:
     params:
         allowed_subs=3,
         flags=bbmap_dedup_params_flags,
-        dupedist=bbmap_dedup_params_dupedist,
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
@@ -141,7 +140,6 @@ rule bbmap_dedup:
             out1={output.R1} out2={output.R2} \
             {params.flags} \
             subs={params.allowed_subs} \
-            dupedist={params.dupedist} \
             t={threads} \
             -Xmx{resources.mem_mb}M \
             -eoom \
@@ -153,10 +151,19 @@ rule bbmap_dedup:
             sed "s|\: *|\t|g" \
             >> {output.dedup_stats}
 
+        # clumpify tends to fail silently. We both catch general cases resulting in an empty file
+        # and cases of misspecified platform (eg trying to do optical deduplication on SRA samples without coordinates)
         if [ ! -s "{output.R1}" ]
         then
-           echo "output file after dedup is empty"
-           exit 1
+          echo "output file after dedup is empty"
+          exit 1
+        else
+          nlines=$(zcat {output.R1} | wc -l)
+          if [ "$nlines" -lt 4 ]
+          then
+            echo "output file after dedup is empty"
+            exit 1
+          fi
         fi
         """
 

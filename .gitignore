@@ -5,3 +5,4 @@ tmp*
 .Rproj.user
 msk-lsf/__pycache__
 vdb_16S/test_output/
+tests/__pycache__/
