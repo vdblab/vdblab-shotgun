@@ -1,9 +1,6 @@
 import os
-import json
 
 from pathlib import Path
-from glob import glob
-import pandas as pd
 
 envvars:
     "TMPDIR"
@@ -41,7 +38,7 @@ rule downsample_fastq:
     params:
         tmpdir="ds{depth}_rep{rep}"
     container:
-        "docker://ghcr.io/vdblab/seqkit:2.3.1"
+        config["docker_seqkit"]
     threads: 4  # see their docs
     resources:
         mem_mb=8000,
