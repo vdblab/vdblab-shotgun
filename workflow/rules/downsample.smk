@@ -3,11 +3,8 @@ import os
 from pathlib import Path
 
 
-envvars:
-    "TMPDIR",
+configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
 
-
-tmpdir = Path(os.environ["TMPDIR"])
 
 if not os.path.exists("logs"):
     os.makedirs("logs")
@@ -39,11 +36,14 @@ downsampled_fastqs_r2 = expand(
     rep=reps,
 )
 
+downsampling_reports = expand("reports/downsample_stats_{sample}.tab", sample=samples)
+
 
 rule all:
     input:
         downsampled_fastqs_r1,
         downsampled_fastqs_r2,
+        downsampling_reports,
 
 
 rule downsample_fastq:
@@ -95,3 +95,19 @@ rule downsample_fastq:
 
         rm $fq_tmpfile
         """
+
+
+rule ds_stats:
+    input:
+        R1=config["R1"],
+        R2=config["R2"],
+        R1ds=downsampled_fastqs_r1,
+        R2ds=downsampled_fastqs_r2,
+    output:
+        stats="reports/downsample_stats_{sample}.tab",
+    container:
+        config["docker_seqkit"]
+    shell:
+        """
+    seqkit stats --basename --tabular  --out-file {output.stats} {input}
+    """
