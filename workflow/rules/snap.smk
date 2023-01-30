@@ -22,7 +22,7 @@ rule snapalign:
     resources:
         mem_mb=lambda wildcards, attempt, input: attempt
         * (max(input.size // 1000000, 1024) * 10),
-        runtime="48:00",
+        runtime=48 * 60,
     threads: 24  # Use at least two threads
     shell:
         """
