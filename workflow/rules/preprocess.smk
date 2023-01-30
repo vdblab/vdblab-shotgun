@@ -358,7 +358,7 @@ rule get_all_host_reads:
         R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
     threads: 8
     resources:
-        runtime=8*60
+        runtime=8 * 60,
     container:
         config["docker_bowtie2"]
     shell:
