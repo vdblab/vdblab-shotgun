@@ -123,7 +123,7 @@ rule bbmap_dedup:
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
-        runtime="24:00",
+        runtime=24 * 60,
     log:
         # this is annoying but we want to be able to extract the stats from
         # the logs, which we can't do without the logs as a file. Perhaps
