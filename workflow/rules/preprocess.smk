@@ -356,6 +356,9 @@ rule get_all_host_reads:
     output:
         R1=f"host/{{sample}}_all_host_reads_R1.fastq.gz",
         R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
+    threads: 8
+    resources:
+        runtime=8 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -373,7 +376,7 @@ rule get_all_host_reads:
             rm tmp_host_{wildcards.sample}.*.fq
             rm tmp_host_{wildcards.sample}.bam
         done
-        #     """
+        """
 
 
 rule sortmerna_run:
