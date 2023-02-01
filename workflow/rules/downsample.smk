@@ -62,8 +62,7 @@ rule downsample_fastq:
         mem_mb=8000,
     shell:
         """
-        set -ex
-        set +o
+        set -euxo pipefail
         # assume 4 line fastqs.
         nreads=$(pigz -dc {input.R1} | awk 'NR % 4== 2' | wc -l )
 
