@@ -80,8 +80,8 @@ rule downsample_fastq:
         generous_proportion=$( echo "print($reads_per_file/$nreads * 1.2)" | python3)
 
         # sample -p + head is seqkit's recommended approach for downsampling,
-        # as it avoids having to read the whole thing into memory when you
-        #  directly to a number sample using -n
+        # as it avoids having to read the whole thing into memory, which happens
+        #  when you sample directly to a number of reads using -n
         # Don't ask why piping isn't working >:(
         fq_tmpfile={params.tmpdir}/tmp.fq.gz
         seqkit sample --rand-seed {wildcards.rep} --threads {threads} {input.R1} \
@@ -107,6 +107,4 @@ rule ds_stats:
     container:
         config["docker_seqkit"]
     shell:
-        """
-    seqkit stats --basename --tabular  --out-file {output.stats} {input}
-    """
+        """seqkit stats --basename --tabular  --out-file {output.stats} {input}"""
