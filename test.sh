@@ -45,6 +45,7 @@ case $mode in
 	    sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    multiqc_config=${PWD}/multiqc_config.yaml nshards=$nshards \
 	    dedup_reads=False \
 	    stage=all
@@ -59,6 +60,7 @@ case $mode in
 	    sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    multiqc_config=${PWD}/multiqc_config.yaml \
 	    nshards=$nshards \
 	    stage=preprocess
@@ -72,6 +74,7 @@ case $mode in
 	    sample=473  \
 	    R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
 	    R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	    $addnconf \
 	    nshards=$nshards \
 	    stage=preprocess \
 	    --generate-unit-tests
@@ -86,6 +89,7 @@ case $mode in
 	    sample=473  \
 	    R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
 	    R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
+	    $addnconf \
 	  nshards=$nshards \
 	  stage=preprocess
 	;;
@@ -98,6 +102,7 @@ case $mode in
 	    sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    stage=biobakery
 	;;
 
@@ -111,6 +116,7 @@ case $mode in
             sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    mpa_profile=/data/brinkvd/data/shotgun/test/C011815_metaphlan3_profile.txt
 	;;
 
@@ -123,6 +129,7 @@ case $mode in
 	    sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
 	    stage=kraken
 	;;
@@ -145,6 +152,7 @@ case $mode in
 	    assembly=${PWD}/tmpassembly/473.assembly.fasta  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    stage=binning
 	;;
     annotate)
@@ -155,6 +163,7 @@ case $mode in
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    assembly=${PWD}/tmpassembly/473.assembly.fasta  \
 	    stage=annotate
 	;;
@@ -166,23 +175,25 @@ case $mode in
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
 	    stage=rgi
 	;;
 
   figs )
-      for stage in all preprocess biobakery binning kraken assembly annotate rgi
-      do
-	  snakemake \
-	  $common_args \
-	  --singularity-args "-B ${PWD},/data/brinkvd/" \
-	  --directory tmprgi/ \
-	  --config sample=473 \
-	  R1=$R1 \
-	  R2=$R2 \
-	  nshards=2 \
-	  assembly=${PWD}/tmpassembly/473.assembly.fasta  \
-	  stage=$stage --dag  | sed "s|color.*rounded\"|color = \"grey\", style=\"rounded\"|g" > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
-      done
+        for stage in all preprocess biobakery binning kraken assembly annotate rgi
+	do
+	    snakemake \
+		$common_args \
+		--singularity-args "-B ${PWD},/data/brinkvd/" \
+		--directory tmprgi/ \
+		--config sample=473 \
+		R1=$R1 \
+		R2=$R2 \
+		$addnconf \
+		nshards=2 \
+		assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+		stage=$stage --dag  | sed "s|color.*rounded\"|color = \"grey\", style=\"rounded\"|g" > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
+	done
 
 	;;
     *)

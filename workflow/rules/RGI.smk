@@ -40,7 +40,7 @@ rule RGI:
         config["docker_rgi"]
     resources:
         mem_mb=lambda wildcards, attempt: attempt * 64 * 1024,
-        runtime="12:00",
+        runtime=12 * 60,
     threads: 32
     log:
         e="rgi/{sample}.e",
