@@ -23,7 +23,7 @@ properties:
     uniqueItems: true
   stage:
     type: string
-    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate)$"
+    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample)$"
   # run parameters
   nshards:
     type: integer
@@ -88,6 +88,18 @@ properties:
     type: string
   CARD_db_json:
     type: string
+  depths:
+    type: array
+    items:
+      type: int
+    minItems: 0
+    uniqueItems: true
+  reps:
+    type: array
+    items:
+      type: int
+    minItems: 0
+    uniqueItems: true
 
 required:
   - sample

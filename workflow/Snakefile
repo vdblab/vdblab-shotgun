@@ -157,6 +157,21 @@ module annotate:
 use rule * from annotate as annotate_*
 
 
+#
+# downsample Module
+#
+module downsample:
+    snakefile:
+        "rules/downsample.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from downsample as downsample_*
+
+
 """
 Notes:
 put all the logic here to connect pipeline stages (eg setting biobakery to using preprocessed results rather than config's R1 and R2
@@ -265,6 +280,9 @@ outputs = {
     ],
     "annotate": [
         rules.annotate_all.input,
+    ],
+    "downsample": [
+        rules.downsample_all.input,
     ],
 }
 
