@@ -101,7 +101,7 @@ rule metawrap_binning:
     threads: 64
     resources:
         mem_mb=32 * 1024,
-        runtime="12:00",
+        runtime=12 * 60,
     shell:
         """
         metawrap binning -o {params.outdir} -t {threads} -a {input.assembly} --{wildcards.tool} {input.R1} {input.R2}
@@ -136,7 +136,7 @@ rule metawrap_refine_binning:
     # give it 82 gb memory because checkm estimates pplacer will need 40GB per core, and we want this to run reasonably fast
     resources:
         mem_mb=82 * 1024,
-        runtime="12:00",
+        runtime=12 * 60,
     shell:
         """
         export  CHECKM_DATA_PATH={params.checkm_db}

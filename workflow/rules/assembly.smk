@@ -62,7 +62,7 @@ rule SPAdes_run:
     resources:
         mem_mb=lambda wildcards, attempt, input: attempt
         * (max(input.size // 1000000, 1024) * 20),
-        runtime="48:00",
+        runtime=48 * 60,
     threads: 64
     log:
         e="logs/spades_{sample}.log",
@@ -112,7 +112,7 @@ rule quast_run:
         o="logs/quast_{sample}.o",
     resources:
         mem_mb=8 * 1024,
-        runtime="3:00",
+        runtime=3 * 60,
     shell:
         """
         quast.py \

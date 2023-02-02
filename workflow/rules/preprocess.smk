@@ -123,7 +123,7 @@ rule bbmap_dedup:
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
-        runtime="24:00",
+        runtime=24 * 60,
     log:
         # this is annoying but we want to be able to extract the stats from
         # the logs, which we can't do without the logs as a file. Perhaps
@@ -356,6 +356,9 @@ rule get_all_host_reads:
     output:
         R1=f"host/{{sample}}_all_host_reads_R1.fastq.gz",
         R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
+    threads: 8
+    resources:
+        runtime=8 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -373,7 +376,7 @@ rule get_all_host_reads:
             rm tmp_host_{wildcards.sample}.*.fq
             rm tmp_host_{wildcards.sample}.bam
         done
-        #     """
+        """
 
 
 rule sortmerna_run:

@@ -91,9 +91,9 @@ rule humann3_run_uniref90:
         * 1024
         * max(input.fastq.size // 1000000000, 1)
         * 10,
-        runtime=lambda wildcards, input: "{}:00".format(
-            max(input.fastq.size // 1000000000, 1) * 18
-        ),
+        runtime=lambda wildcards, input: max(input.fastq.size // 1000000000, 1)
+        * 18
+        * 60,
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
@@ -272,7 +272,7 @@ rule metaphlan_run:
         "../envs/metaphlan.yaml"
     resources:
         mem_mb=16 * 1024,
-        runtime="20:00",
+        runtime=20 * 60,
     threads: 16
     log:
         e="logs/metaphlan_{sample}.e",
@@ -353,7 +353,7 @@ rule sample2markers_run:
         "../envs/humann.yaml"
     resources:
         mem_mb=64 * 1024,
-        runtime="48:00",
+        runtime=48 * 60,
     params:
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
     log:
