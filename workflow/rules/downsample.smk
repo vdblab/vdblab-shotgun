@@ -87,12 +87,13 @@ rule downsample_fastq:
         seqkit sample --rand-seed {wildcards.rep} --threads {threads} {input.R1} \
           -p $generous_proportion -o $fq_tmpfile
         seqkit head  -n $reads_per_file -o {output.R1} $fq_tmpfile
+        rm $fq_tmpfile
 
         seqkit sample --rand-seed {wildcards.rep} --threads {threads} {input.R2} \
           -p $generous_proportion -o $fq_tmpfile
         seqkit head -n $reads_per_file -o {output.R2} $fq_tmpfile
-
         rm $fq_tmpfile
+
         """
 
 
