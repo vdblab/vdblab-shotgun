@@ -48,6 +48,14 @@ if config["stage"] == "all":
     config["assembly"] = f"{config['sample']}.assembly.fasta"
 
 
+"""
+similarly, we have to mock the downsample parameters if we aren't running with stage=downsample
+"""
+if config["stage"] != "downsample":
+    config["depths"] = [0]
+    config["reps"] = [0]
+
+
 #
 # Preprocess Module
 #
@@ -186,19 +194,19 @@ if config["stage"] == "all":
 
     use rule cat_pair from biobakery as biobakery_cat_pair with:
         input:
-            R1="hostdepleted/{sample}_1.fastq.gz",
-            R2="hostdepleted/{sample}_2.fastq.gz",
+            R1="hostdepleted/{sample}_R1.fastq.gz",
+            R2="hostdepleted/{sample}_R2.fastq.gz",
 
     use rule RGI from rgi as rgi_RGI with:
         input:
-            R1="hostdepleted/{sample}_1.fastq.gz",
-            R2="hostdepleted/{sample}_2.fastq.gz",
+            R1="hostdepleted/{sample}_R1.fastq.gz",
+            R2="hostdepleted/{sample}_R2.fastq.gz",
             db=config["CARD_db_json"],
 
     use rule SPAdes_run from assembly as assembly_SPAdes_run with:
         input:
-            R1="hostdepleted/{sample}_1.fastq.gz",
-            R2="hostdepleted/{sample}_2.fastq.gz",
+            R1="hostdepleted/{sample}_R1.fastq.gz",
+            R2="hostdepleted/{sample}_R2.fastq.gz",
 
     use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
         input:

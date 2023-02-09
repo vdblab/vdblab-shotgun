@@ -90,15 +90,15 @@ properties:
     type: string
   depths:
     type: array
-    items:
-      type: int
-    minItems: 0
+#    items:
+#      type: number
+    minItems: 1
     uniqueItems: true
   reps:
     type: array
-    items:
-      type: int
-    minItems: 0
+#    items:
+#      type: number
+    minItems: 1
     uniqueItems: true
 
 required:

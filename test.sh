@@ -178,6 +178,19 @@ case $mode in
 	    $addnconf \
 	    stage=rgi
 	;;
+    downsample|ds )
+	snakemake \
+	    $common_args \
+	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --directory tmprgi/ \
+	    --config sample=473 \
+	    R1=$R1 \
+	    R2=$R2 \
+	    depths=[1000] \
+	    reps=[1,2] \
+	    $addnconf \
+	    stage=rgi
+	;;
 
   figs )
         for stage in all preprocess biobakery binning kraken assembly annotate rgi
