@@ -46,7 +46,7 @@ rule all:
     input:
         assemblies,
         quast_outputs,
-        "{sample}.cleaned_assembly_files",
+        f"{config['sample']}.cleaned_assembly_files",
 
 
 rule SPAdes_run:
@@ -55,6 +55,7 @@ rule SPAdes_run:
         R2=config["R2"],
     output:
         assembly="{sample}.assembly.fasta",
+        spades_log="spades_{sample}/spades.log",
     container:
         config["docker_spades"]
     conda:
@@ -137,10 +138,12 @@ rule clean_up:
         agg_files=[
             "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
         ],
+        spades_log="spades_{sample}/spades.log",
     output:
         touch("{sample}.cleaned_assembly_files"),
     shell:
         """
         # We dont need any of the spades intermediate files (corrected reads, temp, per-kmer assembly)
-        find spades_{config.sample}/  -type d | xargs --no-run-if-empty rm -r
+        ls spades_{wildcards.sample}/
+        find spades_{wildcards.sample}/  -type f | xargs --no-run-if-empty rm
         """
