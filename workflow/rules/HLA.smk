@@ -13,13 +13,16 @@ rule all:
 
 
 rule OptiType_subset_fastq:
+    """ Based on the recommendation from the optitype readme, this
+    subsets the fastq reads to the hla
+    """
     input:
         R1=config["R1"],
         R2=config["R2"],
-        alleles=HTTP.remote("https://raw.githubusercontent.com/FRED-2/OptiType/master/data/hla_reference_dna.fasta")
+        alleles=config["optityper_hla_dna"],
     output:
-        R1="tmp_{sample}_R1.bam",
-        R2="tmp_{sample}_R2.bam",
+        R1=temp("tmp_optitype_{sample}_R1.bam"),
+        R2=temp("tmp_optitype_{sample}_R2.bam"),
     container:
         config["docker_optitype"]
     threads: 16
@@ -30,11 +33,14 @@ rule OptiType_subset_fastq:
         """
 
 rule OptiType_bam2fastq:
+    """the bam is converted to a single fastq.
+    Optityper does not used the pairing information
+    """
     input:
-        R1="tmp_{sample}_R1.bam",
-        R2="tmp_{sample}_R2.bam",
+        R1="tmp_optitype_{sample}_R1.bam",
+        R2="tmp_optitype_{sample}_R2.bam",
     output:
-        R1="tmp_{sample}.fastq",
+        R1=temp("tmp_optitype_{sample}.fastq"),
     container:
         config["docker_bowtie2"]
     threads: 16
@@ -45,9 +51,8 @@ rule OptiType_bam2fastq:
         """
 
 rule OptiType_fastq:
-    # TODO move ref to resources repo
     input:
-        R1="tmp_{sample}.fastq",
+        R1="tmp_optitype_{sample}.fastq",
     output:
         results="reports/{sample}_result.tsv",
     container:
@@ -55,6 +60,12 @@ rule OptiType_fastq:
     threads: 16
     shell:
         """
-        OptiTypePipeline.py -i {input.R1}  --dna --prefix {wildcards.sample} --outdir reports/ --verbose
-        find .
+        if [ -s "{input.R1}" ];
+        then
+            OptiTypePipeline.py -i {input.R1}  --dna --prefix {wildcards.sample} --outdir reports/ --verbose
+            find .
+        else
+            echo "Warning; no hla reads detected; skipping optitype"
+            touch {output.results}
+        fi
         """

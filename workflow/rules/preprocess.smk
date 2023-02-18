@@ -57,7 +57,6 @@ rule all:
         fastqc_R1_mqc=f"reports/{config['sample']}_R1_fastqc.html",
         fastqc_R2_mqc=f"reports/{config['sample']}_R2_fastqc.html",
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
-        hlaresults=f"xHLA/{config['sample']}.json",
         host_R1=f"host/{config['sample']}_all_host_reads_R1.fastq.gz",
         host_R2=f"host/{config['sample']}_all_host_reads_R2.fastq.gz",
 
@@ -416,15 +415,6 @@ rule sortmerna_run:
             --blast '1 cigar qcov qstrand' \
             --threads 8 \
             > {log.o} 2> {log.e}
-
-        # due to issues with samples having _0 in the name, this chunk is neccesary :(
-        # https://github.com/biocore/sortmerna/issues/312
-        if [ ! -f '{output.blast}' ]
-        then
-            mv \
-                sortmerna/{wildcards.sample}_shard{wildcards.shard}_sortmerna*.blast.gz \
-                {output.blast}
-        fi
         """
 
 
@@ -505,20 +495,4 @@ rule merge_primary_host_align_bams:
             tmp_{wildcards.sample}_merge/*.sort.bam
         samtools index {output.bam}
         rm -r tmp_{wildcards.sample}_merge/
-        """
-
-
-rule xHLA:
-    input:
-        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
-    output:
-        results="xHLA/{sample}.json",
-        workdir=temp(directory("hla-{sample}")),
-    container:
-        config["docker_hla"]
-    threads: 1
-    shell:
-        """run.py \
-        --sample_id {wildcards.sample} --input_bam_path {input.bam} \
-        --output_path xHLA || touch {output.results}
         """

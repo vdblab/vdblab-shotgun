@@ -222,6 +222,7 @@ if config["stage"] == "all":
         input:
             R1="host/{sample}_all_host_reads_R1.fastq.gz",
             R2="host/{sample}_all_host_reads_R2.fastq.gz",
+            alleles=config["optityper_hla_dna"],
 
     use rule SPAdes_run from assembly as assembly_SPAdes_run with:
         input:
@@ -287,6 +288,7 @@ outputs = {
         rules.rgi_all.input,
         rules.binning_all.input,
         rules.annotate_all.input,
+        rules.hla_all.input,
     ],
     "preprocess": [
         rules.preprocess_all.input,
