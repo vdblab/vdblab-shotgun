@@ -21,8 +21,8 @@ rule OptiType_subset_fastq:
         R2=config["R2"],
         alleles=config["optityper_hla_dna"],
     output:
-        R1=temp("tmp_optitype_{sample}_R1.bam"),
-        R2=temp("tmp_optitype_{sample}_R2.bam"),
+        R1=temp("razor/tmp_optitype_{sample}_R1.bam"),
+        R2=temp("razor/tmp_optitype_{sample}_R2.bam"),
     container:
         config["docker_optitype"]
     threads: 16
