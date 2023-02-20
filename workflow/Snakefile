@@ -279,6 +279,7 @@ else:
 # the above else: pass is needed to make snakefmt happy
 
 
+# in "all" mode, we do NOT HLA type as we regularly lack sufficient host depth
 outputs = {
     "all": [
         rules.preprocess_all.input,
@@ -288,7 +289,7 @@ outputs = {
         rules.rgi_all.input,
         rules.binning_all.input,
         rules.annotate_all.input,
-        rules.hla_all.input,
+        # rules.hla_all.input,
     ],
     "preprocess": [
         rules.preprocess_all.input,
