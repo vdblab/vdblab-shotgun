@@ -32,8 +32,12 @@ rule OptiType_subset_fastq:
     threads: 16
     shell:
         """
-        razers3 -i 95 -m 1 -dr 0 -o {output.R1} {input.alleles} {input.R1}
-        razers3 -i 95 -m 1 -dr 0 -o {output.R2} {input.alleles} {input.R2}
+        razers3 --percent-identity 95 --thread-count {threads} \
+           --max-hits 1 --distance-range 0 --output {output.R1} \
+            {input.alleles} {input.R1}
+        razers3 --percent-identity 95 --thread-count {threads} \
+           --max-hits 1 --distance-range 0 --output {output.R2} \
+            {input.alleles} {input.R2}
         """
 
 
@@ -48,7 +52,7 @@ rule OptiType_bam2fastq:
         R1=temp("razor/tmp_optitype_{sample}.fastq"),
     container:
         config["docker_bowtie2"]
-    threads: 16
+    threads: 1
     shell:
         """
         samtools bam2fq {input.R1} > {output.R1}
@@ -63,7 +67,7 @@ rule OptiType_fastq:
         results="reports/{sample}_result.tsv",
     container:
         config["docker_optitype"]
-    threads: 16
+    threads: 1
     shell:
         """
         if [ -s "{input.R1}" ];
