@@ -23,7 +23,7 @@ properties:
     uniqueItems: true
   stage:
     type: string
-    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample)$"
+    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla)$"
   # run parameters
   nshards:
     type: integer

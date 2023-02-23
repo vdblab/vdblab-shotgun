@@ -19,6 +19,10 @@ bowtie2_mouse_index_base: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_0000
 snap_human_index_dir: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
 snap_mouse_index_dir: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
 
+## optityper
+optityper_hla_dna: "/data/brinkvd/resources/references/human/optitype-hla-dna/07c49bf6fc/hla_reference_dna.fasta"
+optityper_hla_rna: "/data/brinkvd/resources/references/human/optitype-hla-rna/07c49bf6fc/hla_reference_rna.fasta"
+
 
 ## 16S annotation
 blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
