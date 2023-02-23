@@ -160,9 +160,10 @@ checkpoint split_assembly:
     These dummy inputs are intended to be overwritten when importing the rule
     """
     input:
-        R1=config["assembly"],
+        assembly=config["assembly"],
     output:
         directory("tmp"),
+        assembly=temp(os.path.basename(config["assembly"])),
     params:
         outdir="tmp/",
         nseqs=200,
@@ -177,7 +178,13 @@ checkpoint split_assembly:
         o="logs/split_assembly.o",
     shell:
         """
-        seqkit shuffle {input.R1} --two-pass  |
+        # If you get a weird issue with missing contigs, check if its related to
+        # https://github.com/shenwei356/seqkit/issues/364
+
+        #We have to copy the input here because if we run on isabl samples,
+        # the permissions don't allow the creation of the index file
+        cp {input.assembly} {output.assembly}
+        seqkit shuffle {output.assembly} --two-pass  |
         seqkit seq --min-len {params.minlen} --threads {threads} | \
             seqkit split2 --by-size {params.nseqs} --out-dir {params.outdir}  > {log.o} 2>> {log.e}
         """
