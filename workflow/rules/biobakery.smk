@@ -45,17 +45,19 @@ markers = "strainphlan/consensus_markers/{0}_samples2markers/{0}.pkl".format(
 krona = f"reports/{config['sample']}_metaphlan3_profile.txt.krona.html"
 
 all_inputs = [
-            ko_cpm,
-        metaphlan,
-        pabun_cpm,
-        krona,
+    ko_cpm,
+    metaphlan,
+    pabun_cpm,
+    krona,
 ]
 if not config["skip_sample2markers"]:
     all_inputs.append(markers)
 
+
 rule all:
     input:
-        all_inputs
+        all_inputs,
+
 
 # the cat paired end reads and metaphlan and humann3 part
 rule cat_pair:

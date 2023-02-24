@@ -103,7 +103,8 @@ case $mode in
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    stage=biobakery
+	    stage=biobakery \
+	    skip_sample2markers=True
 	;;
 
     mtx )
