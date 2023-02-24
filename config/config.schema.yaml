@@ -38,6 +38,9 @@ properties:
   dedup_reads:
     type: boolean
     default: true
+  skip_sample2markers:
+    type: boolean
+    default: false
   dedup_platform:
     type: string
     pattern: "(NextSeq|HiSeq|MiSeq|NovaSeq|SRA)"
