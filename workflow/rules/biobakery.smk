@@ -38,7 +38,7 @@ localrules:
 pabun_cpm = f"humann/{config['sample']}_humann3_pathabundance_cpm.tsv"
 metaphlan = f"metaphlan/{config['sample']}_metaphlan3_profile.txt"
 ko_cpm = f"humann/{config['sample']}_humann3_KO_cpm.tsv"
-markers = f"strainphlan/{config['sample']}_samples2markers.done"
+metaphlan_sam = f"metaphlan/{config['sample']}.sam.bz2"
 markers = "strainphlan/consensus_markers/{0}_samples2markers/{0}.pkl".format(
     config["sample"]
 )
@@ -49,6 +49,7 @@ all_inputs = [
     metaphlan,
     pabun_cpm,
     krona,
+    metaphlan_sam,
 ]
 if not config["skip_sample2markers"]:
     all_inputs.append(markers)
