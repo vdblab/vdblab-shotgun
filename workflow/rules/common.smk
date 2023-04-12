@@ -130,7 +130,7 @@ def parse_read_lengths(wildcards):
             Path(thispath).touch()
             final_basenames.append(os.path.basename(thispath))
         else:
-            final_basenames.append(f"len{closest_read_length}")
+            final_basenames.append(f"len{readlen}")
 
     return expand(os.path.join(ck_output, "{basenames}"), basenames=final_basenames)
 

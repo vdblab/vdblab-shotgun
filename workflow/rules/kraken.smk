@@ -110,8 +110,8 @@ rule kraken_standard_run:
         db=config["kraken2_db"],
     output:
         out="kraken2/{sample}_kraken2.out",
-        unclass_R1="kraken2/{sample}_kraken2_unclassified_1.fastq",
-        unclass_R2="kraken2/{sample}_kraken2_unclassified_2.fastq",
+        unclass_R1=temp("kraken2/{sample}_kraken2_unclassified_1.fastq"),
+        unclass_R2=temp("kraken2/{sample}_kraken2_unclassified_2.fastq"),
         report="kraken2/{sample}_kraken2.report",
     params:
         unclass_template=lambda wildcards, output: output["unclass_R1"].replace(
