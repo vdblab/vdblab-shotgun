@@ -149,7 +149,7 @@ case $mode in
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --config sample=473 \
 	    --directory tmpbin_$dataset/ \
-	    assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
@@ -164,7 +164,7 @@ case $mode in
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    stage=annotate
 	;;
     rgi )
