@@ -56,6 +56,7 @@ rule all:
         kraken_unclassified_outputs,
         brackenreport,
 
+
 #
 # Utils Module
 if len(config["R1"]) == 1:
@@ -64,6 +65,7 @@ if len(config["R1"]) == 1:
 else:
     input_R1 = "concatenated/{sample}_R1.fastq.gz"
     input_R2 = "concatenated/{sample}_R2.fastq.gz"
+
 
 module utils:
     snakefile:

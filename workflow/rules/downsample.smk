@@ -53,6 +53,7 @@ else:
     ds_input_R1 = "concatenated/{sample}_R1.fastq.gz"
     ds_input_R2 = "concatenated/{sample}_R2.fastq.gz"
 
+
 module utils:
     snakefile:
         "utils.smk"
