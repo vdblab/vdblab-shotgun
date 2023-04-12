@@ -56,10 +56,15 @@ rule all:
         kraken_unclassified_outputs,
         brackenreport,
 
-
 #
 # Utils Module
-#
+if len(config["R1"]) == 1:
+    input_R1 = config["R1"]
+    input_R2 = config["R2"]
+else:
+    input_R1 = "concatenated/{sample}_R1.fastq.gz"
+    input_R2 = "concatenated/{sample}_R2.fastq.gz"
+
 module utils:
     snakefile:
         "utils.smk"
@@ -100,8 +105,8 @@ rule kraken_standard_run:
     do get are high quality and representative
     """
     input:
-        R1="concatenated/{sample}_R1.fastq.gz",
-        R2="concatenated/{sample}_R2.fastq.gz",
+        R1=input_R1,
+        R2=input_R2,
         db=config["kraken2_db"],
     output:
         out="kraken2/{sample}_kraken2.out",

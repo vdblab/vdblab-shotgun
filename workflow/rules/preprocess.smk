@@ -61,7 +61,10 @@ rule all:
         host_R1=f"host/{config['sample']}_all_host_reads_R1.fastq.gz",
         host_R2=f"host/{config['sample']}_all_host_reads_R2.fastq.gz",
 
-
+# note:  we could make the concatenation conditional on how many libraries we
+# have, but a nice side-effect of creating a temporary file is that the
+# resulting filename is uniform.  For tools like fastqc, this means we can
+# predict the outputs much easier
 module utils:
     snakefile:
         "utils.smk"

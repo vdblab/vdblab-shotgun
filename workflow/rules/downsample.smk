@@ -46,10 +46,35 @@ rule all:
         downsampling_reports,
 
 
-rule downsample_fastq:
+if len(config["R1"]) == 1:
+    ds_input_R1 = config["R1"]
+    ds_input_R2 = config["R2"]
+else:
+    ds_input_R1 = "concatenated/{sample}_R1.fastq.gz"
+    ds_input_R2 = "concatenated/{sample}_R2.fastq.gz"
+
+module utils:
+    snakefile:
+        "utils.smk"
+    config:
+        config
+
+
+use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
     input:
         R1=config["R1"],
         R2=config["R2"],
+    output:
+        R1=temp("concatenated/{sample}_R1.fastq.gz"),
+        R2=temp("concatenated/{sample}_R2.fastq.gz"),
+    log:
+        e="logs/concat_r1_r2_{sample}.e",
+
+
+rule downsample_fastq:
+    input:
+        R1=ds_input_R1,
+        R2=ds_input_R2,
     output:
         R1="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R1_001.fastq.gz",
         R2="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R2_001.fastq.gz",
