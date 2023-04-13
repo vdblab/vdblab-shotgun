@@ -63,15 +63,16 @@ rule SPAdes_run:
     resources:
         mem_mb=lambda wildcards, attempt, input: attempt
         * (max(input.size // 1000000, 1024) * 20),
-        runtime=48 * 60,
+        runtime=lambda wildcards, input: min(max(input.size // 1000000000, 1) * 10, 48) * 60,
+    params:
+        input_string=lambda wildcards, input: " ".join([f"--pe{i+1}-1 {x} --pe{i+1}-2 {y}" for i, (x,y) in enumerate(zip(config["R1"], config["R2"]))])
     threads: 64
     log:
         e="logs/spades_{sample}.log",
     shell:
         """
         spades.py \
-            -1 {input.R1} \
-            -2 {input.R2} \
+            {params.input_string} \
             -t {threads} \
             --meta \
             -o spades_{wildcards.sample} \
