@@ -39,11 +39,9 @@ quast_outputs = [
     "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
     "quast/quast_{sample}/transposed_report.tsv".format(sample=config["sample"]),
 ]
-all_inputs = [
-    quast_outputs
-]
+all_inputs = [quast_outputs]
 
-if config["assembler"].lower()  == "spades" and not len(config["R1"]) > 1:
+if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
     print("Running SPAdes")
     assembly = f"spades_{config['sample']}.assembly.fasta"
     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
@@ -54,10 +52,10 @@ else:
     all_inputs.append(assembly)
 
 
-
 rule all:
     input:
-        all_inputs
+        all_inputs,
+
 
 rule megahit:
     input:
@@ -75,15 +73,16 @@ rule megahit:
     threads: 64
     params:
         input_string=lambda wildcards, input: str(
-                "-1 " + ",".join(input.R1) +
-                " -2 " + ",".join(input.R2)
+            "-1 " + ",".join(input.R1) + " -2 " + ",".join(input.R2)
         ),
-    shell: """
+    shell:
+        """
     mkdir -p ${{TMPDIR}}/megahit_{wildcards.sample}/
     megahit {params.input_string} --out-dir megahit_{wildcards.sample}/ --out-prefix {wildcards.sample} --tmp-dir ${{TMPDIR}}/megahit_{wildcards.sample}/ --memory $(({resources.mem_mb} * 1024 ))  --num-cpu-threads {threads}
     rm -r ${{TMPDIR}}/megahit_{wildcards.sample}/
     mv megahit_{wildcards.sample}/{wildcards.sample}.contigs.fa {output.assembly}
     """
+
 
 rule SPAdes_run:
     input:
