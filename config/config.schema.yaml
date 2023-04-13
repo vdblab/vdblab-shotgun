@@ -24,13 +24,6 @@ properties:
   stage:
     type: string
     pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla)$"
-  # strainphlan input
-  strainphan_sams:
-    type: array
-    items:
-      type: string
-    minItems: 1
-    uniqueItems: true
   # run parameters
   nshards:
     type: integer
@@ -45,9 +38,6 @@ properties:
   dedup_reads:
     type: boolean
     default: true
-  skip_sample2markers:
-    type: boolean
-    default: false
   dedup_platform:
     type: string
     pattern: "(NextSeq|HiSeq|MiSeq|NovaSeq|SRA)"
