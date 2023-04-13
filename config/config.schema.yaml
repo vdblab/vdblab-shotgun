@@ -24,6 +24,13 @@ properties:
   stage:
     type: string
     pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla)$"
+  # strainphlan input
+  strainphan_sams:
+    type: array
+    items:
+      type: string
+    minItems: 1
+    uniqueItems: true
   # run parameters
   nshards:
     type: integer
@@ -76,6 +83,8 @@ properties:
   utility_mapping_db:
     type: string
   metaphlan_db:
+    type: string
+  strainphlan_markers_dir:
     type: string
   blast_16s_db_nsq:
     type: string

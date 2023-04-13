@@ -8,7 +8,6 @@ choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
 uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
 utility_mapping_db: "/data/brinkvd/resources/dbs/utility_mapping/utility_mapping/"
 metaphlan_db: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
-
 skip_sample2markers: false
 
 ## CheckM
@@ -93,6 +92,8 @@ docker_sortmerna: "docker://ghcr.io/vdblab/sortmerna:4.3.6"
 docker_spades: "docker://staphb/spades:3.15.4"
 docker_quast: "docker://staphb/quast:5.0.2"
 
+# strainphlan markers dir
+strainphlan_markers_dir: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/marker_outputs/"
 
 # depreciated: will be removed with release 1.0
 bmtagger_human: "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"
