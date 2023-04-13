@@ -19,6 +19,12 @@ case $rawdataset in
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
 	addnconf="dedup_platform=SRA"
 	;;
+    multilib)
+	nshards=2
+	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
+	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
+	addnconf="dedup_platform=SRA"
+	;;
     medium)
 	nshards=2
 	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz]
@@ -139,8 +145,9 @@ case $mode in
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpassembly/ \
 	    --config sample=473 \
-	    R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
-	    R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
+	    R1=$R1 \
+	    R2=$R2 \
+	    $addnconf assembler=spades \
 	    stage=assembly
 	;;
     bin)
