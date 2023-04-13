@@ -20,6 +20,7 @@ case $rawdataset in
 	addnconf="dedup_platform=SRA"
 	;;
     multilib)
+	# this is to test handling of multiple fastqs (lanes, typically)
 	nshards=2
 	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
@@ -32,7 +33,7 @@ case $rawdataset in
 	addnconf="dedup_platform=SRA"
 	;;
     *)
-	echo -e "unknown dataset; please chose from tiny. Exiting\n"
+	echo -e "unknown dataset; please chose from tiny, small, medium, or multilib. Exiting\n"
 	exit 1
 	;;
 esac
@@ -147,7 +148,7 @@ case $mode in
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
-	    $addnconf assembler=spades \
+	    $addnconf \
 	    stage=assembly
 	;;
     bin)
@@ -196,7 +197,7 @@ case $mode in
 	    depths=[1000] \
 	    reps=[1,2] \
 	    $addnconf \
-	    stage=rgi
+	    stage=downsample
 	;;
 
   figs )
