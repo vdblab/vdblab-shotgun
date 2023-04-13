@@ -39,9 +39,6 @@ pabun_cpm = f"humann/{config['sample']}_humann3_pathabundance_cpm.tsv"
 metaphlan = f"metaphlan/{config['sample']}_metaphlan3_profile.txt"
 ko_cpm = f"humann/{config['sample']}_humann3_KO_cpm.tsv"
 metaphlan_sam = f"metaphlan/{config['sample']}.sam.bz2"
-markers = "strainphlan/consensus_markers/{0}_samples2markers/{0}.pkl".format(
-    config["sample"]
-)
 krona = f"reports/{config['sample']}_metaphlan3_profile.txt.krona.html"
 
 all_inputs = [
@@ -51,8 +48,6 @@ all_inputs = [
     krona,
     metaphlan_sam,
 ]
-if not config["skip_sample2markers"]:
-    all_inputs.append(markers)
 
 
 rule all:
@@ -342,35 +337,4 @@ rule krona:
     shell:
         """
         ktImportText {input.infile} -o {output.outfile}
-        """
-
-
-# Run sample2markers for strainplan2
-rule sample2markers_run:
-    input:
-        inf="metaphlan/{sample}.sam.bz2",
-        db=config["metaphlan_db"],
-    output:
-        "strainphlan/consensus_markers/{sample}_samples2markers/{sample}.pkl",
-    threads: 16
-    container:
-        config["docker_biobakery"]
-    conda:
-        "../envs/humann.yaml"
-    resources:
-        mem_mb=64 * 1024,
-        runtime=48 * 60,
-    params:
-        outdir=lambda wildcards, output: os.path.dirname(output[0]),
-    log:
-        e="logs/sample2markers_{sample}.e",
-    shell:
-        """
-        sample2markers.py \
-            --database {input.db} \
-            -i {input.inf} \
-            -o {params.outdir} \
-            --database {input.db} \
-            --nprocs {threads} \
-            2> {log.e}
         """
