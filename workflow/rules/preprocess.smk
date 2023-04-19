@@ -331,34 +331,22 @@ rule merge_fastq_pair:
         cat {input.R2} | pigz -p {threads} -9 > {output.R2} 2>> {log.e}
         """
 
-
-rule get_all_host_reads:
-    """ Get all the host-associated reads and convert back to fastqs
-    """
+rule aligned_host_reads_to_fastq:
     input:
-        human_bams=expand(
+        bam=expand(
             expand(
                 "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
                 zip,
-                id=["01", "02"],
+                id=["01", "02", "04", "05"],
                 sample=config["sample"],
-                db=[bowtie2_human_db_name, snap_human_db_name],
-            ),
-            shard=SHARDS,
-        ),
-        mouse_bams=expand(
-            expand(
-                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
-                zip,
-                id=["04", "05"],
-                sample=config["sample"],
-                db=[bowtie2_mouse_db_name, snap_mouse_db_name],
+                db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name],
             ),
             shard=SHARDS,
         ),
     output:
-        R1=f"host/{{sample}}_all_host_reads_R1.fastq.gz",
-        R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
+        bam=temp("host/tmp_host_{sample}_step{id}_shard{shard}.bam"),
+        R1=temp("host/tmp_host_{sample}_step{id}_shard{shard}.R1.fq"),
+        R2=temp("host/tmp_host_{sample}_step{id}_shard{shard}.R2.fq"),
     threads: 8
     resources:
         runtime=8 * 60,
@@ -366,19 +354,32 @@ rule get_all_host_reads:
         config["docker_bowtie2"]
     shell:
         """
-        for i in {input.human_bams} {input.mouse_bams}
-        do
-            # get the aligned reads
-            samtools view -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
-            # convert to fastq
-            bamToFastq -i tmp_host_{wildcards.sample}.bam -fq tmp_host_{wildcards.sample}.R1.fq -fq2 tmp_host_{wildcards.sample}.R2.fq
-            # add to output (because bamToFastq can't directly concat, nor can it compress output)
-            cat tmp_host_{wildcards.sample}.R1.fq | pigz -p {threads} -9 >> {output.R1}
-            cat tmp_host_{wildcards.sample}.R2.fq | pigz -p {threads} -9 >> {output.R2}
-            # toss the temp bams and fastqs
-            rm tmp_host_{wildcards.sample}.*.fq
-            rm tmp_host_{wildcards.sample}.bam
-        done
+        # get the aligned reads
+        samtools index {input.bam}
+        samtools view -f 2 -F 512 -b -o {output.bam} {input.bam}
+        # convert to fastq
+        bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
+        """
+
+rule make_combined_host_reads_fastq:
+    """ Get all the host-associated reads and convert back to fastqs
+    """
+    input:
+        R1=expand(
+            "host/tmp_host_{sample}_step{id}_shard{shard}.R{readdir}.fq",
+            id=["01", "02", "04", "05"],
+            sample=config['sample'],
+            readdir=[1,2], shard=SHARDS),
+    output:
+        R1=expand("host/{sample}_all_host_reads_R{readdir}.fastq.gz", sample=config['sample'], readdir=[1,2]),
+    threads: 8
+    resources:
+        runtime=8 * 60,
+    container:
+        config["docker_bowtie2"]
+    shell:
+        """
+        cat {input.R1} | pigz -p {threads} -9 >> {output.R1}
         """
 
 
