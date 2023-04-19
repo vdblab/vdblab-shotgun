@@ -77,6 +77,8 @@ properties:
     type: string
   metaphlan_db:
     type: string
+  strainphlan_markers_dir:
+    type: string
   blast_16s_db_nsq:
     type: string
   kraken2_db:
