@@ -332,21 +332,12 @@ rule merge_fastq_pair:
         """
 
 rule aligned_host_reads_to_fastq:
-    # the trigger ensures this gets run last or near last.  Other steps take care of the indexing
     input:
-        trigger=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
-        bam=expand(
-                "{id}/{sample}_shard{{shard}}.{db}.bam",
-                zip,
-                id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
-                sample=config["sample"],
-                db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name],
-            shard=SHARDS,
-        ),
+        bam="{id}/{sample}_shard{shard}.{db}.bam",
     output:
-        bam=temp("host/tmp_host_{sample}_step{id}_shard{shard}.bam"),
-        R1=temp("host/tmp_host_{sample}_step{id}_shard{shard}.R1.fq"),
-        R2=temp("host/tmp_host_{sample}_step{id}_shard{shard}.R2.fq"),
+       bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
+       R1=temp("host/{id}/{sample}_shard{shard}.{db}.R1.fq"),
+       R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     threads: 8
     resources:
         runtime=8 * 60,
@@ -355,7 +346,6 @@ rule aligned_host_reads_to_fastq:
     shell:
         """
         # get the aligned reads
-#        samtools index {input.bam}
         samtools view -f 2 -F 512 -b -o {output.bam} {input.bam}
         # convert to fastq
         bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
@@ -365,13 +355,13 @@ rule make_combined_host_reads_fastq:
     """ Get all the host-associated reads and convert back to fastqs
     """
     input:
-        R1=expand(
-            "host/tmp_host_{sample}_step{id}_shard{shard}.R{{readdir}}.fq",
+        R1=expand(expand(
+            "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{readdir}}.fq",
+            zip,
             id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
-            sample=config['sample'],
-            shard=SHARDS),
+            db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name]), shard=SHARDS, sample=config["sample"], readdir=[1,2]),
     output:
-        R1=expand("host/{sample}_all_host_reads_R{{readdir}}.fastq.gz", sample=config['sample']),
+        R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
     threads: 8
     resources:
         runtime=8 * 60,

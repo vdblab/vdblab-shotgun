@@ -63,6 +63,7 @@ case $mode in
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
             --directory tmppre_${rawdataset}/ \
+	    --notemp \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
