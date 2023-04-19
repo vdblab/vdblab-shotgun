@@ -273,7 +273,7 @@ rule metaphlan_run:
     resources:
         mem_mb=16 * 1024,
         runtime=20 * 60,
-    threads: 16
+    threads: 64
     log:
         e="logs/metaphlan_{sample}.e",
     shell:
