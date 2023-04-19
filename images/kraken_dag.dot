@@ -3,20 +3,18 @@ digraph snakemake_dag {
     node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
     edge[penwidth=2, color=grey];
 	0[label = "all", color = "grey", style="rounded"];
-	1[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
-	2[label = "utils_concat_R1_R2\nsample: 473", color = "grey", style="rounded"];
-	3[label = "kraken_compress_kraken_unclassified", color = "grey", style="rounded"];
-	4[label = "kraken_get_read_len", color = "grey", style="rounded"];
-	5[label = "kraken_bracken\ntaxlevel: G", color = "grey", style="rounded"];
-	6[label = "kraken_bracken\ntaxlevel: S", color = "grey", style="rounded"];
+	1[label = "kraken_kraken_standard_run\nsample: 473", color = "grey", style="rounded"];
+	2[label = "kraken_compress_kraken_unclassified", color = "grey", style="rounded"];
+	3[label = "kraken_get_read_len", color = "grey", style="rounded"];
+	4[label = "kraken_bracken\ntaxlevel: G", color = "grey", style="rounded"];
+	5[label = "kraken_bracken\ntaxlevel: S", color = "grey", style="rounded"];
 	1 -> 0
-	3 -> 0
+	2 -> 0
+	4 -> 0
 	5 -> 0
-	6 -> 0
-	2 -> 1
-	1 -> 3
-	4 -> 5
+	1 -> 2
+	3 -> 4
+	1 -> 4
+	3 -> 5
 	1 -> 5
-	4 -> 6
-	1 -> 6
 }            

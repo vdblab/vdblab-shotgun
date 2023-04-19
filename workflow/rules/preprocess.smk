@@ -332,15 +332,15 @@ rule merge_fastq_pair:
         """
 
 rule aligned_host_reads_to_fastq:
+    # the trigger ensures this gets run last or near last.  Other steps take care of the indexing
     input:
+        trigger=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
         bam=expand(
-            expand(
-                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
+                "{id}/{sample}_shard{{shard}}.{db}.bam",
                 zip,
-                id=["01", "02", "04", "05"],
+                id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
                 sample=config["sample"],
                 db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name],
-            ),
             shard=SHARDS,
         ),
     output:
@@ -355,7 +355,7 @@ rule aligned_host_reads_to_fastq:
     shell:
         """
         # get the aligned reads
-        samtools index {input.bam}
+#        samtools index {input.bam}
         samtools view -f 2 -F 512 -b -o {output.bam} {input.bam}
         # convert to fastq
         bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
@@ -366,12 +366,12 @@ rule make_combined_host_reads_fastq:
     """
     input:
         R1=expand(
-            "host/tmp_host_{sample}_step{id}_shard{shard}.R{readdir}.fq",
-            id=["01", "02", "04", "05"],
+            "host/tmp_host_{sample}_step{id}_shard{shard}.R{{readdir}}.fq",
+            id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
             sample=config['sample'],
-            readdir=[1,2], shard=SHARDS),
+            shard=SHARDS),
     output:
-        R1=expand("host/{sample}_all_host_reads_R{readdir}.fastq.gz", sample=config['sample'], readdir=[1,2]),
+        R1=expand("host/{sample}_all_host_reads_R{{readdir}}.fastq.gz", sample=config['sample']),
     threads: 8
     resources:
         runtime=8 * 60,
