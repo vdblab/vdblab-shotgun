@@ -21,9 +21,9 @@ case $rawdataset in
 	;;
     multilib)
 	# this is to test handling of multiple fastqs (lanes, typically)
-	nshards=1
-	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
-	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
+	nshards=2
+	R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
+	R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz,${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
 	addnconf="dedup_platform=SRA"
 	;;
     medium)
@@ -146,8 +146,9 @@ case $mode in
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpassembly/ \
 	    --config sample=473 \
-	    R1=[${PWD}/.test/SRR21986403/SRR21986403_1.fastq.gz] \
-	    R2=[${PWD}/.test/SRR21986403/SRR21986403_2.fastq.gz] \
+	    R1=$R1 \
+	    R2=$R2 \
+	    $addnconf \
 	    stage=assembly
 	;;
     bin)
