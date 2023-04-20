@@ -5,24 +5,20 @@ digraph snakemake_dag {
 	0[label = "all", color = "grey", style="rounded"];
 	1[label = "binning_metawrap_binning\ntool: concoct", color = "grey", style="rounded"];
 	2[label = "binning_unzip_rename_fastq_for_metawrap\nsample: 473", color = "grey", style="rounded"];
-	3[label = "assembly_SPAdes_run\nsample: /home/watersn/GitHub/vdblab-shotgun/tmpassembly/473", color = "grey", style="rounded"];
-	4[label = "binning_metawrap_binning\ntool: metabat2", color = "grey", style="rounded"];
-	5[label = "binning_metawrap_binning\ntool: maxbin2", color = "grey", style="rounded"];
-	6[label = "binning_metawrap_refine_binning", color = "grey", style="rounded"];
-	7[label = "binning_coverm", color = "grey", style="rounded"];
+	3[label = "binning_metawrap_binning\ntool: metabat2", color = "grey", style="rounded"];
+	4[label = "binning_metawrap_binning\ntool: maxbin2", color = "grey", style="rounded"];
+	5[label = "binning_metawrap_refine_binning", color = "grey", style="rounded"];
+	6[label = "binning_coverm", color = "grey", style="rounded"];
 	1 -> 0
+	3 -> 0
 	4 -> 0
 	5 -> 0
 	6 -> 0
-	7 -> 0
 	2 -> 1
-	3 -> 1
+	2 -> 3
 	2 -> 4
-	3 -> 4
-	2 -> 5
+	1 -> 5
 	3 -> 5
-	1 -> 6
-	4 -> 6
+	4 -> 5
 	5 -> 6
-	6 -> 7
 }            

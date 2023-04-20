@@ -64,7 +64,7 @@ rule RGI:
             --output_file {params.outpre} --threads {threads} \
             --local --clean
         ls rgi
-        rm -r {params.tmpdir}
+        rm -r {params.tmpdir} localDB/
         """
 
 

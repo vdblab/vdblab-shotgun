@@ -163,7 +163,7 @@ checkpoint split_assembly:
         assembly=config["assembly"],
     output:
         directory("tmp"),
-        assembly=temp(os.path.basename(config["assembly"])),
+        assembly=temp("tmp-" + os.path.basename(config["assembly"])),
     params:
         outdir="tmp/",
         nseqs=200,

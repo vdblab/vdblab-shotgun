@@ -45,7 +45,7 @@ we do this for the assembly because that config entry is referenced many times i
 for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
 """
 if config["stage"] == "all":
-    config["assembly"] = f"{config['sample']}.assembly.fasta"
+    config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
 
 """
@@ -180,6 +180,21 @@ module downsample:
 use rule * from downsample as downsample_*
 
 
+#
+# hla Module
+#
+module hla:
+    snakefile:
+        "rules/HLA.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from hla as hla_*
+
+
 """
 Notes:
 put all the logic here to connect pipeline stages (eg setting biobakery to using preprocessed results rather than config's R1 and R2
@@ -203,10 +218,16 @@ if config["stage"] == "all":
             R2="hostdepleted/{sample}_R2.fastq.gz",
             db=config["CARD_db_json"],
 
-    use rule SPAdes_run from assembly as assembly_SPAdes_run with:
+    use rule OptiType_subset_fastq from hla as hla_OptiType_subset_fastq with:
         input:
-            R1="hostdepleted/{sample}_R1.fastq.gz",
-            R2="hostdepleted/{sample}_R2.fastq.gz",
+            R1="host/{sample}_all_host_reads_R1.fastq.gz",
+            R2="host/{sample}_all_host_reads_R2.fastq.gz",
+            alleles=config["optityper_hla_dna"],
+
+    use rule megahit from assembly as assembly_megahit with:
+        input:
+            R1=["hostdepleted/{sample}_R1.fastq.gz"],
+            R2=["hostdepleted/{sample}_R2.fastq.gz"],
 
     use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
         input:
@@ -258,6 +279,7 @@ else:
 # the above else: pass is needed to make snakefmt happy
 
 
+# in "all" mode, we do NOT HLA type as we regularly lack sufficient host depth
 outputs = {
     "all": [
         rules.preprocess_all.input,
@@ -267,6 +289,7 @@ outputs = {
         rules.rgi_all.input,
         rules.binning_all.input,
         rules.annotate_all.input,
+        # rules.hla_all.input,
     ],
     "preprocess": [
         rules.preprocess_all.input,
@@ -291,6 +314,9 @@ outputs = {
     ],
     "downsample": [
         rules.downsample_all.input,
+    ],
+    "hla": [
+        rules.hla_all.input,
     ],
 }
 

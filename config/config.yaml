@@ -8,6 +8,7 @@ choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
 uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
 utility_mapping_db: "/data/brinkvd/resources/dbs/utility_mapping/utility_mapping/"
 metaphlan_db: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
+skip_sample2markers: false
 
 ## CheckM
 checkm_db: "/data/brinkvd/resources/dbs/checkm/2015_01_16/"
@@ -18,6 +19,10 @@ bowtie2_human_index_base: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/bowt
 bowtie2_mouse_index_base: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz"
 snap_human_index_dir: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
 snap_mouse_index_dir: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
+
+## optityper
+optityper_hla_dna: "/data/brinkvd/resources/references/human/optitype-hla-dna/07c49bf6fc/hla_reference_dna.fasta"
+optityper_hla_rna: "/data/brinkvd/resources/references/human/optitype-hla-rna/07c49bf6fc/hla_reference_rna.fasta"
 
 
 ## 16S annotation
@@ -41,6 +46,8 @@ metaerg_db_dir: "/data/brinkvd/resources/dbs/metaerg/2022/db"
 
 cazi_db: "/data/brinkvd/resources/dbCAN2/v11/"
 
+## Assembly
+assembler: "megahit"
 # should the length of the contigs be checked?
 # this was implemented to deal with test data and similations with tiny assemblies that caused annotation erros
 check_contigs: true
@@ -65,7 +72,7 @@ docker_abricate: "docker://staphb/abricate:1.0.0"
 docker_amrfinder: "docker://nickp60/amrfinder:3.10.24"
 docker_antismash: "docker://antismash/standalone:6.1.1"
 docker_bbtools: "docker://staphb/bbtools:38.97"
-docker_biobakery: "docker://ghcr.io/vdblab/biobakery-profiler:20221107"
+docker_biobakery: "docker://ghcr.io/vdblab/biobakery-profiler:20230418a"
 docker_biopython: "docker://nanozoo/biopython:1.74--b03961c"
 docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
 docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
@@ -77,6 +84,7 @@ docker_hla: "docker://humanlongevity/hla:0.0.0"
 docker_kneaddata: "docker://nickp60/kneaddata-bmtagger:0.1.0"
 docker_kraken: "docker://lgallagh/kraken2:2.1.2"
 docker_krona: "docker://nanozoo/krona:2.7.1--e7615f7"
+docker_megahit: "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a25453b95bf"
 docker_metaerg: "docker://ghcr.io/vdblab/metaerg:1.2.3d"
 docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
 docker_optitype: "docker://fred2/optitype"
@@ -84,10 +92,11 @@ docker_rgi: "docker://ghcr.io/vdblab/rgi:6.0.0"
 docker_seqkit: "docker://ghcr.io/vdblab/seqkit:2.3.1"
 docker_snap: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"
 docker_sortmerna: "docker://ghcr.io/vdblab/sortmerna:4.3.6"
-#docker_sortmerna: "docker://nanozoo/sortmerna:4.3.4--7b48a67"
 docker_spades: "docker://staphb/spades:3.15.4"
 docker_quast: "docker://staphb/quast:5.0.2"
 
+# strainphlan markers dir
+strainphlan_markers_dir: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/marker_outputs/"
 
 # depreciated: will be removed with release 1.0
 bmtagger_human: "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"

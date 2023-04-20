@@ -57,11 +57,14 @@ rule all:
         fastqc_R1_mqc=f"reports/{config['sample']}_R1_fastqc.html",
         fastqc_R2_mqc=f"reports/{config['sample']}_R2_fastqc.html",
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
-        hlaresults=f"xHLA/{config['sample']}.json",
         host_R1=f"host/{config['sample']}_all_host_reads_R1.fastq.gz",
         host_R2=f"host/{config['sample']}_all_host_reads_R2.fastq.gz",
 
 
+# note:  we could make the concatenation conditional on how many libraries we
+# have, but a nice side-effect of creating a temporary file is that the
+# resulting filename is uniform.  For tools like fastqc, this means we can
+# predict the outputs much easier
 module utils:
     snakefile:
         "utils.smk"
@@ -329,33 +332,13 @@ rule merge_fastq_pair:
         """
 
 
-rule get_all_host_reads:
-    """ Get all the host-associated reads and convert back to fastqs
-    """
+rule aligned_host_reads_to_fastq:
     input:
-        human_bams=expand(
-            expand(
-                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
-                zip,
-                id=["01", "02"],
-                sample=config["sample"],
-                db=[bowtie2_human_db_name, snap_human_db_name],
-            ),
-            shard=SHARDS,
-        ),
-        mouse_bams=expand(
-            expand(
-                "{id}-bowtie/{sample}_shard{{shard}}.{db}.bam",
-                zip,
-                id=["04", "05"],
-                sample=config["sample"],
-                db=[bowtie2_mouse_db_name, snap_mouse_db_name],
-            ),
-            shard=SHARDS,
-        ),
+        bam="{id}/{sample}_shard{shard}.{db}.bam",
     output:
-        R1=f"host/{{sample}}_all_host_reads_R1.fastq.gz",
-        R2=f"host/{{sample}}_all_host_reads_R2.fastq.gz",
+        bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
+        R1=temp("host/{id}/{sample}_shard{shard}.{db}.R1.fq"),
+        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     threads: 8
     resources:
         runtime=8 * 60,
@@ -363,19 +346,42 @@ rule get_all_host_reads:
         config["docker_bowtie2"]
     shell:
         """
-        for i in {input.human_bams} {input.mouse_bams}
-        do
-            # get the aligned reads
-            samtools view -f 2 -F 512 -b -o tmp_host_{wildcards.sample}.bam $i
-            # convert to fastq
-            bamToFastq -i tmp_host_{wildcards.sample}.bam -fq tmp_host_{wildcards.sample}.R1.fq -fq2 tmp_host_{wildcards.sample}.R2.fq
-            # add to output (because bamToFastq can't directly concat, nor can it compress output)
-            cat tmp_host_{wildcards.sample}.R1.fq | pigz -p {threads} -9 >> {output.R1}
-            cat tmp_host_{wildcards.sample}.R2.fq | pigz -p {threads} -9 >> {output.R2}
-            # toss the temp bams and fastqs
-            rm tmp_host_{wildcards.sample}.*.fq
-            rm tmp_host_{wildcards.sample}.bam
-        done
+        # get the aligned reads
+        samtools view -f 2 -F 512 -b -o {output.bam} {input.bam}
+        # convert to fastq
+        bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
+        """
+
+
+rule make_combined_host_reads_fastq:
+    """ Get all the host-associated reads and convert back to fastqs
+    """
+    input:
+        R1=expand(
+            expand(
+                "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{{{readdir}}}}.fq",
+                zip,
+                id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
+                db=[
+                    bowtie2_human_db_name,
+                    snap_human_db_name,
+                    bowtie2_mouse_db_name,
+                    snap_mouse_db_name,
+                ],
+            ),
+            shard=SHARDS,
+            sample=config["sample"],
+        ),
+    output:
+        R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
+    threads: 8
+    resources:
+        runtime=8 * 60,
+    container:
+        config["docker_bowtie2"]
+    shell:
+        """
+        cat {input.R1} | pigz -p {threads} -9 >> {output.R1}
         """
 
 
@@ -416,15 +422,6 @@ rule sortmerna_run:
             --blast '1 cigar qcov qstrand' \
             --threads 8 \
             > {log.o} 2> {log.e}
-
-        # due to issues with samples having _0 in the name, this chunk is neccesary :(
-        # https://github.com/biocore/sortmerna/issues/312
-        if [ ! -f '{output.blast}' ]
-        then
-            mv \
-                sortmerna/{wildcards.sample}_shard{wildcards.shard}_sortmerna*.blast.gz \
-                {output.blast}
-        fi
         """
 
 
@@ -459,6 +456,8 @@ rule merge_logs_for_multiqc:
         bbtrim="reports/{sample}_trimmingAQ_summary.txt",
     params:
         sample_name=lambda wc: wc.sample,
+    container:
+        "docker://pandas/pandas:pip-all"
     log:
         e="logs/merge_logs_{sample}.e",
         o="logs/merge_logs_{sample}.o",
@@ -505,20 +504,4 @@ rule merge_primary_host_align_bams:
             tmp_{wildcards.sample}_merge/*.sort.bam
         samtools index {output.bam}
         rm -r tmp_{wildcards.sample}_merge/
-        """
-
-
-rule xHLA:
-    input:
-        bam=f"host/{{sample}}.{bowtie2_human_db_name}.bam",
-    output:
-        results="xHLA/{sample}.json",
-        workdir=temp(directory("hla-{sample}")),
-    container:
-        config["docker_hla"]
-    threads: 1
-    shell:
-        """run.py \
-        --sample_id {wildcards.sample} --input_bam_path {input.bam} \
-        --output_path xHLA || touch {output.results}
         """
