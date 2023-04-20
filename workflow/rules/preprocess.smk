@@ -331,13 +331,14 @@ rule merge_fastq_pair:
         cat {input.R2} | pigz -p {threads} -9 > {output.R2} 2>> {log.e}
         """
 
+
 rule aligned_host_reads_to_fastq:
     input:
         bam="{id}/{sample}_shard{shard}.{db}.bam",
     output:
-       bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
-       R1=temp("host/{id}/{sample}_shard{shard}.{db}.R1.fq"),
-       R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
+        bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
+        R1=temp("host/{id}/{sample}_shard{shard}.{db}.R1.fq"),
+        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     threads: 8
     resources:
         runtime=8 * 60,
@@ -351,15 +352,26 @@ rule aligned_host_reads_to_fastq:
         bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
         """
 
+
 rule make_combined_host_reads_fastq:
     """ Get all the host-associated reads and convert back to fastqs
     """
     input:
-        R1=expand(expand(
-            "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{{{readdir}}}}.fq",
-            zip,
-            id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
-            db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name]), shard=SHARDS, sample=config["sample"]),
+        R1=expand(
+            expand(
+                "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{{{readdir}}}}.fq",
+                zip,
+                id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
+                db=[
+                    bowtie2_human_db_name,
+                    snap_human_db_name,
+                    bowtie2_mouse_db_name,
+                    snap_mouse_db_name,
+                ],
+            ),
+            shard=SHARDS,
+            sample=config["sample"],
+        ),
     output:
         R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
     threads: 8
