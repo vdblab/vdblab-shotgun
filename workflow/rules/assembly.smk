@@ -23,8 +23,6 @@ envvars:
 SHARDS = make_shard_names(config["nshards"])
 
 
-
-
 localrules:
     all,
 
@@ -34,6 +32,7 @@ quast_outputs = [
     "quast/quast_{sample}/transposed_report.tsv".format(sample=config["sample"]),
 ]
 all_inputs = [quast_outputs]
+
 
 onstart:
     with open("config_used.yaml", "w") as outfile:
