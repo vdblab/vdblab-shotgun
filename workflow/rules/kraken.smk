@@ -153,7 +153,7 @@ rule kraken_standard_run:
 
 
 checkpoint get_read_len:
-    # get the read length needed by bracken, and name a file in its honor
+    # get the max read length needed by bracken, and name a file in its honor
     input:
         R1=config["R1"],
     output:
@@ -174,8 +174,9 @@ checkpoint get_read_len:
         # we allow pipefails here to account for that
         set +o pipefail
         READLEN=$(zcat {input.R1} | head -n 100 | awk "NR%4 == 2 {{lengths[length(\$0)]++}} END {{for (l in lengths) {{print l}}}}")
+        READLENMAX=$(for i in $READLEN; do echo $i ; done  | awk  'NR==1{{max=$1}} $1>max{{max=$1}} END{{print max+0}}')
         mkdir -p kraken2/readlens
-        touch kraken2/readlens/len${{READLEN}}
+        touch kraken2/readlens/len${{READLENMAX}}
         set -o pipefail
         """
 
