@@ -63,6 +63,7 @@ case $mode in
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
             --directory tmppre_${rawdataset}/ \
+	    --notemp \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
@@ -212,7 +213,7 @@ case $mode in
 		R2=$R2 \
 		$addnconf \
 		nshards=2 \
-		assembly=${PWD}/tmpassembly/473.assembly.fasta  \
+		assembly=${PWD}/.test/assembly.fna  \
 		stage=$stage --dag  | sed "s|color.*rounded\"|color = \"grey\", style=\"rounded\"|g" > images/${stage}_dag.dot &&  dot -Tpng images/${stage}_dag.dot -o images/${stage}_dag.png
 	done
 

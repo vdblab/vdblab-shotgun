@@ -28,60 +28,68 @@ digraph snakemake_dag {
 	23[label = "bt_tally_depletion", color = "grey", style="rounded"];
 	24[label = "bt_tally_depletion", color = "grey", style="rounded"];
 	25[label = "preprocess_initial_fastqc_run", color = "grey", style="rounded"];
-	26[label = "biobakery_renormalize_KO", color = "grey", style="rounded"];
-	27[label = "biobakery_regroup_genefam_2_KO", color = "grey", style="rounded"];
-	28[label = "biobakery_humann3_run_uniref90", color = "grey", style="rounded"];
-	29[label = "biobakery_cat_pair", color = "grey", style="rounded"];
-	30[label = "biobakery_metaphlan_run", color = "grey", style="rounded"];
-	31[label = "biobakery_renormalize_pabun", color = "grey", style="rounded"];
-	32[label = "biobakery_sample2markers_run", color = "grey", style="rounded"];
-	33[label = "biobakery_krona", color = "grey", style="rounded"];
-	34[label = "biobakery_metaphlan2_krona", color = "grey", style="rounded"];
-	35[label = "assembly_SPAdes_run", color = "grey", style="rounded"];
-	36[label = "assembly_quast_run", color = "grey", style="rounded"];
-	37[label = "kraken_kraken_merge_shards", color = "grey", style="rounded"];
-	38[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
-	39[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
-	40[label = "kraken_compress_kraken_unclassified", color = "grey", style="rounded"];
-	41[label = "kraken_get_read_len", color = "grey", style="rounded"];
-	42[label = "rgi_RGI", color = "grey", style="rounded"];
-	43[label = "rgi_plotRGI", color = "grey", style="rounded"];
-	44[label = "binning_metawrap_binning\ntool: concoct", color = "grey", style="rounded"];
-	45[label = "binning_unzip_rename_fastq_for_metawrap\nsample: 473", color = "grey", style="rounded"];
-	46[label = "binning_metawrap_binning\ntool: metabat2", color = "grey", style="rounded"];
-	47[label = "binning_metawrap_binning\ntool: maxbin2", color = "grey", style="rounded"];
-	48[label = "binning_metawrap_refine_binning", color = "grey", style="rounded"];
-	49[label = "binning_coverm", color = "grey", style="rounded"];
-	50[label = "annotate_antismash", color = "grey", style="rounded"];
-	51[label = "annotate_split_assembly", color = "grey", style="rounded"];
-	52[label = "annotate_tabulate_antismash", color = "grey", style="rounded"];
-	53[label = "annotate_annotate_AMR", color = "grey", style="rounded"];
-	54[label = "annotate_annotate_abricate\ntool: argannot", color = "grey", style="rounded"];
-	55[label = "annotate_annotate_abricate\ntool: card", color = "grey", style="rounded"];
-	56[label = "annotate_annotate_abricate\ntool: ecoh", color = "grey", style="rounded"];
-	57[label = "annotate_annotate_abricate\ntool: ecoli_vf", color = "grey", style="rounded"];
-	58[label = "annotate_annotate_abricate\ntool: megares", color = "grey", style="rounded"];
-	59[label = "annotate_annotate_abricate\ntool: ncbi", color = "grey", style="rounded"];
-	60[label = "annotate_annotate_abricate\ntool: plasmidfinder", color = "grey", style="rounded"];
-	61[label = "annotate_annotate_abricate\ntool: resfinder", color = "grey", style="rounded"];
-	62[label = "annotate_annotate_abricate\ntool: vfdb", color = "grey", style="rounded"];
-	63[label = "annotate_clean_up", color = "grey", style="rounded"];
-	64[label = "kraken_bracken\ntaxlevel: G", color = "grey", style="rounded"];
-	65[label = "kraken_bracken\ntaxlevel: S", color = "grey", style="rounded"];
-	66[label = "annotate_join_gffs\nsample: 473", color = "grey", style="rounded"];
-	67[label = "annotate_join_CAZI", color = "grey", style="rounded"];
+	26[label = "preprocess_merge_sortmerna_blast", color = "grey", style="rounded"];
+	27[label = "preprocess_make_combined_host_reads_fastq\nreaddir: 1", color = "grey", style="rounded"];
+	28[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 01-bowtie\nshard: 001.chm13v2.0.fa", color = "grey", style="rounded"];
+	29[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 01-bowtie\nshard: 002.chm13v2.0.fa", color = "grey", style="rounded"];
+	30[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 02-snap\nsample: 473\nshard: 001.chm13v2.0.fa", color = "grey", style="rounded"];
+	31[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 02-snap\nsample: 473\nshard: 002.chm13v2.0.fa", color = "grey", style="rounded"];
+	32[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 04-bowtie\nsample: 473\nshard: 001.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	33[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 04-bowtie\nsample: 473\nshard: 002.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	34[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 05-snap\nsample: 473\nshard: 001.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	35[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 05-snap\nsample: 473\nshard: 002.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	36[label = "preprocess_make_combined_host_reads_fastq\nreaddir: 2", color = "grey", style="rounded"];
+	37[label = "biobakery_renormalize_KO", color = "grey", style="rounded"];
+	38[label = "biobakery_regroup_genefam_2_KO", color = "grey", style="rounded"];
+	39[label = "biobakery_humann3_run_uniref90", color = "grey", style="rounded"];
+	40[label = "biobakery_cat_pair", color = "grey", style="rounded"];
+	41[label = "biobakery_metaphlan_run", color = "grey", style="rounded"];
+	42[label = "biobakery_renormalize_pabun", color = "grey", style="rounded"];
+	43[label = "biobakery_sample2markers_run", color = "grey", style="rounded"];
+	44[label = "biobakery_krona", color = "grey", style="rounded"];
+	45[label = "biobakery_metaphlan2_krona", color = "grey", style="rounded"];
+	46[label = "assembly_SPAdes_run", color = "grey", style="rounded"];
+	47[label = "assembly_quast_run", color = "grey", style="rounded"];
+	48[label = "assembly_clean_up", color = "grey", style="rounded"];
+	49[label = "kraken_kraken_merge_shards", color = "grey", style="rounded"];
+	50[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
+	51[label = "kraken_kraken_standard_run", color = "grey", style="rounded"];
+	52[label = "kraken_compress_kraken_unclassified", color = "grey", style="rounded"];
+	53[label = "kraken_get_read_len", color = "grey", style="rounded"];
+	54[label = "rgi_RGI", color = "grey", style="rounded"];
+	55[label = "rgi_plotRGI", color = "grey", style="rounded"];
+	56[label = "binning_metawrap_binning\ntool: concoct", color = "grey", style="rounded"];
+	57[label = "binning_unzip_rename_fastq_for_metawrap\nsample: 473", color = "grey", style="rounded"];
+	58[label = "binning_metawrap_binning\ntool: metabat2", color = "grey", style="rounded"];
+	59[label = "binning_metawrap_binning\ntool: maxbin2", color = "grey", style="rounded"];
+	60[label = "binning_metawrap_refine_binning", color = "grey", style="rounded"];
+	61[label = "binning_coverm", color = "grey", style="rounded"];
+	62[label = "annotate_antismash", color = "grey", style="rounded"];
+	63[label = "annotate_split_assembly", color = "grey", style="rounded"];
+	64[label = "annotate_tabulate_antismash", color = "grey", style="rounded"];
+	65[label = "annotate_annotate_AMR", color = "grey", style="rounded"];
+	66[label = "annotate_annotate_abricate\ntool: argannot", color = "grey", style="rounded"];
+	67[label = "annotate_annotate_abricate\ntool: card", color = "grey", style="rounded"];
+	68[label = "annotate_annotate_abricate\ntool: ecoh", color = "grey", style="rounded"];
+	69[label = "annotate_annotate_abricate\ntool: ecoli_vf", color = "grey", style="rounded"];
+	70[label = "annotate_annotate_abricate\ntool: megares", color = "grey", style="rounded"];
+	71[label = "annotate_annotate_abricate\ntool: ncbi", color = "grey", style="rounded"];
+	72[label = "annotate_annotate_abricate\ntool: plasmidfinder", color = "grey", style="rounded"];
+	73[label = "annotate_annotate_abricate\ntool: resfinder", color = "grey", style="rounded"];
+	74[label = "annotate_annotate_abricate\ntool: vfdb", color = "grey", style="rounded"];
+	75[label = "annotate_clean_up", color = "grey", style="rounded"];
+	76[label = "kraken_bracken\ntaxlevel: G", color = "grey", style="rounded"];
+	77[label = "kraken_bracken\ntaxlevel: S", color = "grey", style="rounded"];
+	78[label = "annotate_join_gffs\nsample: 473", color = "grey", style="rounded"];
+	79[label = "annotate_join_CAZI", color = "grey", style="rounded"];
 	1 -> 0
 	19 -> 0
 	25 -> 0
 	26 -> 0
-	30 -> 0
-	31 -> 0
-	32 -> 0
-	33 -> 0
-	35 -> 0
+	27 -> 0
 	36 -> 0
 	37 -> 0
-	40 -> 0
+	41 -> 0
 	42 -> 0
 	43 -> 0
 	44 -> 0
@@ -89,23 +97,31 @@ digraph snakemake_dag {
 	47 -> 0
 	48 -> 0
 	49 -> 0
-	50 -> 0
 	52 -> 0
-	53 -> 0
 	54 -> 0
 	55 -> 0
 	56 -> 0
-	57 -> 0
 	58 -> 0
 	59 -> 0
 	60 -> 0
 	61 -> 0
 	62 -> 0
-	63 -> 0
 	64 -> 0
 	65 -> 0
 	66 -> 0
 	67 -> 0
+	68 -> 0
+	69 -> 0
+	70 -> 0
+	71 -> 0
+	72 -> 0
+	73 -> 0
+	74 -> 0
+	75 -> 0
+	76 -> 0
+	77 -> 0
+	78 -> 0
+	79 -> 0
 	2 -> 1
 	12 -> 1
 	3 -> 2
@@ -142,55 +158,83 @@ digraph snakemake_dag {
 	14 -> 24
 	13 -> 24
 	11 -> 25
-	27 -> 26
+	20 -> 26
+	21 -> 26
 	28 -> 27
-	29 -> 28
-	30 -> 28
-	1 -> 29
-	29 -> 30
-	28 -> 31
-	30 -> 32
-	34 -> 33
-	30 -> 34
-	1 -> 35
+	29 -> 27
+	30 -> 27
+	31 -> 27
+	32 -> 27
+	33 -> 27
+	34 -> 27
+	35 -> 27
+	7 -> 28
+	17 -> 29
+	6 -> 30
+	16 -> 31
+	4 -> 32
+	14 -> 33
+	3 -> 34
+	13 -> 35
+	28 -> 36
+	29 -> 36
+	30 -> 36
+	31 -> 36
+	32 -> 36
+	33 -> 36
+	34 -> 36
 	35 -> 36
 	38 -> 37
-	39 -> 37
-	8 -> 38
-	18 -> 39
-	38 -> 40
-	39 -> 40
-	1 -> 42
-	42 -> 43
+	39 -> 38
+	40 -> 39
+	41 -> 39
+	1 -> 40
+	40 -> 41
+	39 -> 42
+	41 -> 43
 	45 -> 44
-	35 -> 44
-	45 -> 46
-	35 -> 46
-	45 -> 47
-	35 -> 47
-	44 -> 48
-	46 -> 48
+	41 -> 45
+	1 -> 46
+	46 -> 47
 	47 -> 48
-	48 -> 49
-	35 -> 50
-	66 -> 50
-	35 -> 51
+	46 -> 48
+	50 -> 49
+	51 -> 49
+	8 -> 50
+	18 -> 51
 	50 -> 52
-	35 -> 53
-	35 -> 54
-	35 -> 55
-	35 -> 56
-	35 -> 57
-	35 -> 58
-	35 -> 59
-	35 -> 60
-	35 -> 61
-	35 -> 62
-	66 -> 63
-	41 -> 64
-	37 -> 64
-	41 -> 65
-	37 -> 65
-	51 -> 66
-	51 -> 67
+	51 -> 52
+	1 -> 54
+	54 -> 55
+	57 -> 56
+	46 -> 56
+	57 -> 58
+	46 -> 58
+	57 -> 59
+	46 -> 59
+	56 -> 60
+	58 -> 60
+	59 -> 60
+	60 -> 61
+	46 -> 62
+	78 -> 62
+	46 -> 63
+	62 -> 64
+	46 -> 65
+	46 -> 66
+	46 -> 67
+	46 -> 68
+	46 -> 69
+	46 -> 70
+	46 -> 71
+	46 -> 72
+	46 -> 73
+	46 -> 74
+	78 -> 75
+	53 -> 76
+	49 -> 76
+	53 -> 77
+	49 -> 77
+	63 -> 78
+	63 -> 79
 }            
