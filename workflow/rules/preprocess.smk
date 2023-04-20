@@ -456,6 +456,8 @@ rule merge_logs_for_multiqc:
         bbtrim="reports/{sample}_trimmingAQ_summary.txt",
     params:
         sample_name=lambda wc: wc.sample,
+    container:
+        "docker://pandas/pandas:pip-all"
     log:
         e="logs/merge_logs_{sample}.e",
         o="logs/merge_logs_{sample}.o",
