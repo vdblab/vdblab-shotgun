@@ -35,18 +35,53 @@ localrules:
     all,
 
 
-assemblies = f"{config['sample']}.assembly.fasta"
 quast_outputs = [
     "quast/quast_{sample}/report.pdf".format(sample=config["sample"]),
     "quast/quast_{sample}/transposed_report.tsv".format(sample=config["sample"]),
 ]
+all_inputs = [quast_outputs]
+
+if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
+    print("Running SPAdes")
+    assembly = f"spades_{config['sample']}.assembly.fasta"
+    all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
+    all_inputs.append(assembly)
+else:
+    print("Running megahit")
+    assembly = f"megahit_{config['sample']}.assembly.fasta"
+    all_inputs.append(assembly)
 
 
 rule all:
     input:
-        assemblies,
-        quast_outputs,
-        f"{config['sample']}.cleaned_assembly_files",
+        all_inputs,
+
+
+rule megahit:
+    input:
+        R1=config["R1"],
+        R2=config["R2"],
+    output:
+        outdir=directory("megahit_{sample}"),
+        assembly="megahit_{sample}.assembly.fasta",
+    container:
+        config["docker_megahit"]
+    resources:
+        mem_mb=lambda wildcards, attempt, input: attempt
+        * (max(input.size // 1000000, 1024) * 20),
+        runtime=24 * 60,
+    threads: 64
+    params:
+        input_string=lambda wildcards, input: str(
+            "-1 " + ",".join(input.R1) + " -2 " + ",".join(input.R2)
+        ),
+    shell:
+        """
+    mkdir -p ${{TMPDIR}}/megahit_{wildcards.sample}/
+    megahit {params.input_string} --out-dir megahit_{wildcards.sample}/ --out-prefix {wildcards.sample} --tmp-dir ${{TMPDIR}}/megahit_{wildcards.sample}/ --memory $(({resources.mem_mb} * 1024 ))  --num-cpu-threads {threads}
+    rm -r ${{TMPDIR}}/megahit_{wildcards.sample}/
+    mv megahit_{wildcards.sample}/{wildcards.sample}.contigs.fa {output.assembly}
+    """
 
 
 rule SPAdes_run:
@@ -54,7 +89,7 @@ rule SPAdes_run:
         R1=config["R1"],
         R2=config["R2"],
     output:
-        assembly="{sample}.assembly.fasta",
+        assembly="spades_{sample}.assembly.fasta",
         spades_log="spades_{sample}/spades.log",
     container:
         config["docker_spades"]
@@ -96,7 +131,7 @@ rule quast_run:
     with pulling genomes
     """
     input:
-        assembly="{sample}.assembly.fasta",
+        assembly=assembly,
         blast_16s_db_nsq=config["blast_16s_db_nsq"],
     output:
         report_tsv="quast/quast_{sample}/transposed_report.tsv",
