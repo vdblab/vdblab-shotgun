@@ -30,22 +30,21 @@ digraph snakemake_dag {
 	25[label = "preprocess_initial_fastqc_run", color = "grey", style="rounded"];
 	26[label = "preprocess_merge_sortmerna_blast", color = "grey", style="rounded"];
 	27[label = "preprocess_make_combined_host_reads_fastq\nreaddir: 1", color = "grey", style="rounded"];
-	28[label = "preprocess_aligned_host_reads_to_fastq\nid: 01-bowtie", color = "grey", style="rounded"];
-	29[label = "preprocess_merge_primary_host_align_bams", color = "grey", style="rounded"];
-	30[label = "preprocess_aligned_host_reads_to_fastq\nid: 01-bowtie", color = "grey", style="rounded"];
-	31[label = "preprocess_aligned_host_reads_to_fastq\nid: 02-snap", color = "grey", style="rounded"];
-	32[label = "preprocess_aligned_host_reads_to_fastq\nid: 02-snap", color = "grey", style="rounded"];
-	33[label = "preprocess_aligned_host_reads_to_fastq\nid: 04-bowtie", color = "grey", style="rounded"];
-	34[label = "preprocess_aligned_host_reads_to_fastq\nid: 04-bowtie", color = "grey", style="rounded"];
-	35[label = "preprocess_aligned_host_reads_to_fastq\nid: 05-snap", color = "grey", style="rounded"];
-	36[label = "preprocess_aligned_host_reads_to_fastq\nid: 05-snap", color = "grey", style="rounded"];
-	37[label = "preprocess_make_combined_host_reads_fastq\nreaddir: 2", color = "grey", style="rounded"];
+	28[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 01-bowtie\nshard: 001.chm13v2.0.fa", color = "grey", style="rounded"];
+	29[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 01-bowtie\nshard: 002.chm13v2.0.fa", color = "grey", style="rounded"];
+	30[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 02-snap\nsample: 473\nshard: 001.chm13v2.0.fa", color = "grey", style="rounded"];
+	31[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 02-snap\nsample: 473\nshard: 002.chm13v2.0.fa", color = "grey", style="rounded"];
+	32[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 04-bowtie\nsample: 473\nshard: 001.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	33[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 04-bowtie\nsample: 473\nshard: 002.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	34[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 05-snap\nsample: 473\nshard: 001.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	35[label = "preprocess_aligned_host_reads_to_fastq\ndb: gz\nid: 05-snap\nsample: 473\nshard: 002.GCA_000001635.9_GRCm39_genomic.fna", color = "grey", style="rounded"];
+	36[label = "preprocess_make_combined_host_reads_fastq\nreaddir: 2", color = "grey", style="rounded"];
 	1 -> 0
 	19 -> 0
 	25 -> 0
 	26 -> 0
 	27 -> 0
-	37 -> 0
+	36 -> 0
 	2 -> 1
 	12 -> 1
 	3 -> 2
@@ -85,37 +84,27 @@ digraph snakemake_dag {
 	20 -> 26
 	21 -> 26
 	28 -> 27
+	29 -> 27
 	30 -> 27
 	31 -> 27
 	32 -> 27
 	33 -> 27
 	34 -> 27
 	35 -> 27
-	36 -> 27
-	29 -> 28
 	7 -> 28
-	7 -> 29
 	17 -> 29
-	29 -> 30
-	17 -> 30
-	29 -> 31
-	7 -> 31
-	29 -> 32
-	17 -> 32
-	29 -> 33
-	7 -> 33
-	29 -> 34
-	17 -> 34
-	29 -> 35
-	7 -> 35
+	6 -> 30
+	16 -> 31
+	4 -> 32
+	14 -> 33
+	3 -> 34
+	13 -> 35
+	28 -> 36
 	29 -> 36
-	17 -> 36
-	28 -> 37
-	30 -> 37
-	31 -> 37
-	32 -> 37
-	33 -> 37
-	34 -> 37
-	35 -> 37
-	36 -> 37
+	30 -> 36
+	31 -> 36
+	32 -> 36
+	33 -> 36
+	34 -> 36
+	35 -> 36
 }            
