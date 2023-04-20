@@ -356,10 +356,10 @@ rule make_combined_host_reads_fastq:
     """
     input:
         R1=expand(expand(
-            "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{readdir}}.fq",
+            "host/{id}/{{sample}}_shard{{shard}}.{db}.R{{{{readdir}}}}.fq",
             zip,
             id=["01-bowtie", "02-snap", "04-bowtie", "05-snap"],
-            db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name]), shard=SHARDS, sample=config["sample"], readdir=[1,2]),
+            db=[bowtie2_human_db_name, snap_human_db_name, bowtie2_mouse_db_name, snap_mouse_db_name]), shard=SHARDS, sample=config["sample"]),
     output:
         R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
     threads: 8
