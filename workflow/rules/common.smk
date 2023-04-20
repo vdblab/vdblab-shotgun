@@ -97,7 +97,7 @@ def parse_read_lengths(wildcards):
         raise ValueError("No read Length files found!")
     # here is some unpleasant logic; we don't want to have to recompute kmers for every concievable read length.
     # Some of our data is 101bp reads, while the prebuilt indexes contain the kmer profiles for 100, 150, etc.
-    # So here we fudge the numbes a bit; and this seems justifiable:
+    # So here we fudge the numbers a bit; and this seems justifiable:
     # From the PeerJ paper:
     #  > Bracken can use these probabilities for any metagenomics data set,
     # including data with different read lengths, although the estimates

@@ -23,12 +23,6 @@ envvars:
 SHARDS = make_shard_names(config["nshards"])
 
 
-onstart:
-    with open("config_used.yaml", "w") as outfile:
-        yaml.dump(config, outfile)
-
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
 
 
 localrules:
@@ -41,13 +35,23 @@ quast_outputs = [
 ]
 all_inputs = [quast_outputs]
 
+onstart:
+    with open("config_used.yaml", "w") as outfile:
+        yaml.dump(config, outfile)
+
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+    if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
+        print("Running SPAdes")
+    else:
+        print("Running megahit")
+
+
 if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
-    print("Running SPAdes")
     assembly = f"spades_{config['sample']}.assembly.fasta"
     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
     all_inputs.append(assembly)
 else:
-    print("Running megahit")
     assembly = f"megahit_{config['sample']}.assembly.fasta"
     all_inputs.append(assembly)
 
