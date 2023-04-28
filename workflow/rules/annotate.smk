@@ -70,7 +70,7 @@ rule annotate_orfs:
         gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
     resources:
         mem_mb=8 * 1024,
-        runtime=2 * 60,
+        runtime=45,
     threads: 4
     params:
         metaerg_db_dir=config["metaerg_db_dir"],
