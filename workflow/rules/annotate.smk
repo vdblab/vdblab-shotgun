@@ -53,7 +53,7 @@ with open(config["assembly"], "r") as inf:
         if line.startswith(">"):
             ncontigs = ncontigs  + 1
 nparts = ceil(ncontigs/nseqs)
-print(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
 
 rule all:
@@ -105,14 +105,17 @@ rule antismash:
         mem_mb=16 * 1024,
         runtime=3 * 60,
     threads: 16
+    log:
+        o = "logs/antismash_{sample}.log",
     output:
         gbk="{sample}_antismash.gbk",
+        outdir=directory("antismash_{sample}"),
     shell:
         """
         set +e -x
         antismash --cpus {threads} --allow-long-headers \
             --output-dir antismash_{wildcards.sample} {input.assembly} \
-            --genefinding-gff {input.gff}
+            --genefinding-gff {input.gff} --verbose --logfile {log.o}
         exitcode=$?
         if [ ! $exitcode -eq 0 ]
         then

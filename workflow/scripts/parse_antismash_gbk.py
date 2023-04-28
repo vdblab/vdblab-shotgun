@@ -7,7 +7,12 @@ from functools import partial
 
 clusters = []
 
-infile = snakemake.input.gbk #infile = sys.argv[1]
+try:
+    infile = snakemake.input.gbk #infile = sys.argv[1]
+    outfile = snakemake.output.tab
+except NameError:
+    infile = sys.argv[1]
+    outfile = sys.argv[2]
 
 open_fun = partial(gzip.open, mode='rt') if  infile.endswith(".gz") else open
 
@@ -28,7 +33,7 @@ with open_fun(infile) as inf:
                 if "product" in seqFeature.qualifiers:
                     clusters[-1]['gctype'] = seqFeature.qualifiers['product'][0]
 
-with open (snakemake.output.tab, "w") as outf:
+with open (outfile, "w") as outf:
     for clus in clusters:
         outf.write("\t".join([str(x) for x in [
             os.path.basename(infile),
