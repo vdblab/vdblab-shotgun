@@ -290,11 +290,12 @@ rule join_gffs:
 
 
 rule clean_up:
-    """"{sample}_metaerg.gff" is used as an input to ensure
-    that step is done before we clean.
+    """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
+    this is done last.
     """
     input:
         agg_file="{sample}_metaerg.gff",
+        cazi=f"{config['sample']}_cazi_overview.txt",
     output:
         touch("{sample}.cleaned_dirs"),
     shell:
