@@ -4,7 +4,9 @@ from shutil import rmtree
 import glob
 from math import ceil
 
+
 include: "common.smk"
+
 
 configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
 
@@ -51,10 +53,11 @@ ncontigs = 0
 with open(config["assembly"], "r") as inf:
     for line in inf:
         if line.startswith(">"):
-            ncontigs = ncontigs  + 1
-nparts = ceil(ncontigs/nseqs)
+            ncontigs = ncontigs + 1
+nparts = ceil(ncontigs / nseqs)
 logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
+
 
 rule all:
     input:
@@ -106,7 +109,7 @@ rule antismash:
         runtime=3 * 60,
     threads: 16
     log:
-        o = "logs/antismash_{sample}.log",
+        o="logs/antismash_{sample}.log",
     output:
         gbk="{sample}_antismash.gbk",
         outdir=directory("antismash_{sample}"),
@@ -178,7 +181,7 @@ rule split_assembly:
         assembly=config["assembly"],
     output:
         directory("tmp"),
-        chunks = expand("tmp/{batch}.fasta", batch=BATCHES),
+        chunks=expand("tmp/{batch}.fasta", batch=BATCHES),
         assembly=temp("tmp-" + os.path.basename(config["assembly"])),
     params:
         outdir="tmp/",
@@ -259,7 +262,7 @@ def aggregate_metaerg_results(wildcards):
 
 rule join_CAZI:
     input:
-        input = expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
+        input=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
     output:
         f"{config['sample']}_cazi_overview.txt",
     shell:
@@ -275,7 +278,10 @@ rule join_CAZI:
 
 rule join_gffs:
     input:
-        gff = expand("annotation/annotation_{batch}/data/either_all_or_master.gff", batch=BATCHES),
+        gff=expand(
+            "annotation/annotation_{batch}/data/either_all_or_master.gff",
+            batch=BATCHES,
+        ),
     output:
         f"{config['sample']}_metaerg.gff",
     shell:

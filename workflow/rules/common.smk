@@ -12,6 +12,7 @@ def get_pipeline_version():
 def make_shard_names(nshards):
     return [f"{x:03}" for x in range(1, config["nshards"] + 1)]
 
+
 def make_assembly_split_names(nparts):
     split_names = []
     # deal with the 3 digit ones first
@@ -19,10 +20,9 @@ def make_assembly_split_names(nparts):
         split_names.append(f"{i:03}")
     # values after 99 are not padded
     if nparts > 99:
-        for i in range(100, nparts+1):
+        for i in range(100, nparts + 1):
             split_names.append(f"{i}")
-    return(split_names)
-
+    return split_names
 
 
 def files_to_split(wildcards, dedup=False, read_dir=1):
