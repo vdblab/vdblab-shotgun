@@ -13,6 +13,18 @@ def make_shard_names(nshards):
     return [f"{x:03}" for x in range(1, config["nshards"] + 1)]
 
 
+def make_assembly_split_names(nparts):
+    split_names = []
+    # deal with the 3 digit ones first
+    for i in range(1, min(nparts, 100)):
+        split_names.append(f"{i:03}")
+    # values after 99 are not padded
+    if nparts > 99:
+        for i in range(100, nparts + 1):
+            split_names.append(f"{i}")
+    return split_names
+
+
 def files_to_split(wildcards, dedup=False, read_dir=1):
     if dedup:
         return ((f"dedup/{wildcards.sample}_R{read_dir}.fastq.gz"),)

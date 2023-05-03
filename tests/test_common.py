@@ -18,3 +18,8 @@ from common import *
 # TODO: many of the snakemake input/param functions rely on accessing `config`
 # from the global namespace. That won't work defining that globally in this
 # test module because the imported modules have a different namespace.
+
+def test_make_assembly_split_names():
+    split_names = make_assembly_split_names(10000)
+    assert len(str(split_names[0])) == 3, "bad padding!"
+    assert len(str(split_names[1001])) == 4, "bad padding!"

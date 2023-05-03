@@ -2,6 +2,10 @@ import os
 import sys
 from shutil import rmtree
 import glob
+from math import ceil
+
+
+include: "common.smk"
 
 
 configfile: os.path.join(workflow.basedir, "../../config/config.yaml")
@@ -43,6 +47,17 @@ if config["check_contigs"]:
         [f"{config['sample']}_metaerg.gff", f"{config['sample']}_antismash.gbk"]
     )
 
+nseqs = 200
+
+ncontigs = 0
+with open(config["assembly"], "r") as inf:
+    for line in inf:
+        if line.startswith(">"):
+            ncontigs = ncontigs + 1
+nparts = ceil(ncontigs / nseqs)
+logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
+
 
 rule all:
     input:
@@ -58,7 +73,7 @@ rule annotate_orfs:
         gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
     resources:
         mem_mb=8 * 1024,
-        runtime=2 * 60,
+        runtime=45,
     threads: 4
     params:
         metaerg_db_dir=config["metaerg_db_dir"],
@@ -93,14 +108,17 @@ rule antismash:
         mem_mb=16 * 1024,
         runtime=3 * 60,
     threads: 16
+    log:
+        o="logs/antismash_{sample}.log",
     output:
         gbk="{sample}_antismash.gbk",
+        outdir=directory("antismash_{sample}"),
     shell:
         """
         set +e -x
         antismash --cpus {threads} --allow-long-headers \
             --output-dir antismash_{wildcards.sample} {input.assembly} \
-            --genefinding-gff {input.gff}
+            --genefinding-gff {input.gff} --verbose --logfile {log.o}
         exitcode=$?
         if [ ! $exitcode -eq 0 ]
         then
@@ -155,7 +173,7 @@ rule annotate_AMR:
         """
 
 
-checkpoint split_assembly:
+rule split_assembly:
     """
     These dummy inputs are intended to be overwritten when importing the rule
     """
@@ -163,10 +181,11 @@ checkpoint split_assembly:
         assembly=config["assembly"],
     output:
         directory("tmp"),
+        chunks=expand("tmp/{batch}.fasta", batch=BATCHES),
         assembly=temp("tmp-" + os.path.basename(config["assembly"])),
     params:
         outdir="tmp/",
-        nseqs=200,
+        nbatches=len(BATCHES),
         minlen=config["contig_annotation_thresh"],
     container:
         "docker://pegi3s/seqkit:2.3.0"
@@ -186,7 +205,8 @@ checkpoint split_assembly:
         cp {input.assembly} {output.assembly}
         seqkit shuffle {output.assembly} --two-pass  |
         seqkit seq --min-len {params.minlen} --threads {threads} | \
-            seqkit split2 --by-size {params.nseqs} --out-dir {params.outdir}  > {log.o} 2>> {log.e}
+            seqkit split2 --by-part {params.nbatches} --out-dir {params.outdir}  > {log.o} 2>> {log.e}
+        ls tmp/
         """
 
 
@@ -242,7 +262,7 @@ def aggregate_metaerg_results(wildcards):
 
 rule join_CAZI:
     input:
-        aggregate_cazi_results,
+        input=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
     output:
         f"{config['sample']}_cazi_overview.txt",
     shell:
@@ -258,13 +278,16 @@ rule join_CAZI:
 
 rule join_gffs:
     input:
-        aggregate_metaerg_results,
+        gff=expand(
+            "annotation/annotation_{batch}/data/either_all_or_master.gff",
+            batch=BATCHES,
+        ),
     output:
-        "{sample}_metaerg.gff",
+        f"{config['sample']}_metaerg.gff",
     shell:
         """
         # deal with header
-        head -n 1 {input[0]} > {output}
+        head -n 1 {input.gff[0]} > {output}
         for f in {input}
         do
             tail -n+2 $f >> {output}
@@ -273,11 +296,12 @@ rule join_gffs:
 
 
 rule clean_up:
-    """"{sample}_metaerg.gff" is used as an input to ensure
-    that step is done before we clean.
+    """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
+    this is done last.
     """
     input:
         agg_file="{sample}_metaerg.gff",
+        cazi=f"{config['sample']}_cazi_overview.txt",
     output:
         touch("{sample}.cleaned_dirs"),
     shell:
