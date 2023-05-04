@@ -1,29 +1,23 @@
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(speedyseq)
 
 
 if(!interactive()){
   args <- commandArgs(trailingOnly = TRUE) 
-  if (length(args) != 4) {
-    stop(paste("USAGE: Rscript make_project_phylo.R path_to_manifest_file.txt project_name <metaphlan|kraken|humann> output.rds\n", args))
+  if (length(args) != 3) {
+    stop(paste("USAGE: Rscript make_project_phylo.R path_to_manifest_file.txt <metaphlan|kraken|humann> output.rds\n", args))
   }
   if (!file.exists(args[1])) {
     stop(paste("file ", args[1], " does not exist!"))
   }
-  outfile = args[4]
+  outfile = args[3]
   if (file.exists(outfile)) {
     stop(paste("output file ", outfile, " already exists!"))
   }
   
   file_paths <- readLines(args[1])
-  proj_name <- args[2]
   print("paths to aggregate")
   print(file_paths)
-  res_type = tolower(args[3])
+  res_type = tolower(args[2])
  } else {
-  proj_name = "test"
 
     file_paths = c(
     "~/GitHub/Shouval-CART-2023/pipeline_results_1m/brinkvd/isabl/data_lake/analyses/38/80/3880/metaphlan/08788_1511N_HW7L2BBXX_metaphlan3_profile.txt",
@@ -47,6 +41,12 @@ if(!interactive()){
   outfile = "tmp_hummann.rds"
   
 }
+
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(speedyseq)
+
 
 if (!res_type %in% c("metaphlan", "humann", "bracken")) {
   stop(paste("can only aggregate metaphlan, humann, or braken results, not ", res_type))
@@ -84,7 +84,7 @@ aggregate_metaphlan <- function(file_paths, outfile){
                   column_to_rownames("fid"))
   ) 
   print("  saving results")
-  
+  print(raw_mpa_phy)
   saveRDS(raw_mpa_phy, file = outfile)
 }
 
@@ -117,6 +117,7 @@ aggregate_humann <- function(file_paths, outfile){
     sample_data(data.frame(dummymetadata="dummy", fid=colnames(bigdf)[2:ncol(bigdf)]) %>% 
                   column_to_rownames("fid"))
   ) 
+  print(raw_humann_phy)
   print("  saving results")
   saveRDS(raw_humann_phy, file = outfile)
 }
@@ -157,6 +158,7 @@ aggregate_braken <- function(file_paths, outfile){
     sample_data(data.frame(dummymetadata="dummy", fid=colnames(otu_df)[2:ncol(otu_df)]) %>% 
                   column_to_rownames("fid"))
   ) 
+  print(raw_brack_phy)
   print("  saving results")
   saveRDS(raw_brack_phy, file = outfile)
 }
