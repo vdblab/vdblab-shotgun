@@ -57,11 +57,11 @@ if (!res_type %in% c("metaphlan", "humann", "bracken")) {
 aggregate_metaphlan <- function(file_paths, outfile){
   print("  parsing input files")
   bigdf_at_species <- lapply(file_paths, function(x){
-    read.csv(x, col.names = c("clade_name", "taxids","perc", "perc_at", "reads_from_clade")) %>% 
+    read.csv(x, col.names = c("clade_name", "taxids","perc", "coverage", "reads_from_clade"), header = FALSE, comment.char = "#", sep="\t") %>% 
       mutate(experiment_id = gsub("_metaphlan3_profile.txt", "", basename(x))) %>% 
       filter(grepl("\\|s__", clade_name) & !grepl("\\|t__", clade_name)) 
   }) %>% bind_rows() %>% 
-    select(-perc, -perc_at) %>% 
+    select(-perc, -coverage) %>% 
     pivot_wider(names_from = experiment_id, values_from = reads_from_clade, values_fill = 0)
 
   
