@@ -1,46 +1,28 @@
-
-
-if(!interactive()){
+if (!interactive()) {
   args <- commandArgs(trailingOnly = TRUE) 
-  if (length(args) != 3) {
-    stop(paste("USAGE: Rscript make_project_phylo.R path_to_manifest_file.txt <metaphlan|kraken|humann> output.rds\n", args))
-  }
-  if (!file.exists(args[1])) {
-    stop(paste("file ", args[1], " does not exist!"))
-  }
-  outfile = args[3]
-  if (file.exists(outfile)) {
-    stop(paste("output file ", outfile, " already exists!"))
-  }
-  
-  file_paths <- readLines(args[1])
-  print("paths to aggregate")
-  print(file_paths)
-  res_type = tolower(args[2])
- } else {
-
-    file_paths = c(
-    "~/GitHub/Shouval-CART-2023/pipeline_results_1m/brinkvd/isabl/data_lake/analyses/38/80/3880/metaphlan/08788_1511N_HW7L2BBXX_metaphlan3_profile.txt",
-    "~/GitHub/Shouval-CART-2023/pipeline_results_1m/brinkvd/isabl/data_lake/analyses/40/10/4010/metaphlan/13481_2512B_HWNLKDSX3_metaphlan3_profile.txt"
-  )
-  res_type = "metaphlan"
-  outfile = "tmp_metaphlan.rds"
-  
-  file_paths = c(
-    "~/GitHub/Shouval-CART-2023/pipeline_results_1m/brinkvd/isabl/data_lake/analyses/38/80/3880/humann/08788_1511N_HW7L2BBXX_humann3_pathabundance_cpm.tsv",
-    "~/GitHub/Shouval-CART-2023/pipeline_results_1m/brinkvd/isabl/data_lake/analyses/40/10/4010/humann/13481_2512B_HWNLKDSX3_humann3_pathabundance_cpm.tsv"
-  )
-  res_type = "humann"
-  outfile = "tmp_hummann.rds"
-
-  file_paths = c(
-    "/Users/nwaters/GitHub/Shouval-CART-2023/pipeline_results_full/brinkvd/isabl/data_lake/analyses/28/93/2893/kraken2/08788_1715A_HW7L2BBXX_kraken2.bracken.S.report",
-    "/Users/nwaters/GitHub/Shouval-CART-2023/pipeline_results_full/brinkvd/isabl/data_lake/analyses/28/90/2890/kraken2/10194_2108A_H7WG3BBXY_kraken2.bracken.S.report"
-  )
-  res_type = "braken"
-  outfile = "tmp_hummann.rds"
-  
+} else {
+  # see test files generated/fetched with .tests/.get_msk_test_results.sh
+  args = c("local_metaphlan_test_results.txt", "metaphlan", "metaphlan.rds")
+  args = c("local_humann_gf_test_results.txt", "humann", "gene_families.rds")
+  args = c("local_humann_ko_test_results.txt", "humann", "ko.rds")
+  args = c("local_bracken_test_results.txt", "bracken", "bracken.rds")
 }
+
+if (length(args) != 3) {
+  stop(paste("USAGE: Rscript make_project_phylo.R path_to_manifest_file.txt <metaphlan|kraken|humann> output.rds\n", args))
+}
+if (!file.exists(args[1])) {
+  stop(paste("file ", args[1], " does not exist!"))
+}
+outfile = args[3]
+if (file.exists(outfile)) {
+  stop(paste("output file ", outfile, " already exists!"))
+}
+
+file_paths <- readLines(args[1])
+print("paths to aggregate")
+print(file_paths)
+res_type = tolower(args[2])
 
 library(dplyr)
 library(tidyr)
@@ -57,7 +39,7 @@ if (!res_type %in% c("metaphlan", "humann", "bracken")) {
 aggregate_metaphlan <- function(file_paths, outfile){
   print("  parsing input files")
   bigdf_at_species <- lapply(file_paths, function(x){
-    read.csv(x, col.names = c("clade_name", "taxids","perc", "coverage", "reads_from_clade"), header = FALSE, comment.char = "#", sep="\t") %>% 
+    read.csv(x, col.names = c("clade_name", "taxids","perc", "coverage", "reads_from_clade"), header = FALSE, comment.char = "#", sep = "\t") %>% 
       mutate(experiment_id = gsub("_metaphlan3_profile.txt", "", basename(x))) %>% 
       filter(grepl("\\|s__", clade_name) & !grepl("\\|t__", clade_name)) 
   }) %>% bind_rows() %>% 
@@ -72,6 +54,7 @@ aggregate_metaphlan <- function(file_paths, outfile){
     lapply(gsub("\\|", ";", bigdf_at_species$clade_name), phyloseq::parse_taxonomy_qiime))  %>% as_tibble() %>% 
     mutate(clade_name = bigdf_at_species$clade_name, 
            taxids = bigdf_at_species$taxids) %>% column_to_rownames("clade_name") %>%
+    select(-.otu) %>% 
     mutate(Species_taxid = gsub(".*?\\|.*?\\|.*?\\|.*?\\|.*?\\|.*?\\|(.*)", "\\1", taxids)) %>% as.matrix() %>% 
     tax_table()
   
@@ -80,7 +63,7 @@ aggregate_metaphlan <- function(file_paths, outfile){
     otu_table(bigdf_at_species %>%
                 select(clade_name, 3:ncol(.)), taxa_are_rows = TRUE),
     tax_tab,
-    sample_data(data.frame(dummymetadata="dummy", fid=colnames(bigdf_at_species)[3:ncol(bigdf_at_species)]) %>% 
+    sample_data(data.frame(dummymetadata = "dummy", fid = colnames(bigdf_at_species)[3:ncol(bigdf_at_species)]) %>% 
                   column_to_rownames("fid"))
   ) 
   print("  saving results")
@@ -92,8 +75,8 @@ aggregate_humann <- function(file_paths, outfile){
   print("  parsing input files")
   
   bigdf <- lapply(file_paths, function(x){
-    read.csv(x, col.names = c("funct_id_raw", "count"), sep="\t") %>% 
-      mutate(experiment_id = gsub("_humann*$", "", basename(x))) #%>% filter(grepl("\\|g__",funct_id_raw ))
+    read.csv(x, col.names = c("funct_id_raw", "count"), sep = "\t") %>% 
+      mutate(experiment_id = gsub("_humann.*$", "", basename(x))) #%>% filter(grepl("\\|g__",funct_id_raw ))
   }) %>% 
     bind_rows() %>% 
     pivot_wider(names_from = experiment_id, values_from = count, values_fill = 0)
@@ -114,7 +97,7 @@ aggregate_humann <- function(file_paths, outfile){
   raw_humann_phy <- phyloseq(
     otu_table(bigdf, taxa_are_rows = TRUE),
     tax_table(funct_taxonomy),
-    sample_data(data.frame(dummymetadata="dummy", fid=colnames(bigdf)[2:ncol(bigdf)]) %>% 
+    sample_data(data.frame(dummymetadata = "dummy", fid = colnames(bigdf)[2:ncol(bigdf)]) %>% 
                   column_to_rownames("fid"))
   ) 
   print(raw_humann_phy)
@@ -125,8 +108,8 @@ aggregate_humann <- function(file_paths, outfile){
 aggregate_braken <- function(file_paths, outfile){
   print("  parsing input files")
   
-  bigbrakendf <- lapply(file_paths, function(x){
-    read.csv(x, col.names = c("perc", "reads", "reads_at_species", "taxlev", "taxid", "taxon"), sep="\t", header = FALSE) %>%
+  bigbrakendf <- lapply(file_paths, function(x) {
+    read.csv(x, col.names = c("perc", "reads", "reads_at_species", "taxlev", "taxid", "taxon"), sep = "\t", header = FALSE) %>%
       mutate(
         taxon = trimws(taxon),
         orig_tax_level = taxlev,
@@ -137,8 +120,8 @@ aggregate_braken <- function(file_paths, outfile){
       fill(S, .direction = "up") %>%
       fill(D:G, .direction = "down") %>% 
       filter(orig_tax_level == "S") %>% 
-      rename(K=D) %>% 
-      mutate(clade_name=paste0("k__", K, "|p__", P, "|c__", C, "|o__", O, "|f__", F, "|g__", G, "|s__", S)) %>%
+      rename(K = D) %>% 
+      mutate(clade_name = paste0("k__", K, "|p__", P, "|c__", C, "|o__", O, "|f__", F, "|g__", G, "|s__", S)) %>%
       select(clade_name, K:S,  taxid, reads_at_species, experiment_id)
   }) %>% 
     bind_rows() %>% 
@@ -147,7 +130,7 @@ aggregate_braken <- function(file_paths, outfile){
   
   print("  building taxonomy table")
   brack_tax <- bigbrakendf %>% select(clade_name,  K:taxid) %>% 
-    rename("Kingdom"=K, "Phylum"=P, "Class"=C,  "Order"=O, "Family"=F, "Genus"=G, "Species"="S") %>% 
+    rename("Kingdom" = K, "Phylum" = P, "Class" = C,  "Order" = O, "Family" = F, "Genus" = G, "Species" = "S") %>% 
     column_to_rownames("clade_name") %>% 
     as.matrix()
   otu_df <- bigbrakendf %>% select(-c(K:taxid))
@@ -155,7 +138,7 @@ aggregate_braken <- function(file_paths, outfile){
   raw_brack_phy <- phyloseq(
     otu_table(otu_df %>% column_to_rownames("clade_name"), taxa_are_rows = TRUE),
     tax_table(brack_tax ),
-    sample_data(data.frame(dummymetadata="dummy", fid=colnames(otu_df)[2:ncol(otu_df)]) %>% 
+    sample_data(data.frame(dummymetadata = "dummy", fid = colnames(otu_df)[2:ncol(otu_df)]) %>% 
                   column_to_rownames("fid"))
   ) 
   print(raw_brack_phy)
@@ -163,15 +146,14 @@ aggregate_braken <- function(file_paths, outfile){
   saveRDS(raw_brack_phy, file = outfile)
 }
 print(paste("Aggregating", res_type, "results"))
-if (res_type =="metaphlan"){
+if (res_type == "metaphlan") {
   aggregate_metaphlan(file_paths, outfile)
-} else if (res_type == "humann"){
+} else if (res_type == "humann") {
   aggregate_humann(file_paths, outfile)
-} else if (res_type == "bracken"){
+} else if (res_type == "bracken") {
   aggregate_braken(file_paths, outfile)
 } else {
   stop("unsupported results type!")
 }
 print("Done. Exiting")
-
 
