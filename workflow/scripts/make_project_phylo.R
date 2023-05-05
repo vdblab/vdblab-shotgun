@@ -43,8 +43,8 @@ aggregate_metaphlan <- function(file_paths, outfile){
       mutate(experiment_id = gsub("_metaphlan3_profile.txt", "", basename(x))) %>% 
       filter(grepl("\\|s__", clade_name) & !grepl("\\|t__", clade_name)) 
   }) %>% bind_rows() %>% 
-    select(-perc, -coverage) %>% 
-    pivot_wider(names_from = experiment_id, values_from = reads_from_clade, values_fill = 0)
+    select(-reads_from_clade, -coverage) %>% 
+    pivot_wider(names_from = experiment_id, values_from = perc, values_fill = 0)
 
   
 
