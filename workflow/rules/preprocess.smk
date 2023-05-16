@@ -229,7 +229,7 @@ rule bbmap_run:
             out={output.out_R1} out2={output.out_R2} \
             outm={output.rm_R1} outm2={output.rm_R2} \
             ref={input.adapter} \
-            minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo \
+            {config['bbmap_params']} \
             stats={output.stats} \
             threads={threads} \
             2> {log}
