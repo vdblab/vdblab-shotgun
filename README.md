@@ -9,7 +9,7 @@
 
 ## **Important Notes**:
 
-- Set the location of your profile to the environment variable `$SNAKEPROFILE` (eg `export SNAKEPROFILE=/path/to/your/profile/`)
+- Set the location of your profile to the environment variable `$SNAKEMAKE_PROFILE` (eg `export SNAKEMAKE_PROFILE=/path/to/your/profile/`)
 - For the purposes of the examples, we added the `--dry-run` flag for the user to preview the rules to be executed.  Remove this step to execute the commands.
 - All database paths are configured in `config/config.yaml`  Change the paths to reflect where the databases can be found on your machine.  For a uniform way to fetch and build all the databases, see https://github.com/vdblab/resources
 

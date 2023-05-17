@@ -15,6 +15,7 @@ configfile: os.path.join(workflow.basedir, "../config/config.yaml")
 
 envvars:
     "TMPDIR",
+    "SNAKEMAKE_PROFILE",
 
 
 validate(
