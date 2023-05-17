@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from snakemake.utils import validate
 
+
 include: "common.smk"
 
 
@@ -21,6 +22,7 @@ envvars:
 
 
 SHARDS = make_shard_names(config["nshards"])
+
 
 onstart:
     with open("config_used.yaml", "w") as outfile:
@@ -48,24 +50,24 @@ krona = expand(
     "reports/{sample}_kraken2.bracken.S.report.krona.html", sample=config["sample"]
 )
 phanta_db_names = ["phanta_unmasked_db", "phanta_masked_db"]
-phanta_outputs = expand(f'phanta_{config["sample"]}/{{db}}/results/final_merged_outputs/counts.txt',
-                        db=phanta_db_names)
+phanta_outputs = expand(
+    f'phanta_{config["sample"]}/{{db}}/results/final_merged_outputs/counts.txt',
+    db=phanta_db_names,
+)
 
-phanta_extra_outputs = expand(f'phanta_{config["sample"]}/{{db}}/results/counts_by_host.tsv',
-                              db=phanta_db_names)
+phanta_extra_outputs = expand(
+    f'phanta_{config["sample"]}/{{db}}/results/counts_by_host.tsv', db=phanta_db_names
+)
 
-all_outputs= [
-    kraken_outputs,
-    kraken_unclassified_outputs,
-    brackenreport
-]
-if not config['skip_phanta']:
+all_outputs = [kraken_outputs, kraken_unclassified_outputs, brackenreport]
+if not config["skip_phanta"]:
     all_outputs.extend(phanta_outputs)
     all_outputs.extend(phanta_extra_outputs)
 
+
 rule all:
     input:
-        all_outputs
+        all_outputs,
 
 
 #
@@ -324,20 +326,23 @@ rule kraken_merge_shards:
             > {log.o} 2> {log.e}
         """
 
+
 rule make_phanta_manifest:
     input:
         R1=input_R1,
         R2=input_R2,
     output:
-        manifest= temp('phanta_inputs.tsv'),
+        manifest=temp("phanta_inputs.tsv"),
     params:
         sample=config["sample"],
-    shell: """echo -e "{params.sample}\t{input.R1}\t{input.R2}" > {output.manifest}"""
+    shell:
+        """echo -e "{params.sample}\t{input.R1}\t{input.R2}" > {output.manifest}"""
 
 
 def get_singularity_args(wildcards):
-    with open(os.path.join(os.environ["SNAKEMAKE_PROFILE"], "config.yaml"), 'r') as f:
+    with open(os.path.join(os.environ["SNAKEMAKE_PROFILE"], "config.yaml"), "r") as f:
         return yaml.safe_load(f)["singularity-args"]
+
 
 rule phanta:
     # we need the results dir because if we try to initiate two snakemake workflows from the same --directory we get LockErrors
@@ -347,28 +352,29 @@ rule phanta:
         manifest=rules.make_phanta_manifest.output.manifest,
         readlen_file=parse_read_lengths,
     output:
-        counts= 'phanta_{sample}/{db}/results/final_merged_outputs/counts.txt',
-        bracken_failed= 'phanta_{sample}/{db}/results/classification/samples_that_failed_bracken.txt',
-        bracken_report= 'phanta_{sample}/{db}/results/classification/{sample}.krak.report_bracken_species.filtered',
-        bracken_species_abundance= 'phanta_{sample}/{db}/results/classification/{sample}.krak.report.filtered.bracken.scaled',
-        relative_read_abundance= 'phanta_{sample}/{db}/results/final_merged_outputs/relative_read_abundance.txt',
-        relative_taxonomic_abundance= 'phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt',
-        total_reads= 'phanta_{sample}/{db}/results/final_merged_outputs/total_reads.tsv',
-    container: config["docker_phanta"]
-    #handover: True
+        counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
+        bracken_failed="phanta_{sample}/{db}/results/classification/samples_that_failed_bracken.txt",
+        bracken_report="phanta_{sample}/{db}/results/classification/{sample}.krak.report_bracken_species.filtered",
+        bracken_species_abundance="phanta_{sample}/{db}/results/classification/{sample}.krak.report.filtered.bracken.scaled",
+        relative_read_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_read_abundance.txt",
+        relative_taxonomic_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
+        total_reads="phanta_{sample}/{db}/results/final_merged_outputs/total_reads.tsv",
+    container:
+        config["docker_phanta"]
+    # handover: True
     params:
-        dbpath = lambda wc: config[wc.db],
-        sing_args = lambda wc: get_singularity_args(wc),
-        cov_thresh_viral=config['cov_thresh_viral'],
-        cov_thresh_arc=config['cov_thresh_arc'],
-        cov_thresh_bacterial=config['cov_thresh_bacterial'],
-        cov_thresh_euk=config['cov_thresh_euk'],
-        minimizer_thresh_viral=config['minimizer_thresh_viral'],
-        minimizer_thresh_arc=config['minimizer_thresh_arc'],
-        minimizer_thresh_bacterial=config['minimizer_thresh_bacterial'],
-        minimizer_thresh_euk=config['minimizer_thresh_euk'],
+        dbpath=lambda wc: config[wc.db],
+        sing_args=lambda wc: get_singularity_args(wc),
+        cov_thresh_viral=config["cov_thresh_viral"],
+        cov_thresh_arc=config["cov_thresh_arc"],
+        cov_thresh_bacterial=config["cov_thresh_bacterial"],
+        cov_thresh_euk=config["cov_thresh_euk"],
+        minimizer_thresh_viral=config["minimizer_thresh_viral"],
+        minimizer_thresh_arc=config["minimizer_thresh_arc"],
+        minimizer_thresh_bacterial=config["minimizer_thresh_bacterial"],
+        minimizer_thresh_euk=config["minimizer_thresh_euk"],
     resources:
-        mem_mb=lambda wildcards, attempt: 58 * 1024 * attempt
+        mem_mb=lambda wildcards, attempt: 58 * 1024 * attempt,
     threads: 16
     # we have to do the dummy profile to keep the job from inheiriting SNAKEMAKE_PROFILE;
     #   we want this job to be submitted locally.  Otherwise, we have this unpleasant
@@ -406,20 +412,21 @@ rule phanta:
         sample_file=$PWD/{input.manifest}
         """
 
+
 rule phanta_postprocess:
     input:
-        counts= 'phanta_{sample}/{db}/results/final_merged_outputs/counts.txt',
-        tax_relab='phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt',
+        counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
+        tax_relab="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
     output:
-        byhost= 'phanta_{sample}/{db}/results/counts_by_host.tsv',
-        lifestyle= 'phanta_{sample}/{db}/results/lifestype_stats.txt',
+        byhost="phanta_{sample}/{db}/results/counts_by_host.tsv",
+        lifestyle="phanta_{sample}/{db}/results/lifestype_stats.txt",
     container:
         config["docker_phanta"]
     params:
-        dbpath = lambda wc: config[wc.db],
-        bacphlip_thresh = .5,
+        dbpath=lambda wc: config[wc.db],
+        bacphlip_thresh=0.5,
     resources:
-        mem_mb= 8 * 1024
+        mem_mb=8 * 1024,
     threads: 1
     shell:
         """
