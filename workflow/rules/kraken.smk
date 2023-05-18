@@ -76,8 +76,8 @@ if len(config["R1"]) == 1:
     input_R1 = config["R1"]
     input_R2 = config["R2"]
 else:
-    input_R1 = "concatenated/{sample}_R1.fastq.gz"
-    input_R2 = "concatenated/{sample}_R2.fastq.gz"
+    input_R1 = f"concatenated/{config['sample']}_R1.fastq.gz"
+    input_R2 = f"concatenated/{config['sample']}_R2.fastq.gz"
 
 
 module utils:
