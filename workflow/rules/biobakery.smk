@@ -92,9 +92,10 @@ rule humann3_run_uniref90:
         * 1024
         * max(input.fastq.size // 1000000000, 1)
         * 10,
-        runtime=lambda wildcards, input: max(input.fastq.size // 1000000000, 1)
-        * 18
-        * 60,
+        runtime=24,
+#        runtime=lambda wildcards, input: max(input.fastq.size // 1000000000, 1)
+#        * 18
+#        * 60,
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
