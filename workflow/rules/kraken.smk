@@ -361,7 +361,6 @@ rule phanta:
         total_reads="phanta_{sample}/{db}/results/final_merged_outputs/total_reads.tsv",
     container:
         config["docker_phanta"]
-    # handover: True
     params:
         dbpath=lambda wc: config[wc.db],
         sing_args=lambda wc: get_singularity_args(wc),
