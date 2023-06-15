@@ -30,6 +30,17 @@ blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.ns
 
 ## Kraken2
 kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
+phanta_unmasked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1/unmasked_db_v1/"
+phanta_masked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1_masked/masked_db_v1/"
+skip_phanta: false
+cov_thresh_viral: .1
+cov_thresh_bacterial: .01
+minimizer_thresh_viral: 0
+minimizer_thresh_bacterial: 0
+cov_thresh_arc: 0.01
+minimizer_thresh_arc: 0
+cov_thresh_euk: 0
+minimizer_thresh_euk: 0
 
 ## kaiju
 kaiju_nodes: "/data/brinkvd/resources/kaiju/nodes.dmp"
@@ -88,6 +99,7 @@ docker_megahit: "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a2
 docker_metaerg: "docker://ghcr.io/vdblab/metaerg:1.2.3d"
 docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
 docker_optitype: "docker://fred2/optitype"
+docker_phanta: "docker://ghcr.io/vdblab/phanta:1.1.0"
 docker_rgi: "docker://ghcr.io/vdblab/rgi:6.0.0"
 docker_seqkit: "docker://ghcr.io/vdblab/seqkit:2.3.1"
 docker_snap: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"

@@ -132,7 +132,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpkraken/ \
+            --directory tmpkraken_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \

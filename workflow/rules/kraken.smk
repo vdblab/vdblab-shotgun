@@ -18,6 +18,7 @@ validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema
 
 envvars:
     "TMPDIR",
+    "SNAKEMAKE_PROFILE",
 
 
 SHARDS = make_shard_names(config["nshards"])
@@ -48,13 +49,25 @@ brackenreport = expand(
 krona = expand(
     "reports/{sample}_kraken2.bracken.S.report.krona.html", sample=config["sample"]
 )
+phanta_db_names = ["phanta_unmasked_db", "phanta_masked_db"]
+phanta_outputs = expand(
+    f'phanta_{config["sample"]}/{{db}}/results/final_merged_outputs/counts.txt',
+    db=phanta_db_names,
+)
+
+phanta_extra_outputs = expand(
+    f'phanta_{config["sample"]}/{{db}}/results/counts_by_host.tsv', db=phanta_db_names
+)
+
+all_outputs = [kraken_outputs, kraken_unclassified_outputs, brackenreport]
+if not config["skip_phanta"]:
+    all_outputs.extend(phanta_outputs)
+    all_outputs.extend(phanta_extra_outputs)
 
 
 rule all:
     input:
-        kraken_outputs,
-        kraken_unclassified_outputs,
-        brackenreport,
+        all_outputs,
 
 
 #
@@ -63,8 +76,8 @@ if len(config["R1"]) == 1:
     input_R1 = config["R1"]
     input_R2 = config["R2"]
 else:
-    input_R1 = "concatenated/{sample}_R1.fastq.gz"
-    input_R2 = "concatenated/{sample}_R2.fastq.gz"
+    input_R1 = f"concatenated/{config['sample']}_R1.fastq.gz"
+    input_R2 = f"concatenated/{config['sample']}_R2.fastq.gz"
 
 
 module utils:
@@ -311,4 +324,115 @@ rule kraken_merge_shards:
             -r {input.reports} \
             -o {output.out} \
             > {log.o} 2> {log.e}
+        """
+
+
+rule make_phanta_manifest:
+    input:
+        R1=input_R1,
+        R2=input_R2,
+    output:
+        manifest=temp("phanta_inputs.tsv"),
+    params:
+        sample=config["sample"],
+    shell:
+        """echo -e "{params.sample}\t{input.R1}\t{input.R2}" > {output.manifest}"""
+
+
+def get_singularity_args(wildcards):
+    with open(os.path.join(os.environ["SNAKEMAKE_PROFILE"], "config.yaml"), "r") as f:
+        return yaml.safe_load(f)["singularity-args"]
+
+
+rule phanta:
+    # we need the results dir because if we try to initiate two snakemake workflows from the same --directory we get LockErrors
+    input:
+        R1=input_R1,
+        R2=input_R2,
+        manifest=rules.make_phanta_manifest.output.manifest,
+        readlen_file=parse_read_lengths,
+    output:
+        counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
+        bracken_failed="phanta_{sample}/{db}/results/classification/samples_that_failed_bracken.txt",
+        bracken_report="phanta_{sample}/{db}/results/classification/{sample}.krak.report_bracken_species.filtered",
+        bracken_species_abundance="phanta_{sample}/{db}/results/classification/{sample}.krak.report.filtered.bracken.scaled",
+        relative_read_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_read_abundance.txt",
+        relative_taxonomic_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
+        total_reads="phanta_{sample}/{db}/results/final_merged_outputs/total_reads.tsv",
+    container:
+        config["docker_phanta"]
+    params:
+        dbpath=lambda wc: config[wc.db],
+        sing_args=lambda wc: get_singularity_args(wc),
+        cov_thresh_viral=config["cov_thresh_viral"],
+        cov_thresh_arc=config["cov_thresh_arc"],
+        cov_thresh_bacterial=config["cov_thresh_bacterial"],
+        cov_thresh_euk=config["cov_thresh_euk"],
+        minimizer_thresh_viral=config["minimizer_thresh_viral"],
+        minimizer_thresh_arc=config["minimizer_thresh_arc"],
+        minimizer_thresh_bacterial=config["minimizer_thresh_bacterial"],
+        minimizer_thresh_euk=config["minimizer_thresh_euk"],
+    resources:
+        mem_mb=lambda wildcards, attempt: 58 * 1024 * attempt,
+    threads: 16
+    # we have to do the dummy profile to keep the job from inheiriting SNAKEMAKE_PROFILE;
+    #   we want this job to be submitted locally.  Otherwise, we have this unpleasant
+    # situation where we need the docker container for its snakefile, but also
+    # need the workflow itself to execute within the same container.  Cue mount point conflicts,
+    # the inability to test, etc.
+    # The workaround is running it without a --cluster directive so it runs 'locally',
+    # which is actually on the node this rule got submitted to. While there is a slight
+    # inefficiency, phanta doesn't benefit enough from distributing its workflow rules to
+    # warrant going the alternative route of adding it to this repo as a submodule,
+    # importing the rules, etc.
+    shell:
+        """
+        READLEN=$(basename {input.readlen_file} | sed 's|len||' | sed  's|approx||')
+        echo "cores: {threads}" > config.yaml && \
+        snakemake  --profile $PWD --notemp \
+        --singularity-args '{params.sing_args}' \
+        --snakefile /home/mambauser/phanta/Snakefile \
+        --configfile /home/mambauser/phanta/config.yaml \
+        --directory phanta_{wildcards.sample}/{wildcards.db}/ \
+        --config \
+        outdir="results/" \
+        read_length=$READLEN \
+        cov_thresh_viral={params.cov_thresh_viral} \
+        cov_thresh_bacterial={params.cov_thresh_bacterial} \
+        cov_thresh_euk={params.cov_thresh_euk} \
+        cov_thresh_arc={params.cov_thresh_arc} \
+        minimizer_thresh_viral={params.minimizer_thresh_viral} \
+        minimizer_thresh_bacterial={params.minimizer_thresh_bacterial} \
+        minimizer_thresh_euk={params.minimizer_thresh_euk} \
+        minimizer_thresh_arc={params.minimizer_thresh_arc} \
+        class_mem_mb={resources.mem_mb} \
+        database={params.dbpath} \
+        pipeline_directory=/home/mambauser/phanta/ \
+        sample_file=$PWD/{input.manifest}
+        """
+
+
+rule phanta_postprocess:
+    input:
+        counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
+        tax_relab="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
+    output:
+        byhost="phanta_{sample}/{db}/results/counts_by_host.tsv",
+        lifestyle="phanta_{sample}/{db}/results/lifestype_stats.txt",
+    container:
+        config["docker_phanta"]
+    params:
+        dbpath=lambda wc: config[wc.db],
+        bacphlip_thresh=0.5,
+    resources:
+        mem_mb=8 * 1024,
+    threads: 1
+    shell:
+        """
+        python   /home/mambauser/phanta/post_pipeline_scripts/collapse_viral_abundances_by_host.py {input.counts}  {params.dbpath}/host_prediction_to_genus.tsv  {output.byhost}
+        Rscript /home/mambauser/phanta/post_pipeline_scripts/calculate_lifestyle_stats/lifestyle_stats.R \
+          {params.bacphlip_thresh} {params.dbpath}/species_name_to_vir_score.txt \
+          {input.counts} \
+          {input.tax_relab} \
+          {output.lifestyle}
         """
