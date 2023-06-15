@@ -92,7 +92,7 @@ rule humann3_run_uniref90:
         * 1024
         * max(input.fastq.size // 1000000000, 1)
         * 10,
-        runtime=24,
+        runtime=24 * 60,
 #        runtime=lambda wildcards, input: max(input.fastq.size // 1000000000, 1)
 #        * 18
 #        * 60,
