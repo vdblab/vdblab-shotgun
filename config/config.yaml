@@ -41,6 +41,7 @@ cov_thresh_arc: 0.01
 minimizer_thresh_arc: 0
 cov_thresh_euk: 0
 minimizer_thresh_euk: 0
+single_end_krak: true
 
 ## kaiju
 kaiju_nodes: "/data/brinkvd/resources/kaiju/nodes.dmp"
