@@ -18,7 +18,6 @@
 ### Usage
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpout/ \
   --config \
     sample=473 \
@@ -72,7 +71,6 @@ docker run -V $PWD:$PWD docker://ewels/multiqc:${ver} multiqc \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmppreprocess/ \
   --config \
     sample=473 \
@@ -100,7 +98,6 @@ History))
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpbiobakery/ \
   --config \
     sample=473 \
@@ -121,7 +118,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpkraken/ \
   --config \
     sample=473 \
@@ -140,7 +136,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpassembly/ \
   --config \
     sample=473 \
@@ -160,7 +155,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpannotate/ \
   --config \
     sample=473 \
@@ -184,7 +178,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpbinning/ \
   --config \
     sample=473 \
@@ -201,7 +194,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmprgi/ \
   --config \
     sample=473 \
@@ -230,7 +222,6 @@ This workflow accepts as input a list of sample's metaphlan `sam.bz2` alignment 
 
 ```sh
 snakemake \
-  --profile msk-lsf/ \
   --snakefile workflow/strainphlan.smk \
   --directory tmpstrain/ \
   --config \
