@@ -40,7 +40,7 @@ esac
 
 
 
-common_args="--snakefile workflow/Snakefile --profile ${SNAKEPROFILE} --rerun-incomplete --restart-times 0 --cores 32"
+common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
 case $mode in
 
     full | all)
@@ -116,7 +116,6 @@ case $mode in
 
     mtx )
 	snakemake \
-	    --profile ${SNAKEPROFILE} \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --snakefile workflow/Snakefile_mtx \
             --directory tmpmtx/ \
@@ -138,7 +137,7 @@ case $mode in
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    kraken2_db=/data/brinkvd/watersn/minikraken2_v2_8GB_201904_UPDATE/ \
+	    kraken2_db=/data/brinkvd/resources/dbs/kraken/k2_pluspf_08gb_20230314/ \
 	    stage=kraken
 	;;
     assembly)
@@ -157,7 +156,7 @@ case $mode in
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --config sample=473 \
-	    --directory tmpbin_$dataset/ \
+	    --directory tmpbin_${rawdataset}/ \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
 	    R2=$R2 \
