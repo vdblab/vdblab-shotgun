@@ -79,4 +79,5 @@ rule plotRGI:
         o="logs/plotRGI_{sample}.log",
     container:
         "docker://ghcr.io/vdblab/dada2:1.20.0"
-    script: "../scripts/plot_RGI_heatmap.R"
+    script:
+        "../scripts/plot_RGI_heatmap.R"

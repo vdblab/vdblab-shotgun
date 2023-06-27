@@ -49,7 +49,8 @@ if config["check_contigs"]:
 
 
 nseqs = 200
-nparts = 10 # will be overriden on workflow start
+nparts = 10  # will be overriden on workflow start
+
 
 onstart:
     ncontigs = 0
@@ -59,9 +60,9 @@ onstart:
                 ncontigs = ncontigs + 1
     nparts = ceil(ncontigs / nseqs)
     logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+
+
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
-
-
 
 
 rule all:

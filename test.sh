@@ -38,7 +38,7 @@ case $rawdataset in
 	;;
 esac
 
-if [ ! -f "${PWD}/.test/SRR18369973/" ]
+if [ ! -d "${PWD}/.test/SRR18369973/" ]
 then
     echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
     exit 1
