@@ -47,16 +47,21 @@ if config["check_contigs"]:
         [f"{config['sample']}_metaerg.gff", f"{config['sample']}_antismash.gbk"]
     )
 
-nseqs = 200
 
-ncontigs = 0
-with open(config["assembly"], "r") as inf:
-    for line in inf:
-        if line.startswith(">"):
-            ncontigs = ncontigs + 1
-nparts = ceil(ncontigs / nseqs)
-logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+nseqs = 200
+nparts = 10 # will be overriden on workflow start
+
+onstart:
+    ncontigs = 0
+    with open(config["assembly"], "r") as inf:
+        for line in inf:
+            if line.startswith(">"):
+                ncontigs = ncontigs + 1
+    nparts = ceil(ncontigs / nseqs)
+    logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
+
+
 
 
 rule all:
