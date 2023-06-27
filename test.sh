@@ -38,7 +38,11 @@ case $rawdataset in
 	;;
 esac
 
-
+if [ ! -d "${PWD}/.test/SRR18369973/" ]
+then
+    echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
+    exit 1
+fi
 
 common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
 case $mode in

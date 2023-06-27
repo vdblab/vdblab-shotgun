@@ -18,7 +18,6 @@
 ### Usage
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpout/ \
   --config \
     sample=473 \
@@ -72,7 +71,6 @@ docker run -V $PWD:$PWD docker://ewels/multiqc:${ver} multiqc \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmppreprocess/ \
   --config \
     sample=473 \
@@ -100,7 +98,6 @@ History))
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpbiobakery/ \
   --config \
     sample=473 \
@@ -121,13 +118,13 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpkraken/ \
   --config \
     sample=473 \
     R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
     R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
-    stage=kraken2 \
+    dedup_platform=NovaSeq \
+    stage=kraken \
   --dry-run
 ```
 
@@ -140,7 +137,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpassembly/ \
   --config \
     sample=473 \
@@ -160,7 +156,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpannotate/ \
   --config \
     sample=473 \
@@ -184,7 +179,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmpbinning/ \
   --config \
     sample=473 \
@@ -201,7 +195,6 @@ snakemake \
 
 ```sh
 snakemake \
-  --profile $SNAKEPROFILE \
   --directory tmprgi/ \
   --config \
     sample=473 \

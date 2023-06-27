@@ -71,21 +71,13 @@ rule RGI:
 rule plotRGI:
     input:
         allele_mapping="rgi/{sample}.allele_mapping_data.txt",
-    #        plotscript=config["rgi_plotscript"],
     output:
         heatmap="rgi/{sample}.allele_mapping_mqc.png",
     params:
-        plotscript_url="https://raw.githubusercontent.com/vdblab/vdblab-pipelines/fix/annotate-binning-isabl/vdb_shotgun/scripts/plot_RGI_heatmap.R",
-        plotscript_base="plot_RGI_heatmap.R",
         cov_percent=50,
     log:
-        e="logs/plotRGI_{sample}.e",
-        o="logs/plotRGI_{sample}.o",
+        o="logs/plotRGI_{sample}.log",
     container:
         "docker://ghcr.io/vdblab/dada2:1.20.0"
-    shell:
-        """
-        wget {params.plotscript_url}
-        Rscript {params.plotscript_base} {input.allele_mapping} {output.heatmap} {params.cov_percent} > {log.o} 2> {log.e}
-        rm {params.plotscript_base}
-        """
+    script:
+        "../scripts/plot_RGI_heatmap.R"
