@@ -399,8 +399,9 @@ rule phanta:
         """
         READLEN=$(basename {input.readlen_file} | sed 's|len||' | sed  's|approx||')
         echo "cores: {threads}" > config.yaml && \
+        export SNAKEMAKE_PROFILE="" && \
         snakemake  --profile $PWD --notemp \
-        --singularity-args '{params.sing_args}' \
+        --singularity-args "{params.sing_args}" \
         --snakefile /home/mambauser/phanta/Snakefile \
         --configfile /home/mambauser/phanta/config.yaml \
         --directory phanta_{wildcards.sample}/{wildcards.db}/ \

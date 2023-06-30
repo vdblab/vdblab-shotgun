@@ -100,7 +100,7 @@ docker_megahit: "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a2
 docker_metaerg: "docker://ghcr.io/vdblab/metaerg:1.2.3d"
 docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
 docker_optitype: "docker://fred2/optitype"
-docker_phanta: "docker://ghcr.io/vdblab/phanta:1.1.0"
+docker_phanta: "docker://ghcr.io/vdblab/phanta:1.1.0-dev"
 docker_rgi: "docker://ghcr.io/vdblab/rgi:6.0.0"
 docker_seqkit: "docker://ghcr.io/vdblab/seqkit:2.3.1"
 docker_snap: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"
