@@ -334,15 +334,19 @@ rule kraken_merge_shards:
 
 
 rule make_phanta_manifest:
+    """ {params.thisdir} is needed to list the absolute path when using concatenated libraries.
+    PHANTA needs the full path, and Input_R1 is relative the relative paths if we are using the concatenated lanes
+    """
     input:
         R1=input_R1,
         R2=input_R2,
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:
+        thisdir=os.getcwd() if isinstance(input_R1, str)  else "",
         sample=config["sample"],
     shell:
-        """echo -e "{params.sample}\t{input.R1}\t{input.R2}" > {output.manifest}"""
+        """echo -e "{params.sample}\t{params.thisdir}/{input.R1}\t{params.thisdir}/{input.R2}" > {output.manifest}"""
 
 
 def get_singularity_args(wildcards):
