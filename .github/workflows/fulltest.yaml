@@ -32,7 +32,7 @@ jobs:
           --resources mem_mb=5000
           --use-singularity
           --singularity-prefix /github/workspace/.singularity/
-	  --singularity-args "-B /github/"
+	  --singularity-args '-B /github/'
           --config
           sample=test
           R1=['473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz']
