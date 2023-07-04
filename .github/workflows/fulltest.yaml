@@ -2,7 +2,7 @@
 name: Run Full Integration Test
 env:
   TMPDIR: /tmp/
-  SNAKEMAKE_PROFILE: /github/workspace/vdblab-shotgun/.test/profile/
+  SNAKEMAKE_PROFILE: /__w/vdblab-shotgun/.test/profile/
 
 on:
   pull_request:
