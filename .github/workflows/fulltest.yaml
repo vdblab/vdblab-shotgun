@@ -2,7 +2,7 @@
 name: Run Full Integration Test
 env:
   TMPDIR: /tmp/
-  SNAKEMAKE_PROFILE: /github/workspace/.test/profile/
+  SNAKEMAKE_PROFILE: /github/workspace/vdblab-shotgun/.test/profile/
 
 on:
   pull_request:
@@ -24,7 +24,7 @@ jobs:
 
       - name: Test shotgun up to dedup
         run: >
-          snakemake
+          echo pwd && snakemake
           --directory .test_results/
           --snakefile workflow/Snakefile
           --cores 1
