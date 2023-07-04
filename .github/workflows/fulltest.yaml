@@ -2,6 +2,7 @@
 name: Run Full Integration Test
 env:
   TMPDIR: /tmp/
+  SNAKEMAKE_PROFILE: /__w/vdblab-shotgun/vdblab-shotgun/.test/profile/
 
 on:
   pull_request:
@@ -23,18 +24,19 @@ jobs:
 
       - name: Test shotgun up to dedup
         run: >
-          snakemake
-          --directory .test/
+          echo `pwd` && snakemake
+          --directory .test_results/
           --snakefile workflow/Snakefile
           --cores 1
           --jobs 1
           --resources mem_mb=5000
           --use-singularity
           --singularity-prefix /github/workspace/.singularity/
+          --singularity-args '-B /github/'
           --config
           sample=test
-          R1=['473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz']
-          R2=['473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz']
+          R1=["$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz"]
+          R2=["$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz"]
           dedup_platform=NovaSeq
           stage=preprocess
           --force dedup/473_R1.fastq.gz

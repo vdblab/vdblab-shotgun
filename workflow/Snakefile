@@ -154,16 +154,17 @@ use rule * from binning as binning_*
 #
 # annotation Module
 #
-module annotate:
-    snakefile:
-        "rules/annotate.smk"
-    config:
-        config
-    skip_validation:
-        True
+if config["stage"] in ["annotate", "all"]:
 
+    module annotate:
+        snakefile:
+            "rules/annotate.smk"
+        config:
+            config
+        skip_validation:
+            True
 
-use rule * from annotate as annotate_*
+    use rule * from annotate as annotate_*
 
 
 #
@@ -273,16 +274,10 @@ if config["stage"] == "all":
         wildcard_constraints:
             sample=".+(?<!shard\d\d\d)",
 
-else:
-    pass
-
-
-# the above else: pass is needed to make snakefmt happy
-
 
 # in "all" mode, we do NOT HLA type as we regularly lack sufficient host depth
-outputs = {
-    "all": [
+if config["stage"] == "all":
+    outputs = [
         rules.preprocess_all.input,
         rules.biobakery_all.input,
         rules.assembly_all.input,
@@ -291,38 +286,12 @@ outputs = {
         rules.binning_all.input,
         rules.annotate_all.input,
         # rules.hla_all.input,
-    ],
-    "preprocess": [
-        rules.preprocess_all.input,
-    ],
-    "biobakery": [
-        rules.biobakery_all.input,
-    ],
-    "assembly": [
-        rules.assembly_all.input,
-    ],
-    "kraken": [
-        rules.kraken_all.input,
-    ],
-    "rgi": [
-        rules.rgi_all.input,
-    ],
-    "binning": [
-        rules.binning_all.input,
-    ],
-    "annotate": [
-        rules.annotate_all.input,
-    ],
-    "downsample": [
-        rules.downsample_all.input,
-    ],
-    "hla": [
-        rules.hla_all.input,
-    ],
-}
+    ]
+else:
+    outputs = getattr(rules, f"{config['stage']}_all").input
 
 
 rule all:
     input:
-        outputs[config["stage"]],
+        outputs,
     default_target: True

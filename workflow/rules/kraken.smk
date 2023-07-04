@@ -56,7 +56,13 @@ phanta_outputs = expand(
 )
 
 phanta_extra_outputs = expand(
-    f'phanta_{config["sample"]}/{{db}}/results/counts_by_host.tsv', db=phanta_db_names
+    f'phanta_{config["sample"]}/{{db}}/results/{{result}}',
+    db=phanta_db_names,
+    result=[
+        "counts_by_host.tsv",
+        "lifestyle_stats.txt",
+        "integrated_prophages_detection_results.txt",
+    ],
 )
 
 all_outputs = [kraken_outputs, kraken_unclassified_outputs, brackenreport]
@@ -116,7 +122,7 @@ rule kraken_standard_run:
       - minimize the L1 distance to the known community composition
       - maximize the alpha diversity similarity to the actual diversity
 
-    We don't care as much about reads assigned so long as the assignements we
+    We don't care as much about reads assigned so long as the assignments we
     do get are high quality and representative
     """
     input:
@@ -328,15 +334,19 @@ rule kraken_merge_shards:
 
 
 rule make_phanta_manifest:
+    """ {params.thisdir} is needed to list the absolute path when using concatenated libraries.
+    PHANTA needs the full path, and Input_R1 is relative the relative paths if we are using the concatenated lanes
+    """
     input:
         R1=input_R1,
         R2=input_R2,
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:
+        thisdir=os.getcwd() if isinstance(input_R1, str) else "",
         sample=config["sample"],
     shell:
-        """echo -e "{params.sample}\t{input.R1}\t{input.R2}" > {output.manifest}"""
+        """echo -e "{params.sample}\t{params.thisdir}/{input.R1}\t{params.thisdir}/{input.R2}" > {output.manifest}"""
 
 
 def get_singularity_args(wildcards):
@@ -359,6 +369,9 @@ rule phanta:
         relative_read_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_read_abundance.txt",
         relative_taxonomic_abundance="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
         total_reads="phanta_{sample}/{db}/results/final_merged_outputs/total_reads.tsv",
+        single_end=temp(
+            directory("phanta_{sample}/{db}/results/classification/single_end")
+        ),
     container:
         config["docker_phanta"]
     params:
@@ -372,10 +385,11 @@ rule phanta:
         minimizer_thresh_arc=config["minimizer_thresh_arc"],
         minimizer_thresh_bacterial=config["minimizer_thresh_bacterial"],
         minimizer_thresh_euk=config["minimizer_thresh_euk"],
+        single_end_krak=config["single_end_krak"],
     resources:
         mem_mb=lambda wildcards, attempt: 58 * 1024 * attempt,
     threads: 16
-    # we have to do the dummy profile to keep the job from inheiriting SNAKEMAKE_PROFILE;
+    # we have to do the dummy profile to keep the job from inheriting SNAKEMAKE_PROFILE;
     #   we want this job to be submitted locally.  Otherwise, we have this unpleasant
     # situation where we need the docker container for its snakefile, but also
     # need the workflow itself to execute within the same container.  Cue mount point conflicts,
@@ -389,8 +403,9 @@ rule phanta:
         """
         READLEN=$(basename {input.readlen_file} | sed 's|len||' | sed  's|approx||')
         echo "cores: {threads}" > config.yaml && \
+        export SNAKEMAKE_PROFILE="" && \
         snakemake  --profile $PWD --notemp \
-        --singularity-args '{params.sing_args}' \
+        --singularity-args "{params.sing_args}" \
         --snakefile /home/mambauser/phanta/Snakefile \
         --configfile /home/mambauser/phanta/config.yaml \
         --directory phanta_{wildcards.sample}/{wildcards.db}/ \
@@ -405,6 +420,7 @@ rule phanta:
         minimizer_thresh_bacterial={params.minimizer_thresh_bacterial} \
         minimizer_thresh_euk={params.minimizer_thresh_euk} \
         minimizer_thresh_arc={params.minimizer_thresh_arc} \
+        single_end_krak={params.single_end_krak} \
         class_mem_mb={resources.mem_mb} \
         database={params.dbpath} \
         pipeline_directory=/home/mambauser/phanta/ \
@@ -416,23 +432,33 @@ rule phanta_postprocess:
     input:
         counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
         tax_relab="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
+        manifest=rules.make_phanta_manifest.output.manifest,
+        single_end="phanta_{sample}/{db}/results/classification/single_end",
     output:
         byhost="phanta_{sample}/{db}/results/counts_by_host.tsv",
-        lifestyle="phanta_{sample}/{db}/results/lifestype_stats.txt",
+        lifestyle="phanta_{sample}/{db}/results/lifestyle_stats.txt",
+        prophage="phanta_{sample}/{db}/results/integrated_prophages_detection_results.txt",
     container:
         config["docker_phanta"]
     params:
         dbpath=lambda wc: config[wc.db],
         bacphlip_thresh=0.5,
+        classif_dir=lambda wc, input: os.path.dirname(input.single_end),
+        out_dir=lambda wc, output: os.path.dirname(output.prophage),
     resources:
         mem_mb=8 * 1024,
     threads: 1
     shell:
         """
-        python   /home/mambauser/phanta/post_pipeline_scripts/collapse_viral_abundances_by_host.py {input.counts}  {params.dbpath}/host_prediction_to_genus.tsv  {output.byhost}
+        python /home/mambauser/phanta/post_pipeline_scripts/collapse_viral_abundances_by_host.py {input.counts} {params.dbpath}/host_prediction_to_genus.tsv {output.byhost}
         Rscript /home/mambauser/phanta/post_pipeline_scripts/calculate_lifestyle_stats/lifestyle_stats.R \
           {params.bacphlip_thresh} {params.dbpath}/species_name_to_vir_score.txt \
           {input.counts} \
           {input.tax_relab} \
           {output.lifestyle}
+        python /home/mambauser/phanta/post_pipeline_scripts/integrated_prophages_detector.py \
+          {input.manifest} \
+          {params.dbpath} \
+          {params.classif_dir} \
+          {params.out_dir}
         """

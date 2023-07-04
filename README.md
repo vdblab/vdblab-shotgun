@@ -123,7 +123,8 @@ snakemake \
     sample=473 \
     R1=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
     R2=[/data/brinkvd/data/shotgun/test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz] \
-    stage=kraken2 \
+    dedup_platform=NovaSeq \
+    stage=kraken \
   --dry-run
 ```
 
