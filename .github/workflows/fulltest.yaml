@@ -2,6 +2,7 @@
 name: Run Full Integration Test
 env:
   TMPDIR: /tmp/
+  SNAKEMAKE_PROFILE: /github/workspace/.test/profile/
 
 on:
   pull_request:
