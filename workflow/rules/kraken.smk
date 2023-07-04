@@ -343,7 +343,7 @@ rule make_phanta_manifest:
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:
-        thisdir=os.getcwd() if isinstance(input_R1, str)  else "",
+        thisdir=os.getcwd() if isinstance(input_R1, str) else "",
         sample=config["sample"],
     shell:
         """echo -e "{params.sample}\t{params.thisdir}/{input.R1}\t{params.thisdir}/{input.R2}" > {output.manifest}"""
