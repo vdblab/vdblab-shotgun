@@ -25,7 +25,7 @@ jobs:
       - name: Test shotgun up to dedup
         run: >
           snakemake
-          --directory .test/
+          --directory .test_results/
           --snakefile workflow/Snakefile
           --cores 1
           --jobs 1
