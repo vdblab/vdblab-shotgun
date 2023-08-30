@@ -451,14 +451,21 @@ rule phanta_postprocess:
     shell:
         """
         python /home/mambauser/phanta/post_pipeline_scripts/collapse_viral_abundances_by_host.py {input.counts} {params.dbpath}/host_prediction_to_genus.tsv {output.byhost}
-        Rscript /home/mambauser/phanta/post_pipeline_scripts/calculate_lifestyle_stats/lifestyle_stats.R \
-          {params.bacphlip_thresh} {params.dbpath}/species_name_to_vir_score.txt \
-          {input.counts} \
-          {input.tax_relab} \
-          {output.lifestyle}
-        python /home/mambauser/phanta/post_pipeline_scripts/integrated_prophages_detector.py \
-          {input.manifest} \
-          {params.dbpath} \
-          {params.classif_dir} \
-          {params.out_dir}
+        # check if any viruses detected; file has header
+        if [ $(wc -l < "{output.byhost}") -gt 1 ]
+        then
+            Rscript /home/mambauser/phanta/post_pipeline_scripts/calculate_lifestyle_stats/lifestyle_stats.R \
+              {params.bacphlip_thresh} {params.dbpath}/species_name_to_vir_score.txt \
+              {input.counts} \
+              {input.tax_relab} \
+              {output.lifestyle}
+            python /home/mambauser/phanta/post_pipeline_scripts/integrated_prophages_detector.py \
+              {input.manifest} \
+              {params.dbpath} \
+              {params.classif_dir} \
+              {params.out_dir}
+        else
+            touch {output.lifestyle}
+            touch {output.prophage}
+        fi
         """
