@@ -13,6 +13,13 @@ case $rawdataset in
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.gz]
 	addnconf="dedup_platform=HiSeq"
 	;;
+    tinybz)
+	echo " WARNING: this dataset will raise errors during binning/annotation and will have empty metaphlan results due to its size"
+	nshards=1
+	R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.bz2]
+	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.bz2]
+	addnconf="dedup_platform=HiSeq"
+	;;
     small)
 	nshards=2
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]

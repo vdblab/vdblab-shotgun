@@ -57,6 +57,7 @@ rule concat_R1_R2:
     - conditionally combining fastqs if more than one provided is possible via
       input functions, but that can break wildcard globbing due to the lack of
       any standard sample name /file name relationship.
+    - this is also a "convenient" place to deal with non-gzipped files. default is frmt is "gz"
     """
     input:
         R1=[],
@@ -70,8 +71,22 @@ rule concat_R1_R2:
         e="logs/concat_r1_r2_{sample}.e",
     shell:
         """
-        echo {input.R1} > {log.e}
-        cat {input.R1} > {output.R1} 2>> {log.e}
-        echo {input.R2} >> {log.e}
-        cat {input.R2} > {output.R2} 2>> {log.e}
+        case {input.R1[0]} in
+        *gz )
+            cat {input.R1} > {output.R1} 2>> {log.e}
+            cat {input.R2} > {output.R2} 2>> {log.e}
+        ;;
+        *bz2 )
+            bzcat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
+            bzcat {input.R2} | gzip -c > {output.R2} 2>> {log.e}
+        ;;
+        *fastq | *fq  )
+            cat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
+            cat {input.R2} | gzip -c > {output.R2} 2>> {log.e}
+        ;;
+        * )
+            echo "Supported formats are gz, bz2, or uncompressed"
+            exit 1
+        esac
+
         """
