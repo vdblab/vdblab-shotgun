@@ -166,6 +166,7 @@ rule coverm:
         stats=f'metawrap/refined_binning_{{sample}}/metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.stats',
     output:
         mqc=f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.coverage_mqc.tsv',
+        bams=directory(f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'),
     params:
         bindir=lambda wc, input: input.stats.replace(".stats", ""),
     container:
@@ -179,6 +180,7 @@ rule coverm:
           --methods mean relative_abundance trimmed_mean \
             covered_bases variance length count reads_per_base rpkm tpm \
           --output-file {output.mqc}.tmp --threads {threads} \
+          --bam-file-cache-directory {output} \
           --min-covered-fraction 0 \
           --genome-fasta-extension fa
         # add in the Multiqc header info

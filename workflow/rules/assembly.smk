@@ -40,25 +40,63 @@ onstart:
 
     if not os.path.exists("logs"):
         os.makedirs("logs")
-    if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
+    if config["assembler"].lower() == "spades":
+        if len(config["R1"]) > 1:
+            print("WARNING: Concatenating multiple inputs into a single paired library as metaspades does not support multiple libraries")
         print("Running SPAdes")
     else:
         print("Running megahit")
 
 
 if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
-    assembly = f"spades_{config['sample']}.assembly.fasta"
+    assemblies = [f"spades_{config['sample']}.assembly.fasta", f"spades_{config['sample']}_metaviral/scaffolds.fasta"]
+    assemblies_labels = ",".join([f"metaspades_{config['sample']}",f"metaviralspades_{config['sample']}"])
     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
-    all_inputs.append(assembly)
+    all_inputs.extend(assemblies)
+# elif config["assembler"].lower() == "both": # should this be enabled?
+#     assemblies = [f"spades_{config['sample']}.assembly.fasta", f"spades_{config['sample']}_metaviral/scaffolds.fasta", f"megahit_{config['sample']}.assembly.fasta"]
+#     assemblies_labels = ",".join([f"metaspades_{config['sample']}",f"metaviralspades_{config['sample']}",f"megahit_{config['sample']}"])
+#     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
+#     all_inputs.extend(assemblies)
 else:
-    assembly = f"megahit_{config['sample']}.assembly.fasta"
-    all_inputs.append(assembly)
+    assemblies = [f"megahit_{config['sample']}.assembly.fasta"]
+    assemblies_labels = f"megahit_{config['sample']}"
+    all_inputs.extend(assemblies)
 
 
 rule all:
     input:
         all_inputs,
 
+
+#
+# Utils Module
+if len(config["R1"]) == 1:
+    input_R1 = config["R1"]
+    input_R2 = config["R2"]
+else:
+    input_R1 = [f"concatenated/{config['sample']}_R1.fastq.gz"]
+    input_R2 = [f"concatenated/{config['sample']}_R2.fastq.gz"]
+
+
+module utils:
+    snakefile:
+        "utils.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
+    input:
+        R1=config["R1"],
+        R2=config["R2"],
+    output:
+        R1=temp("concatenated/{sample}_R1.fastq.gz"),
+        R2=temp("concatenated/{sample}_R2.fastq.gz"),
+    log:
+        e="logs/concat_r1_r2_{sample}.e",
 
 rule megahit:
     input:
@@ -88,11 +126,13 @@ rule megahit:
 
 
 rule SPAdes_run:
+    # TODO: add in params for read length to experiment with larger kmers than default
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        R1=input_R1,
+        R2=input_R2,
     output:
         assembly="spades_{sample}.assembly.fasta",
+        graph="spades_{sample}.assembly_graph.gfa",
         spades_log="spades_{sample}/spades.log",
     container:
         config["docker_spades"]
@@ -116,6 +156,45 @@ rule SPAdes_run:
             -m $(({resources.mem_mb}/1024)) \
             2> {log.e}
         mv spades_{wildcards.sample}/scaffolds.fasta {output.assembly}
+        mv spades_{wildcards.sample}/assembly_graph_with_scaffolds.gfa {output.graph}
+        """
+
+rule viral_SPAdes_run:
+    # max_kmer https://github.com/ablab/spades/discussions/1188
+    # --onlyassembler seems to be neccessary when using assembly graph input
+    input:
+        R1=input_R1,
+        R2=input_R2,
+        assembly_graph=rules.SPAdes_run.output.graph,
+    output:
+        assembly="spades_{sample}_metaviral/scaffolds.fasta",
+        spades_log="spades_{sample}_metaviral/spades.log",
+    container:
+        config["docker_spades"]
+    params:
+        max_kmer=55
+    conda:
+        "../envs/spades.yaml"
+    resources:
+        mem_mb=lambda wildcards, attempt, input: attempt
+        * (max(input.size // 1000000, 1024) * 20),
+        runtime=48 * 60,
+    threads: 64
+    log:
+        e="logs/spades_{sample}_metaviral.log",
+    shell:
+        """
+        spades.py \
+            --metaviral \
+            -1 {input.R1} \
+            -2 {input.R2} \
+            --assembly-graph {input.assembly_graph} \
+            --only-assembler \
+            -t {threads} \
+            -o spades_{wildcards.sample}_metaviral/ \
+            -m $(({resources.mem_mb}/1024)) \
+            -k {params.max_kmer}  \
+            2> {log.e}
         """
 
 
@@ -134,13 +213,14 @@ rule quast_run:
     with pulling genomes
     """
     input:
-        assembly=assembly,
+        assembly=assemblies,
         blast_16s_db_nsq=config["blast_16s_db_nsq"],
     output:
         report_tsv="quast/quast_{sample}/transposed_report.tsv",
         report="quast/quast_{sample}/report.pdf",
     params:
         dir="quast/quast_{sample}/",
+        labels=assemblies_labels,
     threads: 16
     container:
         config["docker_quast"]
@@ -163,7 +243,7 @@ rule quast_run:
           --min-contig 100 \
           --no-snps \
           --no-icarus \
-          --labels {wildcards.sample} \
+          --labels {params.labels} \
           > {log.o} 2> {log.e}
         """
 
