@@ -3,13 +3,9 @@ digraph snakemake_dag {
     node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
     edge[penwidth=2, color=grey];
 	0[label = "all", color = "grey", style="rounded"];
-	1[label = "assembly_SPAdes_run\nsample: 473", color = "grey", style="rounded"];
-	2[label = "assembly_quast_run", color = "grey", style="rounded"];
-	3[label = "assembly_clean_up", color = "grey", style="rounded"];
+	1[label = "assembly_quast_run", color = "grey", style="rounded"];
+	2[label = "assembly_megahit\nsample: 473", color = "grey", style="rounded"];
 	1 -> 0
 	2 -> 0
-	3 -> 0
-	1 -> 2
-	2 -> 3
-	1 -> 3
+	2 -> 1
 }            

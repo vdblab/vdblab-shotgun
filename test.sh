@@ -44,7 +44,7 @@ case $rawdataset in
 	exit 1
 	;;
 esac
-
+echo $R1
 if [ ! -d "${PWD}/.test/SRR18369973/" ]
 then
     echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
@@ -166,8 +166,8 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --config sample=473 \
 	    --directory tmpbin_${rawdataset}/ \
+	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
 	    R2=$R2 \

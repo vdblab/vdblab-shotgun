@@ -169,18 +169,19 @@ rule coverm:
         bams=directory(f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'),
     params:
         bindir=lambda wc, input: input.stats.replace(".stats", ""),
+        fastq_string = lambda wc, input: " ".join([config["R1"][x] + " " + config["R2"][x] for x in range(0, len(config["R1"]))])
     container:
         config["docker_coverm"]
     threads: 16
     shell:
         """
         coverm genome --genome-fasta-directory {params.bindir} \
-          --coupled {input.R1} {input.R2} \
+          --coupled {params.fastq_string} \
           --mapper minimap2-sr \
           --methods mean relative_abundance trimmed_mean \
             covered_bases variance length count reads_per_base rpkm tpm \
           --output-file {output.mqc}.tmp --threads {threads} \
-          --bam-file-cache-directory {output} \
+          --bam-file-cache-directory {output.bams} \
           --min-covered-fraction 0 \
           --genome-fasta-extension fa
         # add in the Multiqc header info
