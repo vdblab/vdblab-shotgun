@@ -195,6 +195,10 @@ rule viral_SPAdes_run:
             -m $(({resources.mem_mb}/1024)) \
             -k {params.max_kmer}  \
             2> {log.e}
+        # deal with missing scaffolds file if no viruses recovered
+        if grep -q "No complete extrachromosomal contigs assembled" "spades_{wildcards.sample}_metaviral/spades.log"; then
+            touch {output.assembly}
+        fi
         """
 
 
