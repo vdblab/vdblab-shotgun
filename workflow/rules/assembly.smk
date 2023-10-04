@@ -48,7 +48,7 @@ onstart:
         print("Running megahit")
 
 
-if config["assembler"].lower() == "spades" and not len(config["R1"]) > 1:
+if config["assembler"].lower() == "spades":
     assemblies = [f"spades_{config['sample']}.assembly.fasta", f"spades_{config['sample']}_metaviral/scaffolds.fasta"]
     assemblies_labels = ",".join([f"metaspades_{config['sample']}",f"metaviralspades_{config['sample']}"])
     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
@@ -70,7 +70,6 @@ rule all:
 
 
 #
-# Utils Module
 if len(config["R1"]) == 1:
     input_R1 = config["R1"]
     input_R2 = config["R2"]
@@ -79,6 +78,7 @@ else:
     input_R2 = [f"concatenated/{config['sample']}_R2.fastq.gz"]
 
 
+# Utils Module
 module utils:
     snakefile:
         "utils.smk"
