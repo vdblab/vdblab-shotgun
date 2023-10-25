@@ -214,20 +214,30 @@ rule get_nonspike_reads:
         nonspike=temp("{sample}_nonspike.bam"),
         R1="{sample}_nospike_R1.fastq.gz",
         R2="{sample}_nospike_R2.fastq.gz",
+        spikeR1="{sample}_spike_R1.fastq.gz",
+        spikeR2="{sample}_spike_R2.fastq.gz",
     threads: 4
     params:
         R1tmp=lambda wc, output: output.R1.replace(".gz", ""),
         R2tmp=lambda wc, output: output.R2.replace(".gz", ""),
+        R1tmpspike=lambda wc, output: output.spikeR1.replace(".gz", ""),
+        R2tmpspike=lambda wc, output: output.spikeR2.replace(".gz", ""),
     container: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
     shell:"""
     # get header, turn into a BED file
     samtools view -H  {input.bam} | grep "Salinibacter\|Trichoderma\|Haloarcula" | cut -f 2,3 | sed "s|SN:||g" | sed "s|LN:|1\t|g" | sort -k1,1 -k2,2n > {output.bed}
+
     # inspired by https://www.biostars.org/p/473204/
-    samtools view -L {output.bed} -U unsorted_{output.nonspike} -o /dev/null -@ {threads} {input.bam}
+    samtools view -L {output.bed} -U unsorted_{output.nonspike} -o tmp_unsorted_spikes.bam -@ {threads} {input.bam}
     # make sure you NAME-sort before running samtools fastq https://www.biostars.org/p/454942/
     samtools sort -n -o {output.nonspike} unsorted_{output.nonspike}
-    rm unsorted_{output.nonspike}
+    samtools sort -n -o tmp_sorted_spikes.bam tmp_unsorted_spikes.bam
+
+    rm unsorted_{output.nonspike} tmp_unsorted_spikes.bam
+    # samtools can ouput copressed fastqs but it isn't multithreaded as fast as pigz
     samtools fastq -1 {params.R1tmp} -2 {params.R2tmp} -0 /dev/null -s /dev/null -n -@ {threads} {output.nonspike}
+    samtools fastq -1 {params.R1tmpspike} -2 {params.R2tmpspike} -0 /dev/null -s /dev/null -n -@ {threads} tmp_sorted_spikes.bam
     samtools flagstat {output.nonspike}
+    rm tmp_*
     pigz ./*fastq
     """

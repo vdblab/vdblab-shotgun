@@ -197,6 +197,20 @@ module hla:
 use rule * from hla as hla_*
 
 
+#
+# hla Module
+#
+module classify_bins:
+    snakefile:
+        "rules/classify_bins.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+use rule * from classify_bins as classify_bins_*
+
+
 """
 Notes:
 put all the logic here to connect pipeline stages (eg setting biobakery to using preprocessed results rather than config's R1 and R2

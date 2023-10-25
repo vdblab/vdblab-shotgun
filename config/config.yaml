@@ -28,6 +28,9 @@ optityper_hla_rna: "/data/brinkvd/resources/references/human/optitype-hla-rna/07
 ## 16S annotation
 blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
 
+# classify_bins
+gtdb: "/data/brinkvd/resources/dbs/GTDB/214/"
+
 ## Kraken2
 kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
 phanta_unmasked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1/unmasked_db_v1/"
@@ -92,6 +95,7 @@ docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
 docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
 docker_dbcan: "docker://haidyi/run_dbcan:3.0.1"
 docker_fastqc: "docker://staphb/fastqc:0.11.9"
+docker_gtdbtk: "docker://ecogenomic/gtdbtk:2.3.2"
 docker_hla: "docker://humanlongevity/hla:0.0.0"
 docker_kneaddata: "docker://nickp60/kneaddata-bmtagger:0.1.0"
 docker_kraken: "docker://lgallagh/kraken2:2.1.2"

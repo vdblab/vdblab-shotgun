@@ -164,7 +164,7 @@ use rule get_unmapped from snap as get_unmapped_human_mouse with:
     output:
         unmapped_R1=temp(f"06-nohuman-nomouse/{{sample}}.R1.fastq"),
         unmapped_R2=temp(f"06-nohuman-nomouse/{{sample}}.R2.fastq"),
-        flagstat=temp(f"{rules.snapalign_mouse.output.bam}.flagstat"),
+        flagstat=f"{rules.snapalign_mouse.output.bam}.flagstat",
     log:
         e=f"logs/get_unmapped_human_mouse_{{sample}}.e",
         o=f"logs/get_unmapped_human_mouse_{{sample}}.o",

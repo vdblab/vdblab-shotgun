@@ -23,7 +23,7 @@ properties:
     uniqueItems: true
   stage:
     type: string
-    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla)$"
+    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla|classify_bins)$"
   # run parameters
   nshards:
     type: integer
@@ -53,6 +53,9 @@ properties:
   metawrap_compl_thresh:
     type: integer
     default: 90
+  assembler:
+    type: string
+    pattern: "(spades|megahit)"
 
   # databases
   adapters_fasta:
