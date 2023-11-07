@@ -184,6 +184,8 @@ rule coverm:
         bam=os.path.join('coverm/{sample}_bams/', 'coverm-genome.' + os.path.basename(config["R1"][0]) + ".bam"),
     params:
         fastq_string = lambda wc, input: " ".join([config["R1"][x] + " " + config["R2"][x] for x in range(0, len(config["R1"]))])
+    resources:
+        runtime=4*60
     container:
         config["docker_coverm"]
     threads: 32

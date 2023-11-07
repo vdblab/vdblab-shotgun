@@ -196,19 +196,19 @@ module hla:
 
 use rule * from hla as hla_*
 
+if config["stage"] == "classify_bins":
+    #
+    # hla Module
+    #
+    module classify_bins:
+        snakefile:
+            "rules/classify_bins.smk"
+        config:
+            config
+        skip_validation:
+            True
 
-#
-# hla Module
-#
-module classify_bins:
-    snakefile:
-        "rules/classify_bins.smk"
-    config:
-        config
-    skip_validation:
-        True
-
-use rule * from classify_bins as classify_bins_*
+    use rule * from classify_bins as classify_bins_*
 
 
 """
