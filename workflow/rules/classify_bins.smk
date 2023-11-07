@@ -46,27 +46,29 @@ localrules:
 
 rule all:
     input:
-        "gtdb-tk/results.txt",
+        f"gtdbtk-{config['sample']}/gtdbtk.json",
         f"kraken2/{config['sample']}_kraken2.report"
 
 rule gtdb_classify:
+    """ Cant have the tabular output because if a sample lacks bacteria or archaea it will omit that domains output file
+    """
     input:
         bindir=config["bindir"],
     output:
-        "gtdb-tk/results.txt"
+        "gtdbtk-{sample}/gtdbtk.json"
     container:
         config["docker_gtdbtk"]
     params:
-        db="/data/brinkvd/resources/dbs/GTDB/214/release214/"
-    threads: 16
+        db=config["gtdb_db"],
+        outdir=lambda wc, output: os.path.dirname(output[0])
+    threads: 32
     resources:
         # ~64 is recommended by their docs
         mem_mb=68*1024
     shell:
         """
         export GTDBTK_DATA_PATH={params.db}
-        gtdbtk classify_wf --genome_dir {input.bindir} --cpus {threads} -x fa --out_dir results/ --mash_db {params.db}/mash
-        touch {output}
+        gtdbtk classify_wf --genome_dir {input.bindir} --cpus {threads} -x fa --out_dir {params.outdir} --mash_db {params.db}/mash
         """
 
 module kraken:

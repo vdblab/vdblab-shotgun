@@ -29,7 +29,7 @@ optityper_hla_rna: "/data/brinkvd/resources/references/human/optitype-hla-rna/07
 blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
 
 # classify_bins
-gtdb: "/data/brinkvd/resources/dbs/GTDB/214/"
+gtdb_db: "/data/brinkvd/resources/dbs/GTDB/214/release214/"
 
 ## Kraken2
 kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
