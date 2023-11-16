@@ -104,6 +104,8 @@ rule downsample_fastq:
 
         # calculate the proportion needed, but avoid rounding issues by doing the *1.2 factor
         generous_proportion=$( echo "print($reads_per_file/$nreads * 1.2)" | python3)
+        # get min of 1 in case the proportion *1.2 exceeds 1
+        generous_proportion=$( echo "print(min($generous_proportion, 1.0))" | python3)
 
         # sample -p + head is seqkit's recommended approach for downsampling,
         # as it avoids having to read the whole thing into memory, which happens
