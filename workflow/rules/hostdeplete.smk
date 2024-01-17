@@ -78,7 +78,7 @@ rule s01_bowtie2:
         e=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.o",
     params:
-        umapped_template=lambda wildcards, output: output["bto"][1].replace(
+        umapped_template=lambda wildcards, output: output["unmapped_R1"].replace(
             ".R1.fastq.gz", ".R%.fastq.gz"
         ),
         db_prefix=lambda wildcards, input: os.path.splitext(
@@ -94,7 +94,7 @@ rule s01_bowtie2:
          --un-conc-gz {params.umapped_template} \
          -x {params.db_prefix} \
         | samtools view -bh --threads $(({threads} - 1)) - \
-        ) > {output["bto"][0]} 2> {log.e}
+        ) > {output.bam} 2> {log.e}
         """
 
 rule s02_snapalign:

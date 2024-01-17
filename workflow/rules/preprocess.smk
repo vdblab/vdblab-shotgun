@@ -267,11 +267,20 @@ use rule s01_bowtie2 from fourstep as s01_bowtie with:
             ".rev.2.bt2",
         ),
     output:
-        bto=multiext(
-            f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}",
-            ".bam",
-            ".R1.fastq.gz"
-            ".R2.fastq.gz"
+        # at one point the linter complained that this rule needed to have a multiext out
+        # but that broke other rules. unclear why the error went away
+        # bto=multiext(
+        #     f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}",
+        #     ".bam",
+        #     ".R1.fastq.gz"
+        #     ".R2.fastq.gz"
+        # ),
+        bam=temp(f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam"),
+        unmapped_R1=temp(
+            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R1.fastq.gz"
+        ),
+        unmapped_R2=temp(
+            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R2.fastq.gz"
         ),
     log:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
