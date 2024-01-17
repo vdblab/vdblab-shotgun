@@ -63,8 +63,8 @@ rule concat_R1_R2:
         R1=[],
         R2=[],
     output:
-        R1="",
-        R2="",
+        R1="out_{sample}.1.fq.gz",
+        R2="out_{sample}.2.fq.gz",
     conda:
         "../envs/base.yaml"
     log:

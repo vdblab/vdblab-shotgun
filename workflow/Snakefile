@@ -286,7 +286,7 @@ if config["stage"] == "all":
         output:
             out="kraken2/{sample}_kraken2.report",
         wildcard_constraints:
-            sample=".+(?<!shard\d\d\d)",
+            sample=r".+(?<!shard\d\d\d)",
 
 
 # in "all" mode, we do NOT HLA type as we regularly lack sufficient host depth

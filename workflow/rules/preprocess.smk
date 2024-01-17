@@ -273,12 +273,11 @@ use rule bowtie2 from bowtie2 as bowtie_human with:
             ".rev.2.bt2",
         ),
     output:
-        bam=temp(f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam"),
-        unmapped_R1=temp(
-            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R1.fastq.gz"
-        ),
-        unmapped_R2=temp(
-            f"01-bowtie/{{sample}}_shard{{shard}}.without_{bowtie2_human_db_name}.R2.fastq.gz"
+        bto=multiext(
+            f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}",
+            ".bam",
+            ".R1.fastq.gz"
+            ".R2.fastq.gz"
         ),
     log:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
@@ -292,7 +291,7 @@ use rule tally_depletion from fourstep as bt_tally_depletion with:
         bam04=f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam",
         bam05=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
-        table=temp("hostdepleted/{sample}_hostdepletion.stats.tmp"),
+        table=temp("hostdepleted/{sample}_hostdepletion.stats.tmp")
 
 
 rule cat_depletion_stats:

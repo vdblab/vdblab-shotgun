@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - [Snakemake](https://snakemake.readthedocs.io/en/stable/)
+- `pip install snakemake-executor-plugin-cluster-generic`
 - [Apptainer/Singularity](https://apptainer.org/): while in many cases we do provide conda envs the only method of execution we support is via containers.
 - (optional) [A Snakemake Profile](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles): this coordinates the execution of jobs on whatever hardware you are using.
 

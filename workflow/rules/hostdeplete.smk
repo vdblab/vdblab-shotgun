@@ -51,21 +51,9 @@ rule hostdeplete_all:
         table,
 
 
-module bowtie2:
-    snakefile:
-        "bowtie2.smk"
-    config:
-        config
-
-
-module snap:
-    snakefile:
-        "snap.smk"
-    config:
-        config
-
-
-use rule bowtie2 from bowtie2 as bowtie2_human with:
+rule bowtie2:
+    container:
+        config["docker_bowtie2"]
     input:
         R1=config["R1"],
         R2=config["R2"],
@@ -89,9 +77,29 @@ use rule bowtie2 from bowtie2 as bowtie2_human with:
     log:
         e=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.o",
+    params:
+        umapped_template=lambda wildcards, output: output["bto"][1].replace(
+            ".R1.fastq.gz", ".R%.fastq.gz"
+        ),
+        db_prefix=lambda wildcards, input: os.path.splitext(
+            os.path.splitext(input.idx[0])[0]
+        )[0],
+        extra="",  # optional parameters
+    threads: 24
+    shell:
+        """
+          (bowtie2 \
+         --threads {threads} \
+         -1 {input.R1} -2 {input.R2} \
+         --un-conc-gz {params.umapped_template} \
+         -x {params.db_prefix} \
+        | samtools view -bh --threads $(({threads} - 1)) - \
+        ) > {output["bto"][0]} 2> {log.e}
+        """
 
-
-use rule snapalign from snap as snapalign_human with:
+rule snapalign:
+    container:
+        config["docker_snap"]
     input:
         # using the direct syntax breaks when importing module
         # presumably some namespace clashing with bowtie2 when we redefine it
@@ -106,24 +114,70 @@ use rule snapalign from snap as snapalign_human with:
     log:
         e=f"logs/snap_{{sample}}.{snap_human_db_name}.e",
         o=f"logs/snap_{{sample}}.{snap_human_db_name}.o",
+    params:
+        db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
+    resources:
+        mem_mb=lambda wildcards, attempt, input: attempt
+        * (max(input.size // 1000000, 1024) * 10),
+        runtime=48 * 60,
+    threads: 24  # Use at least two threads
+    shell:
+        """
+        snap-aligner paired {params.db_prefix} \
+        {input.R1} {input.R2}  -o {output.bam} -t {threads} -xf 2.0
+        """
 
 
-use rule get_unmapped from snap as get_unmapped_human with:
+rule get_unmapped:
+    """ see mgen/10.1099/mgen.0.000393
+       > This two-stage approach first classified, and then discarded,
+         ‘human’ reads using one method, and then performed a second round of
+          classification using a second method. In this way, a
+         method with high precision could be supplemented by a
+        method with high sensitivity, maximizing the utility of both.
+
+    # uses logic from https://gist.github.com/darencard/72ddd9e6c08aaff5ff64ca512a04a6dd
+
+    """
+    container:
+        config["docker_bowtie2"]
     input:
-        bam=rules.snapalign_human.output.bam,
+        bam=f"02-snap/{{sample}}.{snap_human_db_name}.bam",
     output:
         unmapped_R1=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R1.fastq"),
         unmapped_R2=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R2.fastq"),
-        flagstat=temp(f"{rules.snapalign_human.output.bam}.flagstat"),
+        flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
     log:
         e=f"logs/get_unmapped_human_{{sample}}.e",
         o=f"logs/get_unmapped_human_{{sample}}.o",
+    threads: 8
+    shell:
+        """
+        samtools flagstat {input.bam} > {output.flagstat}
+        # R1 unmapped, R2 mapped
+        samtools view -u -f 4 -F 264 {input.bam} > tmp_unmap_map_{wildcards.sample}.bam
+        # R1 mapped, R2 unmapped
+        samtools view -u -f 8 -F 260 {input.bam} > tmp_map_unmap_{wildcards.sample}.bam
+        # R1 & R2 unmapped
+        samtools view -u -f 12 -F 256 {input.bam} > tmp_unmap_unmap_{wildcards.sample}.bam
+
+        samtools merge -u tmp_unmapped_{wildcards.sample}.bam tmp_unmap_map_{wildcards.sample}.bam tmp_map_unmap_{wildcards.sample}.bam tmp_unmap_unmap_{wildcards.sample}.bam
+        samtools flagstat tmp_unmapped_{wildcards.sample}.bam
+
+        # note this outputs uncompressed only
+        bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq {output.unmapped_R1} -fq2 {output.unmapped_R2}
+        rm tmp*_{wildcards.sample}.bam
+        """
 
 
-use rule bowtie2 from bowtie2 as bowtie2_mouse with:
+
+
+
+
+use rule bowtie2  as bowtie2_mouse with:
     input:
-        R1=rules.get_unmapped_human.output.unmapped_R1,
-        R2=rules.get_unmapped_human.output.unmapped_R2,
+        R1=rules.get_unmapped.output.unmapped_R1,
+        R2=rules.get_unmapped.output.unmapped_R2,
         idx=multiext(
             config["bowtie2_mouse_index_base"],
             ".1.bt2",
@@ -146,7 +200,7 @@ use rule bowtie2 from bowtie2 as bowtie2_mouse with:
         o=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.o",
 
 
-use rule snapalign from snap as snapalign_mouse with:
+use rule snapalign as snapalign_mouse with:
     input:
         R1=rules.bowtie2_mouse.output.unmapped_R1,
         R2=rules.bowtie2_mouse.output.unmapped_R2,
@@ -158,13 +212,13 @@ use rule snapalign from snap as snapalign_mouse with:
         o=f"logs/snap_{{sample}}.{snap_mouse_db_name}.o",
 
 
-use rule get_unmapped from snap as get_unmapped_human_mouse with:
+use rule get_unmapped  as get_unmapped_human_mouse with:
     input:
-        bam=rules.snapalign_mouse.output.bam,
+        bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
         unmapped_R1=temp(f"06-nohuman-nomouse/{{sample}}.R1.fastq"),
         unmapped_R2=temp(f"06-nohuman-nomouse/{{sample}}.R2.fastq"),
-        flagstat=f"{rules.snapalign_mouse.output.bam}.flagstat",
+        flagstat=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam.flagstat",
     log:
         e=f"logs/get_unmapped_human_mouse_{{sample}}.e",
         o=f"logs/get_unmapped_human_mouse_{{sample}}.o",
