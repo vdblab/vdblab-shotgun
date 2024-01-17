@@ -56,6 +56,8 @@ if config["stage"] != "downsample":
     config["depths"] = [0]
     config["reps"] = [0]
 
+# set the rule order so we don't run the lane concat rule multiple times or have name conflicts
+ruleorder: preprocess_utils_concat_R1_R2 > kraken_utils_concat_R1_R2 > downsample_utils_concat_R1_R2 > assembly_utils_concat_R1_R2
 
 #
 # Preprocess Module

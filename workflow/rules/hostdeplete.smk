@@ -51,7 +51,7 @@ rule hostdeplete_all:
         table,
 
 
-rule bowtie2:
+rule s01_bowtie2:
     container:
         config["docker_bowtie2"]
     input:
@@ -97,7 +97,7 @@ rule bowtie2:
         ) > {output["bto"][0]} 2> {log.e}
         """
 
-rule snapalign:
+rule s02_snapalign:
     container:
         config["docker_snap"]
     input:
@@ -128,7 +128,7 @@ rule snapalign:
         """
 
 
-rule get_unmapped:
+rule s03_get_unmapped:
     """ see mgen/10.1099/mgen.0.000393
        > This two-stage approach first classified, and then discarded,
          ‘human’ reads using one method, and then performed a second round of
@@ -174,10 +174,10 @@ rule get_unmapped:
 
 
 
-use rule bowtie2  as bowtie2_mouse with:
+use rule s01_bowtie2  as s04_bowtie2_mouse with:
     input:
-        R1=rules.get_unmapped.output.unmapped_R1,
-        R2=rules.get_unmapped.output.unmapped_R2,
+        R1=rules.s03_get_unmapped.output.unmapped_R1,
+        R2=rules.s03_get_unmapped.output.unmapped_R2,
         idx=multiext(
             config["bowtie2_mouse_index_base"],
             ".1.bt2",
@@ -200,10 +200,10 @@ use rule bowtie2  as bowtie2_mouse with:
         o=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.o",
 
 
-use rule snapalign as snapalign_mouse with:
+use rule s02_snapalign as s04_snapalign_mouse with:
     input:
-        R1=rules.bowtie2_mouse.output.unmapped_R1,
-        R2=rules.bowtie2_mouse.output.unmapped_R2,
+        R1=rules.s04_bowtie2_mouse.output.unmapped_R1,
+        R2=rules.s04_bowtie2_mouse.output.unmapped_R2,
         idx_genome=f"{config['snap_mouse_index_dir']}Genome",
     output:
         bam=temp(f"05-snap/{{sample}}.{snap_mouse_db_name}.bam"),
@@ -212,7 +212,7 @@ use rule snapalign as snapalign_mouse with:
         o=f"logs/snap_{{sample}}.{snap_mouse_db_name}.o",
 
 
-use rule get_unmapped  as get_unmapped_human_mouse with:
+use rule s03_get_unmapped  as s06_get_unmapped_human_mouse with:
     input:
         bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:

@@ -186,7 +186,7 @@ use rule split_fastq from utils as utils_split_fastq with:
         e="logs/split_fastq_{sample}.e",
         o="logs/split_fastq_{sample}.o",
     params:
-        outdir="split_fastq",
+        #outdir=lambda wc, output: os.path.dirname(output.R1[0]),
         nshards=config["nshards"],
 
 
@@ -249,17 +249,11 @@ module fourstep:
         config
 
 
-module bowtie2:
-    snakefile:
-        "bowtie2.smk"
-    config:
-        config
-
 
 use rule * from fourstep as bt_*
 
 
-use rule bowtie2 from bowtie2 as bowtie_human with:
+use rule s01_bowtie2 from fourstep as s01_bowtie with:
     input:
         R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
         R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
@@ -283,15 +277,15 @@ use rule bowtie2 from bowtie2 as bowtie_human with:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.o",
 
-
+# the only reason we import this one separate so we can temp() the output
 use rule tally_depletion from fourstep as bt_tally_depletion with:
     input:
-        bam01=f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam",
-        bam02=f"02-snap/{{sample}}.{snap_human_db_name}.bam",
-        bam04=f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam",
-        bam05=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
+        bam01=f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam",
+        bam02=f"02-snap/{{sample}}_shard{{shard}}.{snap_human_db_name}.bam",
+        bam04=f"04-bowtie/{{sample}}_shard{{shard}}.{bowtie2_mouse_db_name}.bam",
+        bam05=f"05-snap/{{sample}}_shard{{shard}}.{snap_mouse_db_name}.bam",
     output:
-        table=temp("hostdepleted/{sample}_hostdepletion.stats.tmp")
+        table=temp("hostdepleted/{sample}_shard{shard}_hostdepletion.stats.tmp")
 
 
 rule cat_depletion_stats:

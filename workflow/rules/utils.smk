@@ -9,7 +9,7 @@ rule split_fastq:
         R1=[],
         R2=[],
     params:
-        outdir="",
+        outdir=lambda wc, output: os.path.dirname(output.R1[0]),
         nshards=1,
     container:
         "docker://pegi3s/seqkit:2.3.0"
