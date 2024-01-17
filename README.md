@@ -17,7 +17,7 @@
 - Set the location of your profile to the environment variable `$SNAKEMAKE_PROFILE` (eg `export SNAKEMAKE_PROFILE=/path/to/your/profile/`)  (Recommended that you add this to the .bashrc file in your home directory to have this environmental variable instated upon startup.)
 - For the purposes of the examples, we added the `--dry-run` flag for the user to preview the rules to be executed.  Remove this step to execute the commands.
 - All database paths are configured in `config/config.yaml`  Change the paths to reflect where the databases can be found on your machine.  For a uniform way to fetch and build all the databases, see https://github.com/vdblab/resources
-- If running analysis on SRA files, when specifying the config of your command set the dedup-platform=SRA switch.  If this tag is not succsefully set the pipeline will hang indefinitely at the dedup stage.  
+- If running analysis on SRA files, when specifying the config of your command set the dedup-platform=SRA switch.  If this tag is not successfully set the pipeline will hang indefinitely at the dedup stage.  
 
 
 ## Main Pipeline
