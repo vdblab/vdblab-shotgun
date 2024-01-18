@@ -2,16 +2,22 @@
 
 ## Prerequisites
 
-- [Snakemake](https://snakemake.readthedocs.io/en/stable/)
+- [Snakemake](https://snakemake.readthedocs.io/en/stable/) We currently recommend installing version 7.31.1 as later versions may be inconsistent with this pipeline.
 - [Apptainer/Singularity](https://apptainer.org/): while in many cases we do provide conda envs the only method of execution we support is via containers.
 - (optional) [A Snakemake Profile](https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles): this coordinates the execution of jobs on whatever hardware you are using.
+
+## Recommendations
+
+- set up a fresh conda virtual environment, install snakemake version 7.31.1 and python 3.10.9 and use this environment to run all analyses.
+- configure your .bashrc file to configure the `$SNAKEMAKE_PROFILE` variable to use the vdblab-profile (A private repo for vdblab members) or to point to whatever snakmake profile you will be using. At the same time add an `$TMPDIR` environmental variable definition to your .bashrc file to define where you would like to put temporary files.  If doing this on lilac - recommended that you point this to a location in your /data/ directory.
 
 
 ## **Important Notes**:
 
-- Set the location of your profile to the environment variable `$SNAKEMAKE_PROFILE` (eg `export SNAKEMAKE_PROFILE=/path/to/your/profile/`)
+- Set the location of your profile to the environment variable `$SNAKEMAKE_PROFILE` (eg `export SNAKEMAKE_PROFILE=/path/to/your/profile/`)  (Recommended that you add this to the .bashrc file in your home directory to have this environmental variable instated upon startup.)
 - For the purposes of the examples, we added the `--dry-run` flag for the user to preview the rules to be executed.  Remove this step to execute the commands.
 - All database paths are configured in `config/config.yaml`  Change the paths to reflect where the databases can be found on your machine.  For a uniform way to fetch and build all the databases, see https://github.com/vdblab/resources
+- If running analysis on SRA files, when specifying the config of your command set the dedup-platform=SRA switch.  If this tag is not successfully set the pipeline will hang indefinitely at the dedup stage.  
 
 
 ## Main Pipeline

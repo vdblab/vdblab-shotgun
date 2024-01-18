@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: snakemake/snakemake:stable
+      image: snakemake/snakemake:v7.31.1
       options: --privileged  --workdir /github/workspace --rm -e TMPDIR
       volumes:
         - /github/workspace/:/github/workspace/
