@@ -57,7 +57,7 @@ case $mode in
     full | all)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/,/scratch/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/,/scratch/" \
             --directory tmpall_${rawdataset}/ \
 	    --config \
 	    sample=473 \
@@ -72,7 +72,7 @@ case $mode in
 	# the --notemp is here so we can do the unittests afterward
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
             --directory tmppre_${rawdataset}/ \
 	    --notemp \
 	    --config \
@@ -87,7 +87,7 @@ case $mode in
     testpreprocess )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmppre_testing/   \
 	    --config \
 	    sample=473  \
@@ -101,7 +101,7 @@ case $mode in
     testpreprocess_build )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmppre_testing/   \
 	    --notemp \
 	    --config \
@@ -115,7 +115,7 @@ case $mode in
     biobakery | bb)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpbio/ \
 	    --config \
 	    sample=473  \
@@ -127,7 +127,7 @@ case $mode in
 
     mtx )
 	snakemake \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --snakefile workflow/Snakefile_mtx \
             --directory tmpmtx/ \
             --config \
@@ -141,7 +141,7 @@ case $mode in
     kraken | kraken2 )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
             --directory tmpkraken_${rawdataset}/ \
 	    --config \
 	    sample=473  \
@@ -154,7 +154,7 @@ case $mode in
     assembly)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpassembly/ \
 	    --config sample=473 \
 	    R1=$R1 \
@@ -165,7 +165,7 @@ case $mode in
     bin)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpbin_${rawdataset}/ \
 	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
@@ -177,7 +177,7 @@ case $mode in
     annotate)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmpannotate/ \
 	    --config sample=473 \
 	    R1=$R1 \
@@ -189,7 +189,7 @@ case $mode in
     rgi )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmprgi/ \
 	    --config sample=473 \
 	    R1=$R1 \
@@ -200,7 +200,7 @@ case $mode in
     downsample|ds )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --apptainer-args "-B ${PWD},/data/brinkvd/" \
 	    --directory tmprgi/ \
 	    --config sample=473 \
 	    R1=$R1 \
@@ -216,7 +216,7 @@ case $mode in
 	do
 	    snakemake \
 		$common_args \
-		--singularity-args "-B ${PWD},/data/brinkvd/" \
+		--apptainer-args "-B ${PWD},/data/brinkvd/" \
 		--directory tmprgi/ \
 		--config sample=473 \
 		R1=$R1 \
