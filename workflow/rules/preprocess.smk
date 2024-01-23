@@ -386,6 +386,8 @@ rule make_combined_host_reads_fastq:
 
 
 rule sortmerna_run:
+    # sortmerna has a bug where they default to writing workdir to your
+    # home, and to $HOME/<workdir> if you don't provide an absolute path
     input:
         R1="trimmed/{sample}_shard{shard}_trim_R1.fastq.gz",
         R2="trimmed/{sample}_shard{shard}_trim_R2.fastq.gz",
@@ -417,10 +419,10 @@ rule sortmerna_run:
             --reads {input.R1} \
             --reads {input.R2} \
             --aligned {params.aligned_prefix} \
-            --workdir {output.work} \
+            --workdir $PWD/{output.work} \
             -e 0.1 \
             --blast '1 cigar qcov qstrand' \
-            --threads 8 \
+            --threads {threads}  -v \
             > {log.o} 2> {log.e}
         """
 
