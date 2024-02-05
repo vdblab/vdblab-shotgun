@@ -18,13 +18,18 @@ validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema
 
 envvars:
     "TMPDIR",
-    "SNAKEMAKE_PROFILE",
 
 
 SHARDS = make_shard_names(config["nshards"])
 
 
 onstart:
+    # see https://github.com/snakemake/snakemake/issues/2663
+    # for why this isn't in envvars anymore
+    try:
+        print(os.environ["SNAKEMAKE_PROFILE"])
+    except KeyError:
+        raise ValueError("Warning: SNAKEMAKE_PROFILE must be set")
     with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
     if not os.path.exists("logs"):
