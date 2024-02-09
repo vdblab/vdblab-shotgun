@@ -5,12 +5,12 @@ import shutil
 
 from pathlib import Path
 
+
 include: "common.smk"
 
 
 # the str is needed as when running from github workflow.current_basedir is a Githubfile, not a string or a path so os.path objects
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
-
 
 
 envvars:
@@ -30,13 +30,10 @@ onstart:
 
 localrules:
     all,
-    ani_filter
+    ani_filter,
 
 
 covermreports = f'coverm/{config["sample"]}_bins.coverage_mqc.tsv'
-
-
-
 
 
 rule all:
@@ -46,12 +43,14 @@ rule all:
         f'{config["sample"]}_nospike_R1.fastq.gz',
         f'{config["sample"]}_nospike_R2.fastq.gz',
 
+
 rule add_spikes_to_bin_dir:
     input:
         bindir=config["bindir"],
     output:
-        bindir=temp(directory("{sample}_bins_with_spikes_raw"))
-    shell:"""
+        bindir=temp(directory("{sample}_bins_with_spikes_raw")),
+    shell:
+        """
     mkdir {output.bindir}
     cp {input.bindir}/* {output.bindir}/
     curl -o - ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/013/045/GCA_000013045.1_ASM1304v1/GCA_000013045.1_ASM1304v1_genomic.fna.gz | gunzip > {output.bindir}/Salinibacter_ruber.fa
@@ -61,18 +60,22 @@ rule add_spikes_to_bin_dir:
     curl -o - ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/008/729/095/GCF_008729095.1_ASM872909v1/GCF_008729095.1_ASM872909v1_genomic.fna.gz | gunzip  > {output.bindir}/Haloarcula_hispanica.fa
     """
 
+
 rule fastani:
     input:
-        bindir="{sample}_bins_with_spikes_raw"
+        bindir="{sample}_bins_with_spikes_raw",
     output:
         csv="{sample}_ani_results.tsv",
-        manifest="{sample}_manifest.txt"
-    container:"docker://ghcr.io/vdblab/fastani:1.34"
+        manifest="{sample}_manifest.txt",
+    container:
+        "docker://ghcr.io/vdblab/fastani:1.34"
     threads: 32
-    shell: """
+    shell:
+        """
     ls {input.bindir}/*fa > {output.manifest}
     fastANI --ql {output.manifest} --rl {output.manifest} --minFraction 0 --threads {threads} -o {output.csv}
     """
+
 
 rule ani_filter:
     """ 95 based on https://www.nature.com/articles/s41467-018-07641-9
@@ -85,7 +88,7 @@ rule ani_filter:
         pairs_for_vis="{sample}_close_ani.tsv",
         bindir=temp(directory("{sample}_bins_with_spikes")),
     params:
-        ani_thresh = 95
+        ani_thresh=95,
     run:
         import os
         import sys
@@ -93,37 +96,46 @@ rule ani_filter:
 
         contigs_to_ignore = []
         # could use pandas, but this is pretty straightforward
-        with open(input.csv, "r") as inf, open(output.pairs_for_vis,  "w") as outf:
+        with open(input.csv, "r") as inf, open(output.pairs_for_vis, "w") as outf:
             for line in inf:
-                (query, reference, ANI, count_mappings, total_frags) = line.strip().split()
+                (query, reference, ANI, count_mappings, total_frags) = (
+                    line.strip().split()
+                )
                 if query == reference:
                     continue
-                # we generate vis for all comparisons exceeding 80%, just in case there are
-                # any bin-bin comparisons of interest
+                    # we generate vis for all comparisons exceeding 80%, just in case there are
+                    # any bin-bin comparisons of interest
                 if float(ANI) > 80:
                     outf.write(line)
-                # ... but only exclude contigs if they exceed the specified
-                # threshold species-level
+                    # ... but only exclude contigs if they exceed the specified
+                    # threshold species-level
                 if float(ANI) < params.ani_thresh:
                     continue
-                if "Haloarcula_hispanica" in line or "Salinibacter_ruber" in line or "Trichoderma_reesei" in line:
+                if (
+                    "Haloarcula_hispanica" in line
+                    or "Salinibacter_ruber" in line
+                    or "Trichoderma_reesei" in line
+                ):
                     # determine if the bin resembing the cannonical reference is the ani query or the reference
-                    if "Haloarcula_hispanica" in query or "Salinibacter_ruber" in query or "Trichoderma_reesei" in query:
-                        bin_index  = 1
+                    if (
+                        "Haloarcula_hispanica" in query
+                        or "Salinibacter_ruber" in query
+                        or "Trichoderma_reesei" in query
+                    ):
+                        bin_index = 1
                     else:
-                        bin_index  = 0
+                        bin_index = 0
                     contigs_to_ignore.append([query, reference][bin_index])
         os.makedirs(output.bindir)
         with open(input.manifest, "r") as inf:
             for line in inf:
                 if line.strip() not in contigs_to_ignore:
-                    dest =  os.path.join(output.bindir, os.path.basename(line.strip()))
+                    dest = os.path.join(output.bindir, os.path.basename(line.strip()))
                     if not os.path.exists(dest):
                         shutil.copyfile(line.strip(), dest)
                 else:
                     print(f"Excluding {line.strip()}")
         print("done")
-
 
 
 rule ani_vis:
@@ -135,11 +147,13 @@ rule ani_vis:
         bindir="{sample}_bins_with_spikes_raw",
     output:
         figdir=directory("{sample}_bin_ref_homology_figures"),
-    container:"docker://ghcr.io/vdblab/fastani:1.34"
+    container:
+        "docker://ghcr.io/vdblab/fastani:1.34"
     params:
-        ani_thresh=.9
+        ani_thresh=0.9,
     threads: 16
-    shell: """
+    shell:
+        """
     mkdir {output.figdir}
     cat {input.pairs_for_vis} | cut -f 1,2,3 | while read query ref ANI
     do
@@ -173,12 +187,20 @@ rule coverm:
         R2=config["R2"],
         bindir=rules.ani_filter.output.bindir,
     output:
-        mqc='coverm/{sample}_bins.coverage_mqc.tsv',
-        bam=os.path.join('coverm/{sample}_bams/', 'coverm-genome.' + os.path.basename(config["R1"][0]) + ".bam"),
+        mqc="coverm/{sample}_bins.coverage_mqc.tsv",
+        bam=os.path.join(
+            "coverm/{sample}_bams/",
+            "coverm-genome." + os.path.basename(config["R1"][0]) + ".bam",
+        ),
     params:
-        fastq_string = lambda wc, input: " ".join([config["R1"][x] + " " + config["R2"][x] for x in range(0, len(config["R1"]))])
+        fastq_string=lambda wc, input: " ".join(
+            [
+                config["R1"][x] + " " + config["R2"][x]
+                for x in range(0, len(config["R1"]))
+            ]
+        ),
     resources:
-        runtime=4*60
+        runtime=4 * 60,
     container:
         config["docker_coverm"]
     threads: 32
@@ -217,8 +239,10 @@ rule get_nonspike_reads:
         R2tmp=lambda wc, output: output.R2.replace(".gz", ""),
         R1tmpspike=lambda wc, output: output.spikeR1.replace(".gz", ""),
         R2tmpspike=lambda wc, output: output.spikeR2.replace(".gz", ""),
-    container: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
-    shell:"""
+    container:
+        "docker://ghcr.io/vdblab/bowtie2:2.5.0"
+    shell:
+        """
     # get header, turn into a BED file
     samtools view -H  {input.bam} | grep "Salinibacter\|Trichoderma\|Haloarcula" | cut -f 2,3 | sed "s|SN:||g" | sed "s|LN:|1\t|g" | sort -k1,1 -k2,2n > {output.bed}
 

@@ -38,15 +38,22 @@ onstart:
         os.makedirs("logs")
     if config["assembler"].lower() == "spades":
         if len(config["R1"]) > 1:
-            print("WARNING: Concatenating multiple inputs into a single paired library as metaspades does not support multiple libraries")
+            print(
+                "WARNING: Concatenating multiple inputs into a single paired library as metaspades does not support multiple libraries"
+            )
         print("Running SPAdes")
     else:
         print("Running megahit")
 
 
 if config["assembler"].lower() == "spades":
-    assemblies = [f"spades_{config['sample']}.assembly.fasta", f"spades_{config['sample']}_metaviral/scaffolds.fasta"]
-    assemblies_labels = ",".join([f"metaspades_{config['sample']}",f"metaviralspades_{config['sample']}"])
+    assemblies = [
+        f"spades_{config['sample']}.assembly.fasta",
+        f"spades_{config['sample']}_metaviral/scaffolds.fasta",
+    ]
+    assemblies_labels = ",".join(
+        [f"metaspades_{config['sample']}", f"metaviralspades_{config['sample']}"]
+    )
     all_inputs.append(f"{config['sample']}.cleaned_assembly_files")
     all_inputs.extend(assemblies)
 # elif config["assembler"].lower() == "both": # should this be enabled?
@@ -93,6 +100,7 @@ use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
         R2=temp("concatenated/{sample}_R2.fastq.gz"),
     log:
         e="logs/concat_r1_r2_{sample}.e",
+
 
 rule megahit:
     input:
@@ -155,6 +163,7 @@ rule SPAdes_run:
         mv spades_{wildcards.sample}/assembly_graph_with_scaffolds.gfa {output.graph}
         """
 
+
 rule viral_SPAdes_run:
     # max_kmer https://github.com/ablab/spades/discussions/1188
     # --onlyassembler seems to be neccessary when using assembly graph input
@@ -168,7 +177,7 @@ rule viral_SPAdes_run:
     container:
         config["docker_spades"]
     params:
-        max_kmer=55
+        max_kmer=55,
     conda:
         "../envs/spades.yaml"
     resources:
