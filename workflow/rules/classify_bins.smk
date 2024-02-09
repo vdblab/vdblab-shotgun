@@ -5,7 +5,6 @@ import yaml
 import shutil
 
 from pathlib import Path
-from snakemake.utils import validate
 
 
 include: "common.smk"
@@ -14,11 +13,6 @@ include: "common.smk"
 # the str is needed as when running from github workflow.current_basedir is a Githubfile, not a string or a path so os.path objects
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
 
-
-validate(
-    config,
-    os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"),
-)
 
 
 envvars:
