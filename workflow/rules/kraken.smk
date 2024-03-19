@@ -4,16 +4,12 @@ import yaml
 import shutil
 
 from pathlib import Path
-from snakemake.utils import validate
 
 
 include: "common.smk"
 
 
 configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
-
-
-validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
 
 
 envvars:
@@ -135,7 +131,9 @@ rule kraken_standard_run:
         unclass_R2=temp("kraken2/{sample}_kraken2_unclassified_2.fastq"),
         report="kraken2/{sample}_kraken2.report",
     params:
-        inpstr=lambda wc, input: f"--paired {input.R1} {input.R2}" if hasattr(input, "R2")  else input.R1,
+        inpstr=lambda wc, input: (
+            f"--paired {input.R1} {input.R2}" if hasattr(input, "R2") else input.R1
+        ),
         unclass_template=lambda wildcards, output: output["unclass_R1"].replace(
             "_1.fastq", "#.fastq"
         ),
@@ -147,9 +145,9 @@ rule kraken_standard_run:
         e="logs/kraken_{sample}.log",
     resources:
         # use 8GB mem if using a minikraken db to make testing easier
-        mem_mb=lambda wildcards, attempt: 8 * 1024
-        if "mini" in config["kraken2_db"]
-        else (64 * 1024 * attempt),
+        mem_mb=lambda wildcards, attempt: (
+            8 * 1024 if "mini" in config["kraken2_db"] else (64 * 1024 * attempt)
+        ),
     threads: 16
     shell:
         """

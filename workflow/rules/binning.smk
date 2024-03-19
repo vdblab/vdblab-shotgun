@@ -4,7 +4,6 @@ import yaml
 import shutil
 
 from pathlib import Path
-from snakemake.utils import validate
 
 
 include: "common.smk"
@@ -12,12 +11,6 @@ include: "common.smk"
 
 # the str is needed as when running from github workflow.current_basedir is a Githubfile, not a string or a path so os.path objects
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
-
-
-validate(
-    config,
-    os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"),
-)
 
 
 envvars:
@@ -166,10 +159,17 @@ rule coverm:
         stats=f'metawrap/refined_binning_{{sample}}/metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.stats',
     output:
         mqc=f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bins.coverage_mqc.tsv',
-        bams=directory(f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'),
+        bams=directory(
+            f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'
+        ),
     params:
         bindir=lambda wc, input: input.stats.replace(".stats", ""),
-        fastq_string = lambda wc, input: " ".join([config["R1"][x] + " " + config["R2"][x] for x in range(0, len(config["R1"]))])
+        fastq_string=lambda wc, input: " ".join(
+            [
+                config["R1"][x] + " " + config["R2"][x]
+                for x in range(0, len(config["R1"]))
+            ]
+        ),
     container:
         config["docker_coverm"]
     threads: 16

@@ -4,7 +4,6 @@ import yaml
 import shutil
 
 from pathlib import Path
-from snakemake.utils import validate
 
 
 include: "common.smk"

@@ -1,14 +1,10 @@
 import os
 from snakemake.remote.HTTP import RemoteProvider as HTTPRemoteProvider
-from snakemake.utils import validate
 
 HTTP = HTTPRemoteProvider()
 
 
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
-
-
-validate(config, os.path.join(str(workflow.basedir), "../../config/config.schema.yaml"))
 
 
 rule all:
