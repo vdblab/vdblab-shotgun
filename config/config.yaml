@@ -3,6 +3,9 @@ assembly: ""
 ## bbmap
 adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
 
+## General Parameters
+retries: 3
+
 ## bioBakery
 choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
 uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
@@ -93,7 +96,7 @@ docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
 docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
 docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
 docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
-docker_dbcan: "docker://haidyi/run_dbcan:3.0.1"
+docker_dbcan: "docker://baichom1/dbcan3:v12"
 docker_fastqc: "docker://staphb/fastqc:0.11.9"
 docker_gtdbtk: "docker://ecogenomic/gtdbtk:2.3.2"
 docker_hla: "docker://humanlongevity/hla:0.0.0"
@@ -118,3 +121,4 @@ strainphlan_markers_dir: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCO
 # depreciated: will be removed with release 1.0
 bmtagger_human: "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"
 bmtagger_mouse: "/data/brinkvd/resources/biobakery_workflows_dbs/mm39_bmtagger"
+
