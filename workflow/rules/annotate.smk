@@ -216,6 +216,10 @@ rule split_assembly:
         """
 
 
+def get_annotate_cazi_runtime(wildcards, attempt):
+    return attempt * 3.5
+
+
 rule annotate_CAZI_split:
     input:
         assembly="tmp/{batch}.fasta",
@@ -226,7 +230,7 @@ rule annotate_CAZI_split:
         contig_annotation_thresh=config["contig_annotation_thresh"],
     resources:
         mem_mb=4 * 1024,
-        runtime=90,
+        runtime=get_annotate_cazi_runtime,
     container:
         config["docker_dbcan"]
     threads: 2

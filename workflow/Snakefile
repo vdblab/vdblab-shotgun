@@ -45,6 +45,7 @@ we have to fix some inputs to downstream applications if we are running all toge
 we do this for the assembly because that config entry is referenced many times in the binning and annotation workflows
 for entries like R1/R2, its eaiest to set those in the conditional block below, as those are only used by a single rule within a given workflow
 """
+
 if config["stage"] == "all":
     config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
@@ -196,7 +197,9 @@ module hla:
 
 use rule * from hla as hla_*
 
+
 if config["stage"] == "classify_bins":
+
     #
     # hla Module
     #
@@ -221,6 +224,7 @@ outputs aren't in rule all, this clips the rule from the dag
 The wildcard_constraints below ensures that the sample wildcard never ends with _shard001
 needing this probably means I could specify file names more cleanly :/
 """
+
 if config["stage"] == "all":
 
     use rule cat_pair from biobakery as biobakery_cat_pair with:

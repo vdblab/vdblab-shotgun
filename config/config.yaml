@@ -3,6 +3,9 @@ assembly: ""
 ## bbmap
 adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
 
+## General Parameters
+retries: 3
+
 ## bioBakery
 choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
 uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
@@ -36,8 +39,8 @@ kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
 phanta_unmasked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1/unmasked_db_v1/"
 phanta_masked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1_masked/masked_db_v1/"
 skip_phanta: false
-cov_thresh_viral: .1
-cov_thresh_bacterial: .01
+cov_thresh_viral: 0.1
+cov_thresh_bacterial: 0.01
 minimizer_thresh_viral: 0
 minimizer_thresh_bacterial: 0
 cov_thresh_arc: 0.01
