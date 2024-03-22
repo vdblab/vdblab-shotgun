@@ -215,8 +215,10 @@ rule split_assembly:
         ls tmp/
         """
 
+
 def get_annotate_cazi_runtime(wildcards, attempt):
     return attempt * 3.5
+
 
 rule annotate_CAZI_split:
     input:

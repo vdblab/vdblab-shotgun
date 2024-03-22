@@ -18,9 +18,13 @@ checkm_db: "/data/brinkvd/resources/dbs/checkm/2015_01_16/"
 
 ## 4-step host depletion
 fourstep_hostremoval: true
-bowtie2_human_index_base: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
+bowtie2_human_index_base: (
+    "/data/brinkvd/resources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
+)
 bowtie2_mouse_index_base: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz"
-snap_human_index_dir: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
+snap_human_index_dir: (
+    "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
+)
 snap_mouse_index_dir: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
 
 ## optityper
@@ -39,8 +43,8 @@ kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
 phanta_unmasked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1/unmasked_db_v1/"
 phanta_masked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1_masked/masked_db_v1/"
 skip_phanta: false
-cov_thresh_viral: .1
-cov_thresh_bacterial: .01
+cov_thresh_viral: 0.1
+cov_thresh_bacterial: 0.01
 minimizer_thresh_viral: 0
 minimizer_thresh_bacterial: 0
 cov_thresh_arc: 0.01
@@ -103,7 +107,9 @@ docker_hla: "docker://humanlongevity/hla:0.0.0"
 docker_kneaddata: "docker://nickp60/kneaddata-bmtagger:0.1.0"
 docker_kraken: "docker://lgallagh/kraken2:2.1.2"
 docker_krona: "docker://nanozoo/krona:2.7.1--e7615f7"
-docker_megahit: "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a25453b95bf"
+docker_megahit: (
+    "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a25453b95bf"
+)
 docker_metaerg: "docker://ghcr.io/vdblab/metaerg:1.2.3d"
 docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
 docker_optitype: "docker://fred2/optitype"
@@ -119,6 +125,7 @@ docker_quast: "docker://staphb/quast:5.0.2"
 strainphlan_markers_dir: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/marker_outputs/"
 
 # depreciated: will be removed with release 1.0
-bmtagger_human: "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"
+bmtagger_human: (
+    "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"
+)
 bmtagger_mouse: "/data/brinkvd/resources/biobakery_workflows_dbs/mm39_bmtagger"
-
