@@ -33,10 +33,11 @@ localrules:
 
 
 sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
+readdirs = [1,2] if config["lib_layout"] == "paired" else [1]
 cleaned_fastqs = expand(
     "hostdepleted/{sample}_R{read_dir}.fastq.gz",
     sample=config["sample"],
-    read_dir=[1, 2],
+    read_dir=readdirs,
 )
 
 
@@ -48,11 +49,9 @@ rule all:
     input:
         clean_fastqs=cleaned_fastqs,
         hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
-        fastqc_R1_mqc=f"reports/{config['sample']}_R1_fastqc.html",
-        fastqc_R2_mqc=f"reports/{config['sample']}_R2_fastqc.html",
+        fastqcs_mqc=expand(f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=readdirs),
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
-        host_R1=f"host/{config['sample']}_all_host_reads_R1.fastq.gz",
-        host_R2=f"host/{config['sample']}_all_host_reads_R2.fastq.gz",
+        host_reads=expand(f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",  rd=readdirs),
 
 
 # note:  we could make the concatenation conditional on how many libraries we
@@ -66,10 +65,9 @@ module utils:
         config
 
 
-use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        unpack(get_input_fastqs),
     output:
         R1=temp("concatenated/{sample}_R1.fastq.gz"),
         R2=temp("concatenated/{sample}_R2.fastq.gz"),
@@ -80,11 +78,11 @@ use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
 # Initial FastQC to see the quality
 rule initial_fastqc_run:
     input:
-        R1="concatenated/{sample}_R1.fastq.gz",
-        R2="concatenated/{sample}_R2.fastq.gz",
+        rules.utils_concat_lanes_fix_names.output
+        # R1="concatenated/{sample}_R1.fastq.gz",
+        # R2="concatenated/{sample}_R2.fastq.gz",
     output:
-        rep_R1="reports/{sample}_R1_fastqc.html",
-        rep_R2="reports/{sample}_R2_fastqc.html",
+        reports=expand("reports/{{sample}}_R{rd}_fastqc.html", rd=readdirs)
     threads: 4
     container:
         config["docker_fastqc"]
@@ -100,23 +98,26 @@ rule initial_fastqc_run:
         fastqc \
             --outdir reports/ \
             --threads {threads} \
-            --noextract {input.R1} {input.R2} \
+            --noextract {input} \
             > {log.o} 2> {log.e}
         """
 
 
 rule bbmap_dedup:
     input:
-        R1="concatenated/{sample}_R1.fastq.gz",
-        R2="concatenated/{sample}_R2.fastq.gz",
+        rules.utils_concat_lanes_fix_names.output,
+#        R1="concatenated/{sample}_R1.fastq.gz",
+#        R2="concatenated/{sample}_R2.fastq.gz",
     output:
-        R1=temp("dedup/{sample}_R1.fastq.gz"),
-        R2=temp("dedup/{sample}_R2.fastq.gz"),
+        reads=temp(expand("dedup/{{sample}}_R{rd}.fastq.gz", rd=readdirs)),
         dedup_stats="reports/{sample}_dedup.stats",
     threads: 8
     params:
         allowed_subs=3,
         flags=bbmap_dedup_params_flags,
+        inputstring = "in1={input[0]} out2={input[1]}" if is_paired() else "in1={input[0]}",
+        outputstring = "out1={output[0]} out2={output[1]}" if is_paired() else "out1={output[0]}",
+
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
@@ -133,8 +134,8 @@ rule bbmap_dedup:
     shell:
         """
         clumpify.sh \
-            in1={input.R1} in2={input.R2} \
-            out1={output.R1} out2={output.R2} \
+            {parms.inputstring} \
+            {parms.outputstring} \
             {params.flags} \
             subs={params.allowed_subs} \
             t={threads} \
@@ -207,6 +208,8 @@ rule bbmap_run:
         rm_R2=temp("trimmed/{sample}_shard{shard}_discard_R2.fastq.gz"),
         stats=temp("trimmed/{sample}_shard{shard}_trimmingAQ.txt"),
     threads: 8
+    params:
+        filter_params=config["filter_params"],
     resources:
         mem_mb=4000,
     container:
@@ -223,7 +226,7 @@ rule bbmap_run:
             out={output.out_R1} out2={output.out_R2} \
             outm={output.rm_R1} outm2={output.rm_R2} \
             ref={input.adapter} \
-            minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo \
+        {params.filter_params} \
             stats={output.stats} \
             threads={threads} \
             2> {log}
@@ -235,12 +238,18 @@ bowtie2_mouse_db_name = os.path.basename(config["bowtie2_mouse_index_base"])
 snap_human_db_name = os.path.basename(os.path.dirname(config["snap_human_index_dir"]))
 snap_mouse_db_name = os.path.basename(os.path.dirname(config["snap_mouse_index_dir"]))
 
-
-module fourstep:
-    snakefile:
-        "hostdeplete.smk"
-    config:
-        config
+if is_paired():
+    module hostdeplete:
+        snakefile:
+            "hostdeplete.smk"
+        config:
+             config
+else:
+    module hostdeplete:
+        snakefile:
+            "hostdeplete-se.smk"
+        config:
+            config
 
 
 module bowtie2:
@@ -250,7 +259,7 @@ module bowtie2:
         config
 
 
-use rule * from fourstep as bt_*
+use rule * from hostdeplete as bt_*
 
 
 use rule bowtie2 from bowtie2 as bowtie_human with:
@@ -279,7 +288,7 @@ use rule bowtie2 from bowtie2 as bowtie_human with:
         o=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.o",
 
 
-use rule tally_depletion from fourstep as bt_tally_depletion with:
+use rule tally_depletion from hostdeplete as bt_tally_depletion with:
     input:
         bam01=f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam",
         bam02=f"02-snap/{{sample}}.{snap_human_db_name}.bam",

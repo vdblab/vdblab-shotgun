@@ -50,6 +50,8 @@ if config["stage"] == "all":
     config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
 
+
+
 """
 similarly, we have to mock the downsample parameters if we aren't running with stage=downsample
 """
@@ -226,7 +228,8 @@ needing this probably means I could specify file names more cleanly :/
 """
 
 if config["stage"] == "all":
-
+    if config["lib_layout"] != "paired":
+        raise ValueError(f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)")
     use rule cat_pair from biobakery as biobakery_cat_pair with:
         input:
             R1="hostdepleted/{sample}_R1.fastq.gz",
@@ -249,7 +252,7 @@ if config["stage"] == "all":
             R1=["hostdepleted/{sample}_R1.fastq.gz"],
             R2=["hostdepleted/{sample}_R2.fastq.gz"],
 
-    use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
+    use rule concat_lanes_fix_names from kraken as kraken_concat_lanes_fix_names with:
         input:
             R1=touch("input_F"),
             R2=touch("input_R"),

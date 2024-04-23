@@ -61,7 +61,7 @@ module utils:
         config
 
 
-use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
         R1=config["R1"],
         R2=config["R2"],

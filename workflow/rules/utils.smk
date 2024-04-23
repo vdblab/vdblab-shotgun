@@ -49,7 +49,7 @@ rule merge_shards:
         """
 
 
-rule concat_R1_R2:
+rule concat_lanes_fix_names:
     """ Merges multilane fastqs and/or standardizes names
     There is some overhead with this rule but the alternatives are worse:
     - symlinking or linking doesn't work across worker nodes, so local jobs
@@ -59,6 +59,7 @@ rule concat_R1_R2:
       any standard sample name /file name relationship.
     - this is also a "convenient" place to deal with non-gzipped files. default is frmt is "gz"
     """
+    #
     input:
         R1=[],
         R2=[],
@@ -71,7 +72,7 @@ rule concat_R1_R2:
         e="logs/concat_r1_r2_{sample}.e",
     shell:
         """
-        case {input.R1[0]} in
+        case {input[0]} in
         *gz )
             cat {input.R1} > {output.R1} 2>> {log.e}
             cat {input.R2} > {output.R2} 2>> {log.e}

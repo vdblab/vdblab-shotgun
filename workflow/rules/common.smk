@@ -1,5 +1,18 @@
 from pathlib import Path
 
+def is_paired():
+    if config["lib_layout"] not in ["paired", "single"]:
+        raise ValueError("lib_layout must be specified as either paired or single")
+
+    if config["lib_layout"] == "single":
+        if "R2" in config.keys():
+            raise ValueError("lib_layout specified as single, but R2 has been provided")
+        else:
+            pass
+    else:
+        if "R2" not in config.keys():
+            raise ValueError("lib_layout specified as paired, but R2 has not been provided")
+    return config["lib_layout"] == "paired"
 
 def get_pipeline_version():
     return (
@@ -47,6 +60,12 @@ def files_to_trim(wildcards, nshards=1, dedup=False, read_dir=1):
     else:
         return ((f"concatenated/{wildcards.sample}_R{read_dir}.fastq.gz"),)
 
+def get_input_fastqs(wildcards):
+    if config["lib_layout"] == "paired":
+        return({"R1": config["R1"],
+                "R2": config["R2"]})
+    else:
+        return ({"R1": config["R1"]})
 
 def bbmap_dedup_params_flags(wildcards):
     # normal optical duplicate removal (HiSeq, MiSeq, etc)

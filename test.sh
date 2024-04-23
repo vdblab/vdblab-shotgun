@@ -84,6 +84,19 @@ case $mode in
 	    nshards=$nshards \
 	    stage=preprocess
 	;;
+    prese )
+	snakemake \
+	    $common_args \
+	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+            --directory tmppre-se_${rawdataset}/ \
+	    --notemp \
+	    --config \
+	    sample=473  \
+	    R1=$R1 \
+	    $addnconf \
+	    nshards=$nshards \
+	    stage=preprocess
+	;;
     testpreprocess )
 	snakemake \
 	    $common_args \
@@ -121,6 +134,18 @@ case $mode in
 	    sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
+	    $addnconf \
+	    stage=biobakery
+	;;
+
+    biobakeryse )
+	snakemake \
+	    $common_args \
+	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --directory tmpbio-se/ \
+	    --config \
+	    sample=473  \
+	    R1=$R1 \
 	    $addnconf \
 	    stage=biobakery
 	;;

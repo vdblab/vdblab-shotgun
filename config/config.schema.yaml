@@ -19,7 +19,7 @@ properties:
     type: array
     items:
       type: string
-    minItems: 1
+    minItems: 0
     uniqueItems: true
   stage:
     type: string
@@ -29,6 +29,9 @@ properties:
     type: integer
     minimum: 1
     default: 1
+  lib_layout:
+    type: string
+    pattern: "^(paired|single)$"
   assembler:
     type: string
     pattern: "^(spades|megahit)$"
@@ -112,7 +115,6 @@ properties:
 required:
   - sample
   - R1
-  - R2
   - dedup_platform
   - stage
   - adapters_fasta
