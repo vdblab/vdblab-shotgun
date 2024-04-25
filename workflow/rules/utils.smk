@@ -3,13 +3,12 @@ rule split_fastq:
     These dummy inputs are intended to be overwritten when importing the rule
     """
     input:
-        R1="",
-        R2="",
+        R1=[]
     output:
-        R1=[],
-        R2=[],
+        reads=[]
     params:
-        outdir="",
+        outdir=lambda wc, output: os.path.dirname(output.reads[0]),
+        inputstring = lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}" if is_paired() else f"--read1 {input['R1']}",
         nshards=1,
     container:
         "docker://pegi3s/seqkit:2.3.0"
@@ -23,8 +22,7 @@ rule split_fastq:
         """
         seqkit split2 \
             --threads {threads} \
-            --read1 {input.R1} \
-            --read2 {input.R2} \
+            {params.inputstring} \
             --by-part {params.nshards} \
             --force \
             --out-dir {params.outdir}/ \
@@ -62,28 +60,23 @@ rule concat_lanes_fix_names:
     #
     input:
         R1=[],
-        R2=[],
     output:
-        R1="",
-        R2="",
+        R1="out_{sample}.1.fq.gz",
     conda:
         "../envs/base.yaml"
     log:
-        e="logs/concat_r1_r2_{sample}.e",
+        e="logs/concat_lanes_fix_names_{sample}.e",
     shell:
         """
         case {input[0]} in
         *gz )
             cat {input.R1} > {output.R1} 2>> {log.e}
-            cat {input.R2} > {output.R2} 2>> {log.e}
         ;;
         *bz2 )
             bzcat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
-            bzcat {input.R2} | gzip -c > {output.R2} 2>> {log.e}
         ;;
         *fastq | *fq  )
             cat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
-            cat {input.R2} | gzip -c > {output.R2} 2>> {log.e}
         ;;
         * )
             echo "Supported formats are gz, bz2, or uncompressed"

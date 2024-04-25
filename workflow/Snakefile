@@ -60,6 +60,10 @@ if config["stage"] != "downsample":
     config["reps"] = [0]
 
 
+if not is_paired():
+    if not config["stage"] in ["preprocess", "biobakery"]:
+        raise ValueError("Single-end analysis has only been implemented for the preprocess and biobakery modules")
+
 #
 # Preprocess Module
 #
@@ -102,22 +106,6 @@ module kraken:
 
 use rule * from kraken as kraken_*
 
-
-#
-# Assembly Module
-#
-module assembly:
-    snakefile:
-        "rules/assembly.smk"
-    config:
-        config
-    skip_validation:
-        True
-
-
-use rule * from assembly as assembly_*
-
-
 #
 # Utils Module
 #
@@ -129,82 +117,93 @@ module utils:
 
 
 #
-# RGI Module
+# Assembly Module
 #
-module rgi:
-    snakefile:
-        "rules/RGI.smk"
-    config:
-        config
-
-
-use rule * from rgi as rgi_*
-
-
-#
-# Binning Module
-#
-module binning:
-    snakefile:
-        "rules/binning.smk"
-    config:
-        config
-
-
-use rule * from binning as binning_*
-
-
-#
-# annotation Module
-#
-if config["stage"] in ["annotate", "all"]:
-
-    module annotate:
+if is_paired():
+    module assembly:
         snakefile:
-            "rules/annotate.smk"
+            "rules/assembly.smk"
+        config:
+            config
+        skip_validation:
+            True
+    use rule * from assembly as assembly_*
+
+
+
+
+    #
+    # RGI Module
+    #
+    module rgi:
+        snakefile:
+            "rules/RGI.smk"
+        config:
+            config
+    use rule * from rgi as rgi_*
+
+
+    #
+    # Binning Module
+    #
+    module binning:
+        snakefile:
+            "rules/binning.smk"
+        config:
+            config
+
+
+    use rule * from binning as binning_*
+
+
+    #
+    # annotation Module
+    #
+    if config["stage"] in ["annotate", "all"]:
+
+        module annotate:
+            snakefile:
+                "rules/annotate.smk"
+            config:
+                config
+            skip_validation:
+                True
+
+        use rule * from annotate as annotate_*
+
+    #
+    # hla Module
+    #
+    module hla:
+        snakefile:
+            "rules/HLA.smk"
         config:
             config
         skip_validation:
             True
 
-    use rule * from annotate as annotate_*
+
+    use rule * from hla as hla_*
+
+    #
+    # downsample Module
+    #
+    module downsample:
+        snakefile:
+            "rules/downsample.smk"
+        config:
+            config
+        skip_validation:
+            True
 
 
-#
-# downsample Module
-#
-module downsample:
-    snakefile:
-        "rules/downsample.smk"
-    config:
-        config
-    skip_validation:
-        True
+    use rule * from downsample as downsample_*
 
 
-use rule * from downsample as downsample_*
-
-
-#
-# hla Module
-#
-module hla:
-    snakefile:
-        "rules/HLA.smk"
-    config:
-        config
-    skip_validation:
-        True
-
-
-use rule * from hla as hla_*
 
 
 if config["stage"] == "classify_bins":
 
-    #
-    # hla Module
-    #
     module classify_bins:
         snakefile:
             "rules/classify_bins.smk"
@@ -230,6 +229,7 @@ needing this probably means I could specify file names more cleanly :/
 if config["stage"] == "all":
     if config["lib_layout"] != "paired":
         raise ValueError(f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)")
+
     use rule cat_pair from biobakery as biobakery_cat_pair with:
         input:
             R1="hostdepleted/{sample}_R1.fastq.gz",
@@ -255,10 +255,8 @@ if config["stage"] == "all":
     use rule concat_lanes_fix_names from kraken as kraken_concat_lanes_fix_names with:
         input:
             R1=touch("input_F"),
-            R2=touch("input_R"),
         output:
             R1=temp(touch("output_F")),
-            R2=temp(touch("output_R")),
 
     use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
         input:
