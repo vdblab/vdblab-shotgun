@@ -39,6 +39,8 @@ outputs = [
     f"{config['sample']}_antismash.tab",
     f"{config['sample']}_amrfinder.tab",
     f"{config['sample']}_cazi_overview.txt",
+    f"{config['sample']}_cazi_substrate.out",
+    f"{config['sample']}_annotated_gene_coverage.txt",
     abricates,
     f"{config['sample']}.cleaned_dirs",
 ]
@@ -77,6 +79,8 @@ rule annotate_orfs:
         assembly="tmp/{batch}.fasta",
     output:
         gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
+        ffn="annotation/annotation_{batch}/data/cds.ffn",
+        faa="annotation/annotation_{batch}/data/cds.faa",
     resources:
         mem_mb=8 * 1024,
         runtime=45,
@@ -222,9 +226,11 @@ def get_annotate_cazi_runtime(wildcards, attempt):
 
 rule annotate_CAZI_split:
     input:
-        assembly="tmp/{batch}.fasta",
+        faa="annotation/annotation_{batch}/data/cds.faa",
+        gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
     output:
         overview="cazi_db_scan/{batch}/overview.txt",
+        substrate="cazi_db_scan/{batch}/substrate.out",
     params:
         cazi_db=config["cazi_db"],
         contig_annotation_thresh=config["contig_annotation_thresh"],
@@ -242,66 +248,123 @@ rule annotate_CAZI_split:
         # if you can figure out checkpoints that can deal with missing files,
         # you win!
         touch {output.overview}
-        run_dbcan {input.assembly} meta --out_dir cazi_db_scan/{wildcards.batch}/ -t all --db_dir /app/db --dia_cpu {threads} --hmm_cpu {threads} --eCAMI_jobs {threads} --tf_cpu {threads} --stp_cpu {threads}   ||  echo "WARNING: no output from this split!"
+        run_dbcan {input.faa} protein --out_dir cazi_db_scan/{wildcards.batch}/ -t all --db_dir /app/db -c {input.gff} --cgc_substrate --dia_cpu {threads} --hmm_cpu {threads} --tf_cpu {threads} --stp_cpu {threads} --dbcan_thread {threads} ||  echo "WARNING: no output from this split!"
         """
-
-
-def aggregate_cazi_results(wildcards):
-    """
-    aggregate the file names of the random number of files
-    generated at the scatter step
-    """
-    checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
-    return expand(
-        "cazi_db_scan/{batch}/overview.txt",
-        batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
-    )
-
-
-def aggregate_metaerg_results(wildcards):
-    """
-    aggregate the file names of the random number of files
-    generated at the scatter step
-    """
-    checkpoint_output = checkpoints.split_assembly.get(**wildcards).output[0]
-    return expand(
-        "annotation/annotation_{batch}/data/either_all_or_master.gff",
-        batch=glob_wildcards(os.path.join(checkpoint_output, "{batch}.fasta")).batch,
-    )
 
 
 rule join_CAZI:
     input:
-        input=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
+        overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
+        substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
     output:
-        f"{config['sample']}_cazi_overview.txt",
+        overview=f"{config['sample']}_cazi_overview.txt",
+        substrate=f"{config['sample']}_cazi_substrate.out",
     shell:
         """
         # deal with header
-        head -n 1 {input[0]} > {output}
-        for f in {input}
+        head -n 1 {input.overview[0]} > {output.overview}
+        for f in {input.overview}
         do
-            tail -n+2 $f >> {output}
+            tail -n+2 $f >> {output.overview}
+        done
+        head -n 1 {input.substrate[0]} > {output.substrate}
+        for f in {input.substrate}
+        do
+            tail -n+2 $f >> {output.substrate}
         done
         """
 
 
-rule join_gffs:
+rule join_metaerg_outputs:
     input:
         gff=expand(
             "annotation/annotation_{batch}/data/either_all_or_master.gff",
             batch=BATCHES,
         ),
+        ffn=expand(
+            "annotation/annotation_{batch}/data/cds.ffn",
+            batch=BATCHES,
+        ),
     output:
-        f"{config['sample']}_metaerg.gff",
+        gff=f"{config['sample']}_metaerg.gff",
+        ffn=f"{config['sample']}_metaerg.ffn",
     shell:
         """
         # deal with header
-        head -n 1 {input.gff[0]} > {output}
-        for f in {input}
+        head -n 1 {input.gff[0]} > {output.gff}
+        for f in {input.gff}
         do
-            tail -n+2 $f >> {output}
+            tail -n+2 $f >> {output.gff}
         done
+                # deal with header
+        head -n 1 {input.ffn[0]} > {output.ffn}
+        for f in {input.ffn}
+        do
+            tail -n+2 $f >> {output.ffn}
+        done
+        """
+
+
+rule align_annotated_genes:
+    input:
+        ffn=f"{config['sample']}_metaerg.ffn",
+        r1=config["R1"],
+        r2=config["R2"],
+    output:
+        samfile=f"tmp/{config['sample']}_samfile.sam",
+    container:
+        config["docker_bwa"]
+    resources:
+        mem_mb=4 * 1024,
+        runtime=get_annotate_cazi_runtime,
+    shell:
+        """
+        bwa index {input.ffn}
+        bwa mem -t {threads} -o {output.samfile} {input.ffn} {input.r1} {input.r2}
+        """
+
+
+rule sam_to_bam:
+    input:
+        samfile=f"tmp/{config['sample']}_samfile.sam",
+    output:
+        bamfile=f"tmp/{config['sample']}_bamfile.bam",
+    container:
+        config["docker_samtools"]
+    shell:
+        """
+        samtools sort -@ {threads} -o {output.bamfile} {input.samfile}
+        rm {input.samfile}
+        """
+
+
+rule seqkit_annotate_ffn:
+    input:
+        ffn=f"{config['sample']}_metaerg.ffn",
+    output:
+        length_file=f"tmp/{config['sample']}_seqkit.length",
+        bed_file=f"tmp/{config['sample']}_seqkit.bed",
+    container:
+        config["docker_seqkit"]
+    shell:
+        """
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file} 
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file} 
+        """
+
+
+rule bedtools_coverage:
+    input:
+        length_file=f"tmp/{config['sample']}_seqkit.length",
+        bed_file=f"tmp/{config['sample']}_seqkit.bed",
+        bamfile=f"tmp/{config['sample']}_bamfile.bam",
+    output:
+        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
+    container:
+        config["docker_bedtools"]
+    shell:
+        """
+        bedtools coverage -g {input.length_file} -sorted -a {input.bed_file} -counts -b {input.bamfile} > {output.coverage}
         """
 
 
@@ -312,6 +375,7 @@ rule clean_up:
     input:
         agg_file="{sample}_metaerg.gff",
         cazi=f"{config['sample']}_cazi_overview.txt",
+        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
     output:
         touch("{sample}.cleaned_dirs"),
     shell:
