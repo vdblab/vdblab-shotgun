@@ -33,7 +33,7 @@ localrules:
 
 
 sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
-readdirs = [1,2] if config["lib_layout"] == "paired" else [1]
+readdirs = [1, 2] if config["lib_layout"] == "paired" else [1]
 cleaned_fastqs = expand(
     "hostdepleted/{sample}_R{read_dir}.fastq.gz",
     sample=config["sample"],
@@ -49,9 +49,13 @@ rule all:
     input:
         clean_fastqs=cleaned_fastqs,
         hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
-        fastqcs_mqc=expand(f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=readdirs),
+        fastqcs_mqc=expand(
+            f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=readdirs
+        ),
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
-        host_reads=expand(f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",  rd=readdirs),
+        host_reads=expand(
+            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz", rd=readdirs
+        ),
 
 
 # note:  we could make the concatenation conditional on how many libraries we
@@ -64,10 +68,10 @@ module utils:
     config:
         config
 
+
 def get_concat_input(wc):
-    print(wildcards.rd)
-    print(config[f"R{wc.rd}"])
     return config[f"R{wc.rd}"]
+
 
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
@@ -81,7 +85,7 @@ use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
 # Initial FastQC to see the quality
 rule initial_fastqc_run:
     input:
-        "concatenated/{sample}_R{rd}.fastq.gz"
+        "concatenated/{sample}_R{rd}.fastq.gz",
     output:
         reports="reports/{sample}_R{rd}_fastqc.html",
     threads: 4
@@ -106,9 +110,7 @@ rule initial_fastqc_run:
 
 rule bbmap_dedup:
     input:
-        reads = expand("concatenated/{{sample}}_R{rd}.fastq.gz", rd=readdirs),
-#        R1="concatenated/{sample}_R1.fastq.gz",
-#        R2="concatenated/{sample}_R2.fastq.gz",
+        reads=expand("concatenated/{{sample}}_R{rd}.fastq.gz", rd=readdirs),
     output:
         reads=temp(expand("dedup/{{sample}}_R{rd}.fastq.gz", rd=readdirs)),
         dedup_stats="reports/{sample}_dedup.stats",
@@ -116,8 +118,12 @@ rule bbmap_dedup:
     params:
         allowed_subs=3,
         flags=bbmap_dedup_params_flags,
-        inputstring = lambda wc, input: f"in1={input.reads[0]} out2={input.reads[1]}" if is_paired() else f"in1={input.reads[0]}",
-        outputstring = lambda wc, output: f"out1={output.reads[0]} out2={output.reads[1]}" if is_paired() else f"out1={output.reads[0]}",
+        inputstring=lambda wc, input: f"in1={input.reads[0]} out2={input.reads[1]}"
+        if is_paired()
+        else f"in1={input.reads[0]}",
+        outputstring=lambda wc, output: f"out1={output.reads[0]} out2={output.reads[1]}"
+        if is_paired()
+        else f"out1={output.reads[0]}",
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
@@ -168,9 +174,15 @@ rule bbmap_dedup:
 
 use rule split_fastq from utils as utils_split_fastq with:
     input:
-        unpack(files_to_split)
+        unpack(files_to_split),
     output:
-        reads=temp(expand("split_fastq/{{sample}}_{readdir}1.part_{shard}.fastq.gz", shard=SHARDS, readdir=readdirs))
+        reads=temp(
+            expand(
+                "split_fastq/{{sample}}_{readdir}1.part_{shard}.fastq.gz",
+                shard=SHARDS,
+                readdir=readdirs,
+            )
+        ),
     log:
         e="logs/split_fastq_{sample}.e",
         o="logs/split_fastq_{sample}.o",
@@ -185,15 +197,31 @@ rule bbmap_run:
         unpack(files_to_trim),
         adapter=config["adapters_fasta"],
     output:
-        reads=temp(expand("trimmed/{{sample}}_shard{{shard}}_trim_R{readdir}.fastq.gz", readdir=readdirs)),
-        rm_reads=temp(expand("trimmed/{{sample}}_shard{{shard}}_discard_R{readdir}.fastq.gz", readdir=readdirs)),
+        reads=temp(
+            expand(
+                "trimmed/{{sample}}_shard{{shard}}_trim_R{readdir}.fastq.gz",
+                readdir=readdirs,
+            )
+        ),
+        rm_reads=temp(
+            expand(
+                "trimmed/{{sample}}_shard{{shard}}_discard_R{readdir}.fastq.gz",
+                readdir=readdirs,
+            )
+        ),
         stats=temp("trimmed/{sample}_shard{shard}_trimmingAQ.txt"),
     threads: 8
     params:
         filter_params=config["filter_params"],
-        inputstring = lambda wc, input: f"in={input['R1']} out2={input['R2']}" if is_paired() else f"in={input['R1']}",
-        outputstring = lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}" if is_paired() else f"out={output.reads[0]}",
-        outputrmstring = lambda wc, output: f"outm={output.rm_reads[0]} outm2={output.rm_reads[1]}" if is_paired() else f"outm={output.rm_reads[0]}",
+        inputstring=lambda wc, input: f"in={input['R1']} out2={input['R2']}"
+        if is_paired()
+        else f"in={input['R1']}",
+        outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
+        if is_paired()
+        else f"out={output.reads[0]}",
+        outputrmstring=lambda wc, output: f"outm={output.rm_reads[0]} outm2={output.rm_reads[1]}"
+        if is_paired()
+        else f"outm={output.rm_reads[0]}",
     resources:
         mem_mb=4000,
     container:
@@ -222,6 +250,7 @@ bowtie2_mouse_db_name = os.path.basename(config["bowtie2_mouse_index_base"])
 snap_human_db_name = os.path.basename(os.path.dirname(config["snap_human_index_dir"]))
 snap_mouse_db_name = os.path.basename(os.path.dirname(config["snap_mouse_index_dir"]))
 
+
 module hostdeplete:
     snakefile:
         "hostdeplete.smk"
@@ -229,14 +258,15 @@ module hostdeplete:
         config
 
 
-
 use rule * from hostdeplete
+
 
 def get_posttrim_inputs(wc):
     res = {"R1": f"trimmed/{wc.sample}_shard{wc.shard}_trim_R1.fastq.gz"}
     if is_paired():
-            res["R2"] = f"trimmed/{wc.sample}_shard{wc.shard}_trim_R2.fastq.gz"
+        res["R2"] = f"trimmed/{wc.sample}_shard{wc.shard}_trim_R2.fastq.gz"
     return res
+
 
 use rule s01_bowtie2 from hostdeplete as s01_bowtie2 with:
     input:
@@ -254,10 +284,12 @@ use rule s01_bowtie2 from hostdeplete as s01_bowtie2 with:
         bam=temp(f"01-bowtie/{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.bam"),
         unmapped_reads=temp(
             expand(
-                "01-bowtie/{{sample}}_shard{{shard}}.without_" +  bowtie2_human_db_name + ".R{rd}.fastq.gz",
-                rd=readdirs
+                "01-bowtie/{{sample}}_shard{{shard}}.without_"
+                + bowtie2_human_db_name
+                + ".R{rd}.fastq.gz",
+                rd=readdirs,
             )
-            )
+        ),
     log:
         e=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}_shard{{shard}}.{bowtie2_human_db_name}.o",
@@ -294,7 +326,10 @@ rule cat_depletion_stats:
 
 rule merge_shards:
     input:
-        R1=[f"06-nohuman-nomouse/{{sample}}_shard{shard}.R{{rd}}.fastq" for shard in SHARDS],
+        R1=[
+            f"06-nohuman-nomouse/{{sample}}_shard{shard}.R{{rd}}.fastq"
+            for shard in SHARDS
+        ],
     output:
         R1="hostdepleted/{sample}_R{rd}.fastq.gz",
     container:
@@ -313,10 +348,16 @@ rule aligned_host_reads_to_fastq:
         bam="{id}/{sample}_shard{shard}.{db}.bam",
     output:
         bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
-        reads=temp(expand("host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=readdirs)),
-#        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
+        reads=temp(
+            expand(
+                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=readdirs
+            )
+        ),
+    #        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     params:
-        outstring=lambda wc, output: f"-fq {output.reads[0]} -fq2 {output.reads[0]}" if is_paired() else f"-fq {output.reads[0]}",
+        outstring=lambda wc, output: f"-fq {output.reads[0]} -fq2 {output.reads[0]}"
+        if is_paired()
+        else f"-fq {output.reads[0]}",
         aligned_samflags="-f 2 -F 512" if is_paired() else "-F 512",
     threads: 8
     resources:
@@ -364,7 +405,6 @@ rule make_combined_host_reads_fastq:
         """
 
 
-
 rule sortmerna_run:
     # sortmerna has a bug where they default to writing workdir to your
     # home, and to $HOME/<workdir> if you don't provide an absolute path
@@ -379,7 +419,9 @@ rule sortmerna_run:
         aligned_prefix=lambda wildcards, output: output["blast"].replace(
             ".blast.gz", ""
         ),
-        inputstring=lambda wc ,input: f"--reads {input['R1']} --reads {input['R1']}" if is_paired() else f"--reads {input['R1']}",
+        inputstring=lambda wc, input: f"--reads {input['R1']} --reads {input['R1']}"
+        if is_paired()
+        else f"--reads {input['R1']}",
     resources:
         mem_mb=16000,
     threads: 16

@@ -3,12 +3,14 @@ rule split_fastq:
     These dummy inputs are intended to be overwritten when importing the rule
     """
     input:
-        R1=[]
+        R1=[],
     output:
-        reads=[]
+        reads=[],
     params:
         outdir=lambda wc, output: os.path.dirname(output.reads[0]),
-        inputstring = lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}" if is_paired() else f"--read1 {input['R1']}",
+        inputstring=lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}"
+        if is_paired()
+        else f"--read1 {input['R1']}",
         nshards=1,
     container:
         "docker://pegi3s/seqkit:2.3.0"

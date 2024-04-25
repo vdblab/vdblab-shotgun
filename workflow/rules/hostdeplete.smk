@@ -31,13 +31,15 @@ bowtie2_mouse_db_name = os.path.basename(config["bowtie2_mouse_index_base"])
 snap_human_db_name = os.path.basename(os.path.dirname(config["snap_human_index_dir"]))
 snap_mouse_db_name = os.path.basename(os.path.dirname(config["snap_mouse_index_dir"]))
 
-readdirs = [1,2] if config["lib_layout"] == "paired" else [1]
+readdirs = [1, 2] if config["lib_layout"] == "paired" else [1]
 
 human_bowtie_outputs = f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.bam"
 human_snap_outputs = f"02-snap/{config['sample']}.{snap_human_db_name}.bam"
 mouse_bowtie_outputs = f"04-bowtie/{config['sample']}.{bowtie2_mouse_db_name}.bam"
 mouse_snap_outputs = f"05-snap/{config['sample']}.{snap_mouse_db_name}.bam"
-cleaned_reads = expand(f"06-nohuman-nomouse/{config['sample']}.R{{rd}}.fastq.gz", rd=readdirs)
+cleaned_reads = expand(
+    f"06-nohuman-nomouse/{config['sample']}.R{{rd}}.fastq.gz", rd=readdirs
+)
 table = f"{config['sample']}_depletion.stats"
 
 
@@ -68,20 +70,28 @@ rule s01_bowtie2:
     output:
         bam=temp(f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam"),
         unmapped_reads=temp(
-            expand("01-bowtie/{{sample}}.without_" + bowtie2_human_db_name+ ".R{rd}.fastq.gz", rd=readdirs)
+            expand(
+                "01-bowtie/{{sample}}.without_"
+                + bowtie2_human_db_name
+                + ".R{rd}.fastq.gz",
+                rd=readdirs,
+            )
         ),
     log:
         e=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.o",
     params:
-        umapped_string=lambda wildcards, output: "--un-conc-gz " + output["unmapped_reads"][0].replace(
-            ".R1.fastq.gz", ".R%.fastq.gz"
-        ) if is_paired() else "--un-gz " + output["unmapped_reads"][0],
+        umapped_string=lambda wildcards, output: "--un-conc-gz "
+        + output["unmapped_reads"][0].replace(".R1.fastq.gz", ".R%.fastq.gz")
+        if is_paired()
+        else "--un-gz " + output["unmapped_reads"][0],
         db_prefix=lambda wildcards, input: os.path.splitext(
             os.path.splitext(input.idx[0])[0]
         )[0],
         extra="",  # optional parameters
-        input_string = lambda wildcards, input: f"-1 {input.R1} -2 {input.R2}" if is_paired() else f"-U {input.R1}",
+        input_string=lambda wildcards, input: f"-1 {input.R1} -2 {input.R2}"
+        if is_paired()
+        else f"-U {input.R1}",
     threads: 24
     shell:
         """
@@ -94,6 +104,7 @@ rule s01_bowtie2:
         ) > {output.bam} 2> {log.e}
         """
 
+
 rule s02_snapalign:
     container:
         config["docker_snap"]
@@ -104,8 +115,12 @@ rule s02_snapalign:
         #        R1=rules.bowtie2_human.output.unmapped_R1,
         #        R2=rules.bowtie2_human.output.unmapped_R2,
         # fstrings + expand + wildcards == :(
-        reads=expand("01-bowtie/{{sample}}.without_" + bowtie2_human_db_name + ".R{rd}.fastq.gz", rd=readdirs),
-#        R2=f"01-bowtie/{{sample}}.without_{bowtie2_human_db_name}.R2.fastq.gz",
+        reads=expand(
+            "01-bowtie/{{sample}}.without_"
+            + bowtie2_human_db_name
+            + ".R{rd}.fastq.gz",
+            rd=readdirs,
+        ),
         idx_genome=f"{config['snap_human_index_dir']}Genome",
     output:
         bam=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam"),
@@ -114,7 +129,7 @@ rule s02_snapalign:
         o=f"logs/snap_{{sample}}.{snap_human_db_name}.o",
     params:
         db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
-        cmd = config["lib_layout"]
+        cmd=config["lib_layout"],
     resources:
         mem_mb=lambda wildcards, attempt, input: attempt
         * (max(input.size // 1000000, 1024) * 10),
@@ -143,12 +158,19 @@ rule s03_get_unmapped:
     input:
         bam=f"02-snap/{{sample}}.{snap_human_db_name}.bam",
     output:
-        unmapped_reads=temp(expand("03-nohuman/{{sample}}.without_" + snap_human_db_name + ".R{rd}.fastq", rd=readdirs)),
+        unmapped_reads=temp(
+            expand(
+                "03-nohuman/{{sample}}.without_" + snap_human_db_name + ".R{rd}.fastq",
+                rd=readdirs,
+            )
+        ),
         flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
     params:
-        bamtofastq_outputstring = lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}" if is_paired() else f"-fq {output.unmapped_reads[0]}",
+        bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
+        if is_paired()
+        else f"-fq {output.unmapped_reads[0]}",
         # "paired" or "single", to avoid dealing with bool conversion between yaml, snakemake, and bash
-        lib_layout = config["lib_layout"]
+        lib_layout=config["lib_layout"],
     log:
         e=f"logs/get_unmapped_human_{{sample}}.e",
         o=f"logs/get_unmapped_human_{{sample}}.o",
@@ -182,9 +204,6 @@ rule s03_get_unmapped:
         """
 
 
-
-
-
 def get_mouse_bowtie_inputs(wc):
     res = {"R1": None}
     if is_paired():
@@ -194,7 +213,8 @@ def get_mouse_bowtie_inputs(wc):
         res["R1"] = rules.s03_get_unmapped.output.unmapped_reads[0]
     return res
 
-use rule s01_bowtie2  as s04_bowtie2_mouse with:
+
+use rule s01_bowtie2 as s04_bowtie2_mouse with:
     input:
         unpack(get_mouse_bowtie_inputs),
         idx=multiext(
@@ -209,7 +229,12 @@ use rule s01_bowtie2  as s04_bowtie2_mouse with:
     output:
         bam=temp(f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam"),
         unmapped_reads=temp(
-            expand("04-bowtie/{{sample}}.without_" + bowtie2_mouse_db_name + ".R{rd}.fastq.gz", rd=readdirs)
+            expand(
+                "04-bowtie/{{sample}}.without_"
+                + bowtie2_mouse_db_name
+                + ".R{rd}.fastq.gz",
+                rd=readdirs,
+            )
         ),
     log:
         e=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.e",
@@ -218,9 +243,12 @@ use rule s01_bowtie2  as s04_bowtie2_mouse with:
 
 use rule s02_snapalign as s05_snapalign_mouse with:
     input:
-        reads=expand("04-bowtie/{{sample}}.without_" + bowtie2_mouse_db_name + ".R{rd}.fastq.gz", rd=readdirs),
-#        R1=rules.s04_bowtie2_mouse.output.unmapped_R1,
- #       R2=rules.s04_bowtie2_mouse.output.unmapped_R2,
+        reads=expand(
+            "04-bowtie/{{sample}}.without_"
+            + bowtie2_mouse_db_name
+            + ".R{rd}.fastq.gz",
+            rd=readdirs,
+        ),
         idx_genome=f"{config['snap_mouse_index_dir']}Genome",
     output:
         bam=temp(f"05-snap/{{sample}}.{snap_mouse_db_name}.bam"),
@@ -229,12 +257,13 @@ use rule s02_snapalign as s05_snapalign_mouse with:
         o=f"logs/snap_{{sample}}.{snap_mouse_db_name}.o",
 
 
-use rule s03_get_unmapped  as s06_get_unmapped_human_mouse with:
+use rule s03_get_unmapped as s06_get_unmapped_human_mouse with:
     input:
         bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
-        unmapped_reads=temp(expand("06-nohuman-nomouse/{{sample}}.R{rd}.fastq", rd=readdirs)),
-#        unmapped_R2=temp(f"06-nohuman-nomouse/{{sample}}.R2.fastq"),
+        unmapped_reads=temp(
+            expand("06-nohuman-nomouse/{{sample}}.R{rd}.fastq", rd=readdirs)
+        ),
         flagstat=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam.flagstat",
     log:
         e=f"logs/get_unmapped_human_mouse_{{sample}}.e",

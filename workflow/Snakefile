@@ -50,8 +50,6 @@ if config["stage"] == "all":
     config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
 
-
-
 """
 similarly, we have to mock the downsample parameters if we aren't running with stage=downsample
 """
@@ -62,7 +60,10 @@ if config["stage"] != "downsample":
 
 if not is_paired():
     if not config["stage"] in ["preprocess", "biobakery"]:
-        raise ValueError("Single-end analysis has only been implemented for the preprocess and biobakery modules")
+        raise ValueError(
+            "Single-end analysis has only been implemented for the preprocess and biobakery modules"
+        )
+
 
 #
 # Preprocess Module
@@ -106,6 +107,7 @@ module kraken:
 
 use rule * from kraken as kraken_*
 
+
 #
 # Utils Module
 #
@@ -120,6 +122,7 @@ module utils:
 # Assembly Module
 #
 if is_paired():
+
     module assembly:
         snakefile:
             "rules/assembly.smk"
@@ -127,10 +130,8 @@ if is_paired():
             config
         skip_validation:
             True
+
     use rule * from assembly as assembly_*
-
-
-
 
     #
     # RGI Module
@@ -140,8 +141,8 @@ if is_paired():
             "rules/RGI.smk"
         config:
             config
-    use rule * from rgi as rgi_*
 
+    use rule * from rgi as rgi_*
 
     #
     # Binning Module
@@ -152,9 +153,7 @@ if is_paired():
         config:
             config
 
-
     use rule * from binning as binning_*
-
 
     #
     # annotation Module
@@ -182,7 +181,6 @@ if is_paired():
         skip_validation:
             True
 
-
     use rule * from hla as hla_*
 
     #
@@ -196,10 +194,7 @@ if is_paired():
         skip_validation:
             True
 
-
     use rule * from downsample as downsample_*
-
-
 
 
 if config["stage"] == "classify_bins":
@@ -228,7 +223,9 @@ needing this probably means I could specify file names more cleanly :/
 
 if config["stage"] == "all":
     if config["lib_layout"] != "paired":
-        raise ValueError(f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)")
+        raise ValueError(
+            f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)"
+        )
 
     use rule cat_pair from biobakery as biobakery_cat_pair with:
         input:

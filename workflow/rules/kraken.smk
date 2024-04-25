@@ -81,8 +81,7 @@ def get_kraken_input(wc):
     else:
         input_R1 = f"concatenated/{config['sample']}_R1.fastq.gz"
         input_R2 = f"concatenated/{config['sample']}_R2.fastq.gz"
-    return({"R1": input_R1,
-            "R2": input_R2})
+    return {"R1": input_R1, "R2": input_R2}
 
 
 module utils:
@@ -93,13 +92,15 @@ module utils:
     skip_validation:
         True
 
+
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=lambda wc: config[f"R{wc.rd}"]
+        R1=lambda wc: config[f"R{wc.rd}"],
     output:
         R1=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
         e="logs/concat_names_fix_names_{sample}_R{rd}.e",
+
 
 # use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
 #     input:
@@ -133,8 +134,6 @@ rule kraken_standard_run:
     """
     input:
         unpack(get_kraken_input),
-#        R1=input_R1,
-#        R2=input_R2,
         db=config["kraken2_db"],
     output:
         out="kraken2/{sample}_kraken2.out",
@@ -348,7 +347,7 @@ rule make_phanta_manifest:
     PHANTA needs the full path, and Input_R1 is relative the relative paths if we are using the concatenated lanes
     """
     input:
-        get_kraken_input
+        get_kraken_input,
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:

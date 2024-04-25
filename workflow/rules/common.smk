@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def is_paired():
     if config["lib_layout"] not in ["paired", "single"]:
         raise ValueError("lib_layout must be specified as either paired or single")
@@ -11,11 +12,15 @@ def is_paired():
             pass
     else:
         if "R2" not in config.keys():
-            raise ValueError("lib_layout specified as paired, but R2 has not been provided")
+            raise ValueError(
+                "lib_layout specified as paired, but R2 has not been provided"
+            )
     return config["lib_layout"] == "paired"
+
 
 def skip_dedup():
     return not config["dedup_reads"]
+
 
 def get_pipeline_version():
     return (
@@ -42,18 +47,17 @@ def make_assembly_split_names(nparts):
 
 
 def files_to_split(wildcards):
-    """full disclosure: I don't remember why this is returning a dict of tuples
-    """
+    """full disclosure: I don't remember why this is returning a dict of tuples"""
     res = {"R1": None}
     if not skip_dedup():
-        res["R1"] = (f"dedup/{wildcards.sample}_R1.fastq.gz"),
+        res["R1"] = ((f"dedup/{wildcards.sample}_R1.fastq.gz"),)
         if is_paired():
-            res["R2"] = (f"dedup/{wildcards.sample}_R2.fastq.gz"),
+            res["R2"] = ((f"dedup/{wildcards.sample}_R2.fastq.gz"),)
     else:
-        res["R1"] = (f"concatenated/{wildcards.sample}_R1.fastq.gz"),
+        res["R1"] = ((f"concatenated/{wildcards.sample}_R1.fastq.gz"),)
         if is_paired():
-            res["R2"] = (f"concatenated/{wildcards.sample}_R2.fastq.gz"),
-    return (res)
+            res["R2"] = ((f"concatenated/{wildcards.sample}_R2.fastq.gz"),)
+    return res
 
 
 def files_to_trim(wildcards, nshards=1):
@@ -62,18 +66,23 @@ def files_to_trim(wildcards, nshards=1):
     # otherwise, just trim the concatenated inputs
     res = {"R1": None}
     if config["nshards"] > 1:
-        res["R1"] = (f"split_fastq/{wildcards.sample}_R1.part_{wildcards.shard}.fastq.gz"),
+        res["R1"] = (
+            (f"split_fastq/{wildcards.sample}_R1.part_{wildcards.shard}.fastq.gz"),
+        )
         if is_paired():
-            res["R2"] = (f"split_fastq/{wildcards.sample}_R2.part_{wildcards.shard}.fastq.gz"),
+            res["R2"] = (
+                (f"split_fastq/{wildcards.sample}_R2.part_{wildcards.shard}.fastq.gz"),
+            )
     elif not skip_dedup():
-        res["R1"] = (f"dedup/{wildcards.sample}_R1.fastq.gz"),
+        res["R1"] = ((f"dedup/{wildcards.sample}_R1.fastq.gz"),)
         if is_paired():
-            res["R2"] = (f"dedup/{wildcards.sample}_R2.fastq.gz"),
+            res["R2"] = ((f"dedup/{wildcards.sample}_R2.fastq.gz"),)
     else:
-        res["R1"] = (f"concatenated/{wildcards.sample}_R1.fastq.gz"),
+        res["R1"] = ((f"concatenated/{wildcards.sample}_R1.fastq.gz"),)
         if is_paired():
-            res["R2"] = (f"concatenated/{wildcards.sample}_R2.fastq.gz"),
+            res["R2"] = ((f"concatenated/{wildcards.sample}_R2.fastq.gz"),)
     return res
+
 
 # def get_input_fastqs(wildcards):
 #     if config["lib_layout"] == "paired":
@@ -89,16 +98,15 @@ def files_to_trim(wildcards, nshards=1):
 #     else:
 #         return ({"R1": config["R1"]})
 
+
 def get_config_inputs(wc):
     if is_paired():
-        return {
-            "R1": config["R1"],
-            "R2": config["R2"]
-        }
+        return {"R1": config["R1"], "R2": config["R2"]}
     else:
         return {
             "R1": config["R1"],
         }
+
 
 def bbmap_dedup_params_flags(wildcards):
     # normal optical duplicate removal (HiSeq, MiSeq, etc)
