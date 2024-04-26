@@ -288,6 +288,8 @@ rule join_metaerg_outputs:
     output:
         gff=f"{config['sample']}_metaerg.gff",
         ffn=f"{config['sample']}_metaerg.ffn",
+    container:
+        config["docker_seqkit"]
     shell:
         """
         # deal with header
@@ -300,7 +302,9 @@ rule join_metaerg_outputs:
         head -n 1 {input.ffn[0]} > {output.ffn}
         for f in {input.ffn}
         do
-            tail -n+2 $f >> {output.ffn}
+            IFS='/'; name_arr=($f); unset IFS;
+            part=${{name_arr[@]: -3: 1}}
+            seqkit replace -p '.+' -r 'megahit_'$part'_{{nr}}' $f >> {output.ffn}
         done
         """
 
@@ -318,20 +322,20 @@ rule align_annotated_genes:
         mem_mb=16 * 1024,
         runtime=get_annotate_cazi_runtime,
         threads=16,
+        cores=16,
     params:
-        bowtie_index=f"tmp/{config['sample']}_bowtie2_index",
+        bowtie_dir=f"./tmp_bowtie_indices_{config['sample']}",
+        bowtie_index=f"./tmp_bowtie_indices_{config['sample']}/{config['sample']}_bowtie2_index",
     shell:
         """
+        mkdir -p {params.bowtie_dir}
         bowtie2-build \
-            --threads {threads} \
+            --threads {resources.threads} \
             {input.ffn} \
-            {params.bowtie_index} \
-        bowtie2 \
-            --threads {threads} \
-            -1 {input.r1} -2 {input.r2} \
-            {params.umapped_string} \
-            -x {params.bowtie_index}  \
-        | samtools sort -o {output.bamfile} -@ $(({threads} - 1)) 
+            {params.bowtie_index}
+        ls {params.bowtie_dir}
+        bowtie2 --threads {resources.threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {resources.threads} -Sb | samtools sort -o {output.bamfile} -@ {resources.threads} 
+        rm -rf {params.bowtie_dir}
         """
 
 
