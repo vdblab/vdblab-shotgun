@@ -311,32 +311,28 @@ rule align_annotated_genes:
         r1=config["R1"],
         r2=config["R2"],
     output:
-        samfile=f"tmp/{config['sample']}_samfile.sam",
-    container:
-        config["docker_bwa"]
-    resources:
-        mem_mb=4 * 1024,
-        runtime=get_annotate_cazi_runtime,
-    shell:
-        """
-        bwa index {input.ffn}
-        bwa mem -t {threads} -o {output.samfile} {input.ffn} {input.r1} {input.r2}
-        """
-
-
-rule sam_to_bam:
-    input:
-        samfile=f"tmp/{config['sample']}_samfile.sam",
-    output:
         bamfile=f"tmp/{config['sample']}_bamfile.bam",
     container:
-        config["docker_samtools"]
+        config["docker_bowtie2"]
+    resources:
+        mem_mb=16 * 1024,
+        runtime=get_annotate_cazi_runtime,
+        threads=16,
+    params:
+        bowtie_index=f"tmp/{config['sample']}_bowtie2_index"
     shell:
         """
-        samtools sort -@ {threads} -o {output.bamfile} {input.samfile}
-        rm {input.samfile}
+        bowtie2-build \
+            --threads {threads} \
+            {input.ffn} \
+            {params.bowtie_index} \
+        bowtie2 \
+            --threads {threads} \
+            -1 {input.r1} -2 {input.r2} \
+            {params.umapped_string} \
+            -x {params.bowtie_index}  \
+        | samtools sort -o {output.bamfile} -@ $(({threads} - 1)) 
         """
-
 
 rule seqkit_annotate_ffn:
     input:
