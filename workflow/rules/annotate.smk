@@ -296,7 +296,9 @@ rule join_metaerg_outputs:
         head -n 1 {input.gff[0]} > {output.gff}
         for f in {input.gff}
         do
-            tail -n+2 $f >> {output.gff}
+            IFS='/'; name_arr=($f); unset IFS;
+            part=${{name_arr[@]: -3: 1}}
+            tail -n+2 $f >> seqkit replace -p 'ID=[^;]*;' -r 'ID=megahit_'$part'_{{nr}};' $f >> {output.gff}
         done
                 # deal with header
         head -n 1 {input.ffn[0]} > {output.ffn}
@@ -333,7 +335,6 @@ rule align_annotated_genes:
             --threads {resources.threads} \
             {input.ffn} \
             {params.bowtie_index}
-        ls {params.bowtie_dir}
         bowtie2 --threads {resources.threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {resources.threads} -Sb | samtools sort -o {output.bamfile} -@ {resources.threads} 
         rm -rf {params.bowtie_dir}
         """
