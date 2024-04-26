@@ -1,0 +1,131 @@
+import os
+import json
+import yaml
+import shutil
+
+from pathlib import Path
+
+
+# is a string so we dont have weird issues where ints get cast to floats, adding a ".0"
+total_depths = "1000000" #config["total_depths"]
+reps = 1 #config["reps"]
+
+output_reads = expand('{rep}_depth{depth}_R{readdir}.fastq.gz',
+                        rep=reps,
+                        depth=total_depths,
+                        readdir=[1,2])
+output_stats = expand("{rep}_depth{depth}.statsfastq",
+                   rep=reps,
+                   depth=total_depths,
+                   )
+
+
+localrules:
+    all,
+    make_input_table,
+all_results = [
+        output_reads,
+        output_stats,
+    ]
+
+
+rule all:
+    input:
+        all_results
+
+
+rule get_references:
+    output:
+        mockdir=directory("mock"),
+    shell:"""
+    set -eoux pipefail
+    # wget complains if this is present
+    if [ -f D6331.refseq.zip ]
+    then
+    echo "refs present"
+    else
+        wget -N https://s3.amazonaws.com/zymo-files/BioPool/D6331.refseq.zip
+        unzip D6331.refseq.zip
+    fi
+    # snakemake doesn't create outputs labeled as directories
+    mkdir -p {output.mockdir}
+
+    # add some of the human genome to our reference pool
+    curl -s  "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_060945.1&rettype=fasta&retmode=txt"> D6331.refseq/genomes/t2t_chr21.fasta
+
+
+    # borrowed some logic from https://www.biostars.org/p/294920/ to smoosh together sequences
+    # otherwise, art with generate nreads PER Sequence, not per genome
+    for fasta in D6331.refseq/genomes/*fasta
+    do
+      name=$(basename $fasta | sed "s|.fasta||g")
+      cat $fasta | grep -v "^>" | awk 'BEGIN {{ ORS=""; print ">${{name}}_concatenated\\n" }} {{ print }}' > {output.mockdir}/${{name}}.fasta
+    done
+
+    """
+
+rule make_input_table:
+    """ this could be modified to incorporate different depth schemes per bug,
+    but for a first pass we do even depths
+    """
+    input:
+        mockdir="mock",
+    output:
+        outtable="sim_tables/{rep}_depth{depth}.tab"
+    run:
+        import glob
+        import math
+        mocks = glob.glob(input.mockdir + "/*.fasta")
+        depth = int(wildcards.depth)
+        nmocks = len(mocks)
+        each_non_spike = math.floor(depth/nmocks)
+        with open(output.outtable, "w") as outf:
+            for mock in mocks:
+                if each_non_spike != 0:
+                    outf.write(f"{mock}\t{each_non_spike}\n")
+
+
+rule simulate:
+    input:
+        mockdir="mock",
+        intable="sim_tables/{rep}_depth{depth}.tab"
+    output:
+        R1="{rep}_depth{depth}_R1.fastq.gz",
+        R2="{rep}_depth{depth}_R2.fastq.gz",
+        intermediate_trigger=touch("{rep}_depth{depth}_individual_reference_fastq_present"),
+    params:
+        tmppre = lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}"
+    container:"docker://ghcr.io/vdblab/art:2016.06.05"
+    threads: 4
+    shell: """
+    set -euxo pipefail
+
+    # look a loop! could use parallel but this is a one-off for generating test data.
+    cat {input.intable} | while read ref nreads
+    do
+        refbase=$(basename $ref)
+        art_illumina --seqSys HS25 --in $ref  --paired --len 150 --rcount $nreads --mflen 500 --sdev 10 --out {params.tmppre}_${{refbase}}_R --rndSeed {wildcards.rep}
+    done
+
+    ls {params.tmppre}*
+    cat {params.tmppre}*R1.fq | pigz > {output.R1}
+    cat {params.tmppre}*R2.fq | pigz > {output.R2}
+    """
+
+rule stats:
+    input:
+        R1="{rep}_depth{depth}_R1.fastq.gz",
+        R2="{rep}_depth{depth}_R2.fastq.gz",
+        intermediate_trigger="{rep}_depth{depth}_individual_reference_fastq_present",
+    output:
+        stats="{rep}_depth{depth}.statsfastq"
+    params:
+        tmppre = lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}"
+    container: "docker://ghcr.io/vdblab/seqkit:2.3.1"
+    threads: 8
+    shell:"""
+    # gather all the per-reference fastq stats
+    seqkit stats {params.tmppre}*.fq > {output.stats}
+    # gather the final stats
+    seqkit stats {input.R1} {input.R2} | tail -n+2  >> {output.stats}
+    """
