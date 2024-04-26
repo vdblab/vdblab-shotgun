@@ -64,13 +64,11 @@ rule concat_lanes_fix_names:
         R1=[],
     output:
         R1="out_{sample}.1.fq.gz",
-    conda:
-        "../envs/base.yaml"
     log:
         e="logs/concat_lanes_fix_names_{sample}.e",
     shell:
         """
-        case {input[0]} in
+        case {input.R1[0]} in
         *gz )
             cat {input.R1} > {output.R1} 2>> {log.e}
         ;;

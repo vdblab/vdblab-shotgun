@@ -80,7 +80,6 @@ case $mode in
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    multiqc_config=${PWD}/multiqc_config.yaml \
 	    nshards=$nshards \
 	    stage=preprocess
 	;;
@@ -92,6 +91,7 @@ case $mode in
 	    --notemp \
 	    --config \
 	    sample=473  \
+	    lib_layout=single \
 	    R1=$R1 \
 	    $addnconf \
 	    nshards=$nshards \
@@ -146,6 +146,7 @@ case $mode in
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
+	    lib_layout=single \
 	    $addnconf \
 	    stage=biobakery
 	;;
