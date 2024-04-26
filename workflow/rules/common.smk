@@ -45,6 +45,8 @@ def make_assembly_split_names(nparts):
             split_names.append(f"{i}")
     return split_names
 
+def get_concat_input(wc):
+    return config[f"R{wc.rd}"]
 
 def files_to_split(wildcards):
     """full disclosure: I don't remember why this is returning a dict of tuples"""
