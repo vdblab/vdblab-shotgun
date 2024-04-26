@@ -319,7 +319,7 @@ rule align_annotated_genes:
         runtime=get_annotate_cazi_runtime,
         threads=16,
     params:
-        bowtie_index=f"tmp/{config['sample']}_bowtie2_index"
+        bowtie_index=f"tmp/{config['sample']}_bowtie2_index",
     shell:
         """
         bowtie2-build \
@@ -333,6 +333,7 @@ rule align_annotated_genes:
             -x {params.bowtie_index}  \
         | samtools sort -o {output.bamfile} -@ $(({threads} - 1)) 
         """
+
 
 rule seqkit_annotate_ffn:
     input:
