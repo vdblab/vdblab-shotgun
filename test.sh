@@ -20,6 +20,25 @@ case $rawdataset in
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.bz2]
 	addnconf="dedup_platform=HiSeq"
 	;;
+    sim)
+	nshards=1
+	if [ "$mode" == "preprocess" ]
+	   then
+	       # simulated a high duplicate library
+	       mkdir -p $PWD/.test/simulated/duplicated/
+	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
+	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
+	else
+	    R1=[$PWD/.test/simulated/1_depth100000_R1.fastq.gz]
+	    R2=[$PWD/.test/simulated/1_depth100000_R2.fastq.gz]
+	fi
+
+	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
+	;;
     small)
 	nshards=2
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
@@ -116,7 +135,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpbio/ \
+            --directory tmpbio_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \

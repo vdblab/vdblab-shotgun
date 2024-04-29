@@ -1,0 +1,23 @@
+Species	Genomic DNA	16S Only	16S & 18S	Genome Copy	Cell Number	Size	Kingdom
+Faecalibacterium prausnitzii	14	17.63	15.96	14.77	14.82	2.68	Bacteria
+Veillonella rogosae	14	15.87	14.37	19.94	20.01	2.14	Bacteria
+Roseburia hominis	14	9.89	8.95	12.43	12.47	3.59	Bacteria
+Bacteroides fragilis	14	9.94	9.00	8.33	8.36	5.2	Bacteria
+Prevotella corporis	6	4.98	4.51	6.26	6.28	2.79	Bacteria
+Bifidobacterium adolescentis	6	8.78	7.95	8.83	8.86	2.2	Bacteria
+Fusobacterium nucleatum	6	7.49	6.79	7.53	7.56	2.5	Bacteria
+Lactobacillus fermentum	6	9.63	8.72	9.68	9.71	2.0	Bacteria
+Clostridioides difficile	1.5	2.62	2.37	1.10	1.10	4.1	Bacteria
+Akkermansia muciniphila	1.5	0.97	0.87	1.62	1.62	2.9	Bacteria
+Methanobrevibacter smithii	0.1	0.066	0.060	0.17	0.17	1.9	Archaea
+Salmonella enterica	0.01	0.009	0.008	0.007	0.0065	5.0	Bacteria
+Enterococcus faecalis	0.001	0.0009	0.0008	0.0011	0.0011	2.9	Bacteria
+Clostridium perfringens	0.0001	0.0002	0.0002	0.00009	0.00009	3.3	Bacteria
+Escherichia coli (JM109)	2.8	2.53	2.29	1.82	1.83	4.72	Bacteria
+Escherichia coli (B-3008)	2.8	2.53	2.29	1.82	1.82	4.739	Bacteria
+Escherichia coli (B-2207)	2.8	2.29	2.07	1.64	1.65	5.23	Bacteria
+Escherichia coli (B-766)	2.8	2.31	2.09	1.66	1.66	5.19	Bacteria
+Escherichia coli (B-1109)	2.8	2.46	2.23	1.77	1.77	4.92	Bacteria
+Candida albicans	1.5		3.11	0.31	0.16	14.3	Eukaryota
+Saccharomyces cerevisiae	1.4		6.35	0.32	0.16	12.1	Eukaryota
+Chr21	0	0	0	0	0	45.09	Eukaryota
