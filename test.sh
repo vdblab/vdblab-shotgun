@@ -22,7 +22,7 @@ case $rawdataset in
 	;;
     sim)
 	nshards=1
-	if [ "$mode" == "preprocess" ]
+	if [[ "$mode" == preprocess* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
@@ -102,6 +102,22 @@ case $mode in
 	    multiqc_config=${PWD}/multiqc_config.yaml \
 	    nshards=$nshards \
 	    stage=preprocess
+	;;
+    preprocess-gha )
+	# runs just to dedup for easy execution on github actions
+	snakemake \
+	    $common_args \
+	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+            --directory tmppre_${rawdataset}/ \
+	    --notemp \
+	    --config \
+	    sample=473  \
+	    R1=$R1 \
+	    R2=$R2 \
+	    $addnconf \
+	    multiqc_config=${PWD}/multiqc_config.yaml \
+	    nshards=$nshards \
+	    stage=preprocess -f dedup/473_R1.fastq.gz
 	;;
     testpreprocess )
 	snakemake \

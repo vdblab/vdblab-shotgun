@@ -22,23 +22,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Test shotgun up to dedup
-        run: >
-          echo `pwd` && snakemake
-          --directory tmpsim_pre/
-          --snakefile workflow/Snakefile
-          --cores 1
-          --jobs 1
-          --resources mem_mb=5000
-          --use-singularity
-          --singularity-prefix /github/workspace/.singularity/
-          --singularity-args '-B /github/'
-          --config
-          sample=test
-          R1=["$PWD/.test/simulated/1_depth100000_R1.fastq.gz"]
-          R2=["$PWD/.test/simulated/1_depth100000_R2.fastq.gz"]
-          dedup_platform=SRA
-          stage=preprocess
-          --force dedup/473_R1.fastq.gz reports/473_hostdepletion.stats
+        run: bash ./test.sh preprocess-gha sim
+          # echo `pwd` && snakemake
+          # --directory tmpsim_pre/
+          # --snakefile workflow/Snakefile
+          # --cores 1
+          # --jobs 1
+          # --resources mem_mb=5000
+          # --use-singularity
+          # --singularity-prefix /github/workspace/.singularity/
+          # --singularity-args '-B /github/'
+          # --config
+          # sample=test
+          # R1=["$PWD/.test/simulated/1_depth100000_R1.fastq.gz"]
+          # R2=["$PWD/.test/simulated/1_depth100000_R2.fastq.gz"]
+          # dedup_platform=SRA
+          # stage=preprocess
+          # --force dedup/473_R1.fastq.gz reports/473_hostdepletion.stats
 
       - name: Test with pytest
         run: |
