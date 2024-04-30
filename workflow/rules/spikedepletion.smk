@@ -98,9 +98,13 @@ rule ani_filter:
         # could use pandas, but this is pretty straightforward
         with open(input.csv, "r") as inf, open(output.pairs_for_vis, "w") as outf:
             for line in inf:
-                (query, reference, ANI, count_mappings, total_frags) = (
-                    line.strip().split()
-                )
+                (
+                    query,
+                    reference,
+                    ANI,
+                    count_mappings,
+                    total_frags,
+                ) = line.strip().split()
                 if query == reference:
                     continue
                     # we generate vis for all comparisons exceeding 80%, just in case there are

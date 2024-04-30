@@ -174,7 +174,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpassembly/ \
+	    --directory tmpassembly_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -197,7 +197,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpannotate/ \
+	    --directory tmpannotate_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -209,7 +209,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi/ \
+	    --directory tmprgi_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -220,7 +220,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi/ \
+	    --directory tmprgi_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -236,7 +236,7 @@ case $mode in
 	    snakemake \
 		$common_args \
 		--singularity-args "-B ${PWD},/data/brinkvd/" \
-		--directory tmprgi/ \
+		--directory tmprgi_${rawdataset}/ \
 		--config sample=473 \
 		R1=$R1 \
 		R2=$R2 \
