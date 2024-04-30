@@ -107,7 +107,12 @@ case $mode in
 	# runs just to dedup for easy execution on github actions
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+            --cores 1 \
+        --jobs 1 \
+        --resources mem_mb=5000 \
+		    --use-singularity \
+           --singularity-prefix /github/workspace/.singularity/ \
+           --singularity-args '-B /github/' \
             --directory tmppre_${rawdataset}/ \
 	    --notemp \
 	    --config \
