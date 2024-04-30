@@ -41,6 +41,11 @@ case $rawdataset in
 	;;
     small)
 	nshards=2
+	if [ ! -d "${PWD}/.test/SRR18369973/" ]
+	then
+	    echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
+	    exit 1
+	fi
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
 	addnconf="dedup_platform=SRA"
@@ -64,11 +69,6 @@ case $rawdataset in
 	;;
 esac
 echo $R1
-if [ ! -d "${PWD}/.test/SRR18369973/" ]
-then
-    echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
-    exit 1
-fi
 
 common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
 case $mode in
