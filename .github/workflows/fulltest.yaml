@@ -22,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Test shotgun up to dedup
-        run: bash ./test.sh preprocess-gha sim
+        run: bash ./test.sh preprocess-gha sim || (cat tmppre_sim/logs/* && exit 1)
           # echo `pwd` && snakemake
           # --directory tmpsim_pre/
           # --snakefile workflow/Snakefile
