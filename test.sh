@@ -108,11 +108,11 @@ case $mode in
 	snakemake \
 	    $common_args \
             --cores 1 \
-        --jobs 1 \
-        --resources mem_mb=5000 \
-		    --use-singularity \
-           --singularity-prefix /github/workspace/.singularity/ \
-           --singularity-args '-B /github/' \
+            --jobs 1 \
+            --resources mem_mb=5000 \
+	    --use-singularity \
+            --singularity-prefix /github/workspace/.singularity/ \
+            --singularity-args '-B /github/' \
             --directory tmppre_${rawdataset}/ \
 	    --notemp \
 	    --config \

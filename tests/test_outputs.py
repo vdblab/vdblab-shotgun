@@ -15,6 +15,9 @@ def get_seqkitstats_count(line):
 def test_simulated_data_present():
     # TODO: test hashes of files?
     assert os.path.exists(".test/simulated/1_depth100000.statsfastq"), "no simulated data present; see readme to simulate data"
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_simulated_host_deplete_results_present():
     assert os.path.exists("tmppre_sim/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess sim`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
@@ -22,6 +25,7 @@ def test_simulated_bb_run_present():
     assert os.path.exists("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery sim`"
     assert os.path.exists("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out"), "no kraken results for sumulated data; please run `bash test.sh kraken sim`"
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_depletes_correct_n_reads():
     with open(".test/simulated/1_depth100000.statsfastq") as inf:
         for line in inf:
