@@ -20,8 +20,32 @@ case $rawdataset in
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.bz2]
 	addnconf="dedup_platform=HiSeq"
 	;;
+    sim)
+	nshards=1
+	if [[ "$mode" == preprocess* ]] # note double brackets
+	   then
+	       # simulated a high duplicate library
+	       mkdir -p $PWD/.test/simulated/duplicated/
+	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
+	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
+	else
+	    R1=[$PWD/.test/simulated/1_depth100000_R1.fastq.gz]
+	    R2=[$PWD/.test/simulated/1_depth100000_R2.fastq.gz]
+	fi
+
+	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
+	;;
     small)
 	nshards=2
+	if [ ! -d "${PWD}/.test/SRR18369973/" ]
+	then
+	    echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
+	    exit 1
+	fi
 	R1=[${PWD}/.test/SRR18369973/SRR18369973_1.fastq.gz]
 	R2=[${PWD}/.test/SRR18369973/SRR18369973_2.fastq.gz]
 	addnconf="dedup_platform=SRA"
@@ -45,11 +69,6 @@ case $rawdataset in
 	;;
 esac
 echo $R1
-if [ ! -d "${PWD}/.test/SRR18369973/" ]
-then
-    echo "${PWD}/.test/SRR18369973/ not found; please run the getdata.sh script found in .test/ to fetch two test datasets"
-    exit 1
-fi
 
 common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
 case $mode in
@@ -97,6 +116,27 @@ case $mode in
 	    nshards=$nshards \
 	    stage=preprocess
 	;;
+    preprocess-gha )
+	# runs just to dedup for easy execution on github actions
+	snakemake \
+	    $common_args \
+            --cores 1 \
+            --jobs 1 \
+            --resources mem_mb=5000 \
+	    --use-singularity \
+            --singularity-prefix /github/workspace/.singularity/ \
+            --singularity-args '-B /github/' \
+            --directory tmppre_${rawdataset}/ \
+	    --notemp \
+	    --config \
+	    sample=473  \
+	    R1=$R1 \
+	    R2=$R2 \
+	    $addnconf \
+	    multiqc_config=${PWD}/multiqc_config.yaml \
+	    nshards=$nshards \
+	    stage=preprocess -f dedup/473_R1.fastq.gz
+	;;
     testpreprocess )
 	snakemake \
 	    $common_args \
@@ -129,7 +169,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpbio/ \
+            --directory tmpbio_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
@@ -181,7 +221,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpassembly/ \
+	    --directory tmpassembly_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -204,7 +244,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpannotate/ \
+	    --directory tmpannotate_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -216,7 +256,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi/ \
+	    --directory tmprgi_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -227,7 +267,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi/ \
+	    --directory tmprgi_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -243,7 +283,7 @@ case $mode in
 	    snakemake \
 		$common_args \
 		--singularity-args "-B ${PWD},/data/brinkvd/" \
-		--directory tmprgi/ \
+		--directory tmprgi_${rawdataset}/ \
 		--config sample=473 \
 		R1=$R1 \
 		R2=$R2 \
