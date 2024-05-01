@@ -93,9 +93,9 @@ module utils:
 
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=get_concat_input
+        fq=get_concat_input
     output:
-        R1=temp("concatenated/{sample}_R{rd}.fastq.gz"),
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 

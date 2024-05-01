@@ -1,6 +1,7 @@
 from pathlib import Path
 
 
+
 def is_paired():
     if config["lib_layout"] not in ["paired", "single"]:
         raise ValueError("lib_layout must be specified as either paired or single")
@@ -17,6 +18,9 @@ def is_paired():
             )
     return config["lib_layout"] == "paired"
 
+
+def get_readdirs():
+    return [1, 2] if is_paired() else [1]
 
 def skip_dedup():
     return not config["dedup_reads"]

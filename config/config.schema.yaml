@@ -19,7 +19,7 @@ properties:
     type: array
     items:
       type: string
-    minItems: 0
+    minItems: 1
     uniqueItems: true
   stage:
     type: string

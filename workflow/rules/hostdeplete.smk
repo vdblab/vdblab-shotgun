@@ -13,11 +13,6 @@ include: "common.smk"
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
 
 
-validate(
-    config,
-    os.path.join(str(workflow.current_basedir), "../../config/config.schema.yaml"),
-)
-
 
 onstart:
     with open("config_used.yaml", "w") as outfile:
@@ -31,14 +26,13 @@ bowtie2_mouse_db_name = os.path.basename(config["bowtie2_mouse_index_base"])
 snap_human_db_name = os.path.basename(os.path.dirname(config["snap_human_index_dir"]))
 snap_mouse_db_name = os.path.basename(os.path.dirname(config["snap_mouse_index_dir"]))
 
-readdirs = [1, 2] if config["lib_layout"] == "paired" else [1]
 
 human_bowtie_outputs = f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.bam"
 human_snap_outputs = f"02-snap/{config['sample']}.{snap_human_db_name}.bam"
 mouse_bowtie_outputs = f"04-bowtie/{config['sample']}.{bowtie2_mouse_db_name}.bam"
 mouse_snap_outputs = f"05-snap/{config['sample']}.{snap_mouse_db_name}.bam"
 cleaned_reads = expand(
-    f"06-nohuman-nomouse/{config['sample']}.R{{rd}}.fastq.gz", rd=readdirs
+    f"06-nohuman-nomouse/{config['sample']}.R{{rd}}.fastq.gz", rd=config["readdirs"]
 )
 table = f"{config['sample']}_depletion.stats"
 
@@ -74,7 +68,7 @@ rule s01_bowtie2:
                 "01-bowtie/{{sample}}.without_"
                 + bowtie2_human_db_name
                 + ".R{rd}.fastq.gz",
-                rd=readdirs,
+                rd=config["readdirs"],
             )
         ),
     log:
@@ -119,7 +113,7 @@ rule s02_snapalign:
             "01-bowtie/{{sample}}.without_"
             + bowtie2_human_db_name
             + ".R{rd}.fastq.gz",
-            rd=readdirs,
+            rd=config["readdirs"],
         ),
         idx_genome=f"{config['snap_human_index_dir']}Genome",
     output:
@@ -161,7 +155,7 @@ rule s03_get_unmapped:
         unmapped_reads=temp(
             expand(
                 "03-nohuman/{{sample}}.without_" + snap_human_db_name + ".R{rd}.fastq",
-                rd=readdirs,
+                rd=config["readdirs"],
             )
         ),
         flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
@@ -233,7 +227,7 @@ use rule s01_bowtie2 as s04_bowtie2_mouse with:
                 "04-bowtie/{{sample}}.without_"
                 + bowtie2_mouse_db_name
                 + ".R{rd}.fastq.gz",
-                rd=readdirs,
+                rd=config["readdirs"],
             )
         ),
     log:
@@ -247,7 +241,7 @@ use rule s02_snapalign as s05_snapalign_mouse with:
             "04-bowtie/{{sample}}.without_"
             + bowtie2_mouse_db_name
             + ".R{rd}.fastq.gz",
-            rd=readdirs,
+            rd=config["readdirs"],
         ),
         idx_genome=f"{config['snap_mouse_index_dir']}Genome",
     output:
@@ -262,7 +256,7 @@ use rule s03_get_unmapped as s06_get_unmapped_human_mouse with:
         bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
         unmapped_reads=temp(
-            expand("06-nohuman-nomouse/{{sample}}.R{rd}.fastq", rd=readdirs)
+            expand("06-nohuman-nomouse/{{sample}}.R{rd}.fastq", rd=config["readdirs"])
         ),
         flagstat=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam.flagstat",
     log:

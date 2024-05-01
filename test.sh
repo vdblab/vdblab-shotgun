@@ -22,7 +22,7 @@ case $rawdataset in
 	;;
     sim)
 	nshards=1
-	if [[ "$mode" == preprocess* ]] # note double brackets
+	if [[ "$mode" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
@@ -179,16 +179,23 @@ case $mode in
 	;;
 
     biobakeryse )
+	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
+	if [ ! -d "tmppre-se_${rawdataset}/" ]
+	then
+	    echo "tmppre-se_${rawdataset}/ not present; please run `bash test.sh preprocess-se $rawdataset`"
+	fi
+
+	# just run through metaphlan in the interest of time; humann needs lots of resources
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpbio-se/ \
+	    --directory tmpbio-se_${rawdataset}/ \
 	    --config \
 	    sample=473  \
-	    R1=$R1 \
+	    R1=[$PWD/tmppre-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
 	    lib_layout=single \
 	    $addnconf \
-	    stage=biobakery
+	    stage=biobakery -f metaphlan/473_metaphlan3_profile.txt
 	;;
 
     mtx )
@@ -277,8 +284,8 @@ case $mode in
 	    stage=downsample
 	;;
 
-  figs )
-        for stage in all preprocess biobakery binning kraken assembly annotate rgi
+    figs )
+	for stage in all preprocess biobakery binning kraken assembly annotate rgi
 	do
 	    snakemake \
 		$common_args \
@@ -295,6 +302,6 @@ case $mode in
 
 	;;
     *)
-	echo -e "unknown mode; please chose from all, preprocess, biobakery, bin, kraken2, assembly, annotate, rgi, figs. Exiting\n"
+	echo -e "unknown mode; please chose from all, preprocess, prese, preprocess-gha, biobakery, biobakeryse, bin, kraken2, assembly, annotate, rgi, figs. Exiting\n"
 	;;
 esac

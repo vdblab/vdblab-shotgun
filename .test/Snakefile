@@ -66,7 +66,7 @@ rule get_references:
     for fasta in D6331.refseq/genomes/*fasta
     do
       name=$(basename $fasta | sed "s|.fasta||g")
-      cat $fasta | grep -v "^>" | awk 'BEGIN {{ ORS=""; print ">${{name}}_concatenated\\n" }} {{ print }}' > {output.mockdir}/${{name}}.fasta
+      cat $fasta | grep -v "^>" | awk  -v header=">${{name}}_concatenated" 'BEGIN {{ ORS=""; print header "\\n" }} {{ print }}' > {output.mockdir}/${{name}}.fasta
     done
 
     """

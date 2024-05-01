@@ -33,11 +33,10 @@ localrules:
 
 
 sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
-readdirs = [1, 2] if config["lib_layout"] == "paired" else [1]
 cleaned_fastqs = expand(
     "hostdepleted/{sample}_R{read_dir}.fastq.gz",
     sample=config["sample"],
-    read_dir=readdirs,
+    read_dir=config["readdirs"],
 )
 
 
@@ -50,11 +49,11 @@ rule all:
         clean_fastqs=cleaned_fastqs,
         hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
         fastqcs_mqc=expand(
-            f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=readdirs
+            f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=config["readdirs"]
         ),
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
         host_reads=expand(
-            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz", rd=readdirs
+            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz", rd=config["readdirs"]
         ),
 
 
@@ -75,9 +74,9 @@ def get_concat_input(wc):
 
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=get_concat_input,
+        fq=get_concat_input,
     output:
-        R1=temp("concatenated/{sample}_R{rd}.fastq.gz"),
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
         e="logs/concat_names_fix_names_{sample}_R{rd}.e",
 
@@ -110,9 +109,9 @@ rule initial_fastqc_run:
 
 rule bbmap_dedup:
     input:
-        reads=expand("concatenated/{{sample}}_R{rd}.fastq.gz", rd=readdirs),
+        reads=expand("concatenated/{{sample}}_R{rd}.fastq.gz", rd=config["readdirs"]),
     output:
-        reads=temp(expand("dedup/{{sample}}_R{rd}.fastq.gz", rd=readdirs)),
+        reads=temp(expand("dedup/{{sample}}_R{rd}.fastq.gz", rd=config["readdirs"])),
         dedup_stats="reports/{sample}_dedup.stats",
     threads: 8
     params:
@@ -180,7 +179,7 @@ use rule split_fastq from utils as utils_split_fastq with:
             expand(
                 "split_fastq/{{sample}}_{readdir}1.part_{shard}.fastq.gz",
                 shard=SHARDS,
-                readdir=readdirs,
+                readdir=config["readdirs"],
             )
         ),
     log:
@@ -200,13 +199,13 @@ rule bbmap_run:
         reads=temp(
             expand(
                 "trimmed/{{sample}}_shard{{shard}}_trim_R{readdir}.fastq.gz",
-                readdir=readdirs,
+                readdir=config["readdirs"],
             )
         ),
         rm_reads=temp(
             expand(
                 "trimmed/{{sample}}_shard{{shard}}_discard_R{readdir}.fastq.gz",
-                readdir=readdirs,
+                readdir=config["readdirs"],
             )
         ),
         stats=temp("trimmed/{sample}_shard{shard}_trimmingAQ.txt"),
@@ -287,7 +286,7 @@ use rule s01_bowtie2 from hostdeplete as s01_bowtie2 with:
                 "01-bowtie/{{sample}}_shard{{shard}}.without_"
                 + bowtie2_human_db_name
                 + ".R{rd}.fastq.gz",
-                rd=readdirs,
+                rd=config["readdirs"],
             )
         ),
     log:
@@ -350,7 +349,7 @@ rule aligned_host_reads_to_fastq:
         bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
         reads=temp(
             expand(
-                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=readdirs
+                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=config["readdirs"]
             )
         ),
     #        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),

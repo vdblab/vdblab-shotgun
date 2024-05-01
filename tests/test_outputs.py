@@ -7,10 +7,14 @@ from pathlib import Path
 def running_as_github_action():
     return "GITHUB_ACTION" in os.environ and os.environ["GITHUB_ACTION"] is not None
 
-def get_seqkitstats_count(line):
-    """ get the right column, remove commas from numbers, and convert to int
+def get_nreads_from_seqkitstats(path, pattern):
+    """ read the file up to the pattern get the right column, remove commas from numbers, and convert to int
     """
-    return  int(line.split()[3].replace(",", ""))
+    with open(path) as inf:
+        for line in inf:
+            if line.startswith(pattern):
+                return int(line.split()[3].replace(",", ""))
+    raise ValueError(f"pattern {pattern} not found at the start of any lines")
 
 def test_simulated_data_present():
     # TODO: test hashes of files?
@@ -21,20 +25,38 @@ def test_simulated_host_deplete_results_present():
     assert os.path.exists("tmppre_sim/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess sim`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
-def test_simulated_bb_run_present():
+def test_simulated_bb_kraken_run_present():
     assert os.path.exists("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery sim`"
     assert os.path.exists("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out"), "no kraken results for sumulated data; please run `bash test.sh kraken sim`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_simulated_bb_se_present():
+    assert os.path.exists("tmpbio-se_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery sim`"
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_depletes_correct_n_reads():
-    with open(".test/simulated/1_depth100000.statsfastq") as inf:
-        for line in inf:
-            if line.startswith("tmp_1_depth100000_t2t_chr21.fasta_R1.fq"):
-                nreads_human_r1 = get_seqkitstats_count(line)
-                nreads_human = nreads_human_r1 * 2
-                break
+    nreads_human = get_nreads_from_seqkitstats(
+        ".test/simulated/1_depth100000.statsfastq",
+        "tmp_1_depth100000_t2t_chr21.fasta_R1.fq"
+    ) * 2
+
 #    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
     with open("tmppre_sim/reports/473_hostdepletion.stats", "r") as inf:
+        for line in inf:
+            if line.startswith("473"):
+                nreads_human_detected = line.split("\t")[2]
+
+    assert isclose(int(nreads_human), int(nreads_human_detected), abs_tol=10)
+
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_preprocess_se__depletes_correct_n_reads():
+    nreads_human = get_nreads_from_seqkitstats(
+        ".test/simulated/1_depth100000.statsfastq",
+        "tmp_1_depth100000_t2t_chr21.fasta_R1.fq"
+    )
+#    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
+    with open("tmppre-se_sim/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             if line.startswith("473"):
                 nreads_human_detected = line.split("\t")[2]
@@ -47,17 +69,38 @@ def test_preprocess_check_dedup():
     create a dataset with a 100% duplication rate, so we should see a
     high duplication rate here
     """
-    with open(".test/simulated/1_depth100000.statsfastq") as inf:
-        for line in inf:
-            if line.startswith("1_depth100000_R1.fastq.gz"):
-                nreads_r1_orig = get_seqkitstats_count(line)
-                nreads_total = nreads_r1_orig * 2
-                break
+    nreads_total = get_nreads_from_seqkitstats(
+        ".test/simulated/1_depth100000.statsfastq",
+        "1_depth100000_R1.fastq.gz"
+    ) * 2
     with open("tmppre_sim/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
                 ndups_found = int(line.split("\t")[1])
     assert isclose(nreads_total, ndups_found, abs_tol=10)
+
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_preprocess_se_check_dedup():
+    """ the test workflow runs on a double copy of simulated data to
+    create a dataset with a 100% duplication rate, so we should see a
+    high duplication rate here
+
+    The abs_tol is higher for this single end run, as we expected
+    99885 (the input size) duplicates but found 99930,
+    presumably because there are some reads that are called duplicates when
+    considering just R1 but wouldn't be considered duplicates when
+    considering both R1 and R2.
+    """
+    nreads_total = get_nreads_from_seqkitstats(
+        ".test/simulated/1_depth100000.statsfastq",
+        "1_depth100000_R1.fastq.gz"
+    )
+    with open("tmppre-se_sim/reports/473_dedup.stats", "r") as inf:
+        for line in inf:
+            if line.startswith("Duplicates Found"):
+                ndups_found = int(line.split("\t")[1])
+    assert isclose(nreads_total, ndups_found, abs_tol=100)
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_bacteria_relab():
@@ -110,12 +153,10 @@ def test_bb_humann_functional_count():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_kraken_bracken_counts_candida():
-    with open(".test/simulated/1_depth100000.statsfastq") as inf:
-        for line in inf:
-            if line.startswith("tmp_1_depth100000_Candida_albican.fasta_R1.fq"):
-                tmp = get_seqkitstats_count(line)
-                nreads_c_albicans = tmp * 2
-                break
+    nreads_c_albicans = get_nreads_from_seqkitstats(
+        ".test/simulated/1_depth100000.statsfastq",
+        "tmp_1_depth100000_Candida_albican.fasta_R1.fq"
+    ) * 2
     with open ("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out", "r") as inf:
         for line in inf:
             if line.startswith("Candida albicans"):

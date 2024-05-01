@@ -49,6 +49,8 @@ for entries like R1/R2, its eaiest to set those in the conditional block below, 
 if config["stage"] == "all":
     config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
+config["readdirs"] = get_readdirs()
+
 
 """
 similarly, we have to mock the downsample parameters if we aren't running with stage=downsample
@@ -251,9 +253,9 @@ if config["stage"] == "all":
 
     use rule concat_lanes_fix_names from kraken as kraken_concat_lanes_fix_names with:
         input:
-            R1=touch("input_F"),
+            fq=touch("input_F"),
         output:
-            R1=temp(touch("output_F")),
+            f1=temp(touch("output_F")),
 
     use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
         input:

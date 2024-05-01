@@ -61,22 +61,22 @@ rule concat_lanes_fix_names:
     """
     #
     input:
-        R1=[],
+        fq=[],
     output:
-        R1="out_{sample}.1.fq.gz",
+        fq="out_{sample}.1.fq.gz",
     log:
         e="logs/concat_lanes_fix_names_{sample}.e",
     shell:
         """
-        case {input.R1[0]} in
+        case {input.fq[0]} in
         *gz )
-            cat {input.R1} > {output.R1} 2>> {log.e}
+            cat {input.fq} > {output.fq} 2>> {log.e}
         ;;
         *bz2 )
-            bzcat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
+            bzcat {input.fq} | gzip -c > {output.fq} 2>> {log.e}
         ;;
         *fastq | *fq  )
-            cat {input.R1} | gzip -c > {output.R1} 2>> {log.e}
+            cat {input.fq} | gzip -c > {output.fq} 2>> {log.e}
         ;;
         * )
             echo "Supported formats are gz, bz2, or uncompressed"
