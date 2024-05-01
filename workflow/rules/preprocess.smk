@@ -354,9 +354,13 @@ rule aligned_host_reads_to_fastq:
         ),
     #        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     params:
-        outstring=lambda wc, output: f"-fq {output.reads[0]} -fq2 {output.reads[0]}"
+        bamtofastq_outputstring=lambda wc, output: f"-1 {output.reads[0]} -2 {output.reads[1]}"
         if is_paired()
-        else f"-fq {output.reads[0]}",
+        else f"-0 {output.reads[0]}",
+        # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
+        # if is_paired()
+        # else f"-fq {output.unmapped_reads[0]}",
+        # "paired" or "single", to avoid dealing with bool conversion between yaml, snakemake, and bash
         aligned_samflags="-f 2 -F 512" if is_paired() else "-F 512",
     threads: 8
     resources:
@@ -368,7 +372,7 @@ rule aligned_host_reads_to_fastq:
         # get the aligned reads
         samtools view {params.aligned_samflags} -b -o {output.bam} {input.bam}
         # convert to fastq
-        bamToFastq -i {output.bam} {params.outstring}
+        samtools fastq {params.bamtofastq_outputstring} {output.bam}
         """
 
 

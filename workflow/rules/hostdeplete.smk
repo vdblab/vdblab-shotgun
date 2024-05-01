@@ -160,9 +160,12 @@ rule s03_get_unmapped:
         ),
         flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
     params:
-        bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
+        bamtofastq_outputstring=lambda wc, output: f"-1 {output.unmapped_reads[0]} -2 {output.unmapped_reads[1]}"
         if is_paired()
-        else f"-fq {output.unmapped_reads[0]}",
+        else f"-0 {output.unmapped_reads[0]}",
+        # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
+        # if is_paired()
+        # else f"-fq {output.unmapped_reads[0]}",
         # "paired" or "single", to avoid dealing with bool conversion between yaml, snakemake, and bash
         lib_layout=config["lib_layout"],
     log:
@@ -191,7 +194,8 @@ rule s03_get_unmapped:
             # R1 unmapped
             samtools view -u -f 4 {input.bam} > tmp_unmapped_{wildcards.sample}.bam
             samtools flagstat tmp_unmapped_{wildcards.sample}.bam
-            bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
+            samtools fastq {params.bamtofastq_outputstring}  tmp_unmapped_{wildcards.sample}.bam
+            #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
 
         fi
         rm tmp*_{wildcards.sample}.bam
