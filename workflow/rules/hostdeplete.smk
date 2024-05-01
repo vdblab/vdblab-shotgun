@@ -13,7 +13,6 @@ include: "common.smk"
 configfile: os.path.join(str(workflow.current_basedir), "../../config/config.yaml")
 
 
-
 onstart:
     with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)

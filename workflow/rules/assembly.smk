@@ -93,7 +93,7 @@ module utils:
 
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        fq=get_concat_input
+        fq=get_concat_input,
     output:
         fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:

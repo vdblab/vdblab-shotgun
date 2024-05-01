@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-
 def is_paired():
     if config["lib_layout"] not in ["paired", "single"]:
         raise ValueError("lib_layout must be specified as either paired or single")
@@ -21,6 +20,7 @@ def is_paired():
 
 def get_readdirs():
     return [1, 2] if is_paired() else [1]
+
 
 def skip_dedup():
     return not config["dedup_reads"]
@@ -49,8 +49,10 @@ def make_assembly_split_names(nparts):
             split_names.append(f"{i}")
     return split_names
 
+
 def get_concat_input(wc):
     return config[f"R{wc.rd}"]
+
 
 def files_to_split(wildcards):
     """full disclosure: I don't remember why this is returning a dict of tuples"""

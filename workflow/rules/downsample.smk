@@ -5,7 +5,10 @@ from pathlib import Path
 
 configfile: os.path.join(str(workflow.basedir), "../../config/config.yaml")
 
+
 include: "common.smk"
+
+
 if not os.path.exists("logs"):
     os.makedirs("logs")
 
@@ -63,7 +66,7 @@ module utils:
 
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        fq=get_concat_input
+        fq=get_concat_input,
     output:
         fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
