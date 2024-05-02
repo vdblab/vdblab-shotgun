@@ -166,16 +166,21 @@ case $mode in
 	  stage=preprocess
 	;;
     biobakery | bb)
+	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
+	if [ ! -d "tmppre_${rawdataset}/" ]
+	then
+	    echo "tmppre_${rawdataset}/ not present; please run `bash test.sh preprocess-se $rawdataset`"
+	fi
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
             --directory tmpbio_${rawdataset}/ \
 	    --config \
 	    sample=473  \
-	    R1=$R1 \
-	    R2=$R2 \
+	    R1=[$PWD/tmppre_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
+	    R2=[$PWD/tmppre_${rawdataset}/hostdepleted/473_R2.fastq.gz] \
 	    $addnconf \
-	    stage=biobakery
+	    stage=biobakery -f metaphlan/473_metaphlan3_profile.txt
 	;;
 
     biobakeryse )

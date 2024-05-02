@@ -4,17 +4,27 @@ import sys
 from math import isclose
 from pathlib import Path
 
+def get_simulated_organism_counts(path=".test/simulated/1_depth100000.statsfastq"):
+    res = {}
+    with open (path, "r") as inf:
+        for i, line in enumerate(inf):
+            if i == 0:
+                continue
+            line = line.strip().split()
+            line[0] = line[0].replace("tmp_1_depth100000_", "")
+            organism = line[0].split(".fasta")[0]
+            count = int(line[3].replace(",", ""))
+            if organism in res:
+                res[organism] = res[organism] + count
+            else:
+                res[organism] =  count
+    return res
+
+simcounts = get_simulated_organism_counts(".test/simulated/1_depth100000.statsfastq")
+
 def running_as_github_action():
     return "GITHUB_ACTION" in os.environ and os.environ["GITHUB_ACTION"] is not None
 
-def get_nreads_from_seqkitstats(path, pattern):
-    """ read the file up to the pattern get the right column, remove commas from numbers, and convert to int
-    """
-    with open(path) as inf:
-        for line in inf:
-            if line.startswith(pattern):
-                return int(line.split()[3].replace(",", ""))
-    raise ValueError(f"pattern {pattern} not found at the start of any lines")
 
 def test_simulated_data_present():
     # TODO: test hashes of files?
@@ -35,10 +45,7 @@ def test_simulated_bb_se_present():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_depletes_correct_n_reads():
-    nreads_human = get_nreads_from_seqkitstats(
-        ".test/simulated/1_depth100000.statsfastq",
-        "tmp_1_depth100000_t2t_chr21.fasta_R1.fq"
-    ) * 2
+    nreads_human = simcounts["t2t_chr21"]
 
 #    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
     with open("tmppre_sim/reports/473_hostdepletion.stats", "r") as inf:
@@ -51,11 +58,7 @@ def test_preprocess_depletes_correct_n_reads():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_se__depletes_correct_n_reads():
-    nreads_human = get_nreads_from_seqkitstats(
-        ".test/simulated/1_depth100000.statsfastq",
-        "tmp_1_depth100000_t2t_chr21.fasta_R1.fq"
-    )
-#    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
+    nreads_human = simcounts["t2t_chr21"] / 2
     with open("tmppre-se_sim/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             if line.startswith("473"):
@@ -69,10 +72,7 @@ def test_preprocess_check_dedup():
     create a dataset with a 100% duplication rate, so we should see a
     high duplication rate here
     """
-    nreads_total = get_nreads_from_seqkitstats(
-        ".test/simulated/1_depth100000.statsfastq",
-        "1_depth100000_R1.fastq.gz"
-    ) * 2
+    nreads_total = simcounts["1_depth100000_R1.fastq.gz"] * 2
     with open("tmppre_sim/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
@@ -92,10 +92,7 @@ def test_preprocess_se_check_dedup():
     considering just R1 but wouldn't be considered duplicates when
     considering both R1 and R2.
     """
-    nreads_total = get_nreads_from_seqkitstats(
-        ".test/simulated/1_depth100000.statsfastq",
-        "1_depth100000_R1.fastq.gz"
-    )
+    nreads_total = simcounts["1_depth100000_R1.fastq.gz"]
     with open("tmppre-se_sim/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
@@ -135,9 +132,48 @@ def test_bb_metaphlan_bacteria_relab():
     print(est_relab*100, float(bact_relab))
     # would love to be able to tighen up the tolerance  here
     assert isclose(est_relab*100, float(bact_relab), abs_tol=10),  "Bad relative abundance estimate"
-    # TODO: these are way off, likely due to unmapped reads and host reads
+    # TODO: these are way off, likely due to unmapped reads
     # print((99885*2) *est_relab, float(bact_total))
-    # assert isclose((99885*2) * est_relab, int(bact_total)),  "Bad estimated counts"
+    #assert isclose((99885*2) * est_relab, int(bact_total)),  "Bad estimated counts"
+
+def test_bb_metaphlan_est_counts():
+    mpares = {}
+    with open("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+        for line in inf:
+            if "s__" in line and "t__" not in line:
+                line = line.split()
+                species = line[0].split("s__")[1]
+                mpares[species] =  int(line[4])
+
+    # there are multiple E. coli in the mock
+    assert isclose(mpares["Escherichia_coli"],
+                   sum([v for k,v in simcounts.items() if k.startswith("Escherichia_coli")]),
+                   abs_tol=1200), "bad e.coli count"
+
+    assert isclose(mpares["Akkermansia_muciniphila"], simcounts["Akkermansia_muciniphila"], abs_tol=2000)
+    assert isclose(mpares["Enterococcus_faecalis"], simcounts["Enterococcus_faecalis"], abs_tol=2000)
+    assert isclose(mpares["Salmonella_enterica"], simcounts["Salmonella_enterica"], abs_tol=2000)
+    assert isclose(mpares["Veillonella_rogosae"], simcounts["Veillonella_rogosae"], abs_tol=2000 )
+
+
+def test_bb_metaphlan_se_est_counts():
+    mpares = {}
+    with open("tmpbio-se_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+        for line in inf:
+            if "s__" in line and "t__" not in line:
+                line = line.split()
+                species = line[0].split("s__")[1]
+                mpares[species] =  int(line[4])
+
+    # there are multiple E. coli in the mock
+    assert isclose(mpares["Escherichia_coli"],
+                   sum([v for k,v in simcounts.items() if k.startswith("Escherichia_coli")]) / 2,
+                   abs_tol=1200), "bad e.coli count"
+
+    assert isclose(mpares["Akkermansia_muciniphila"], simcounts["Akkermansia_muciniphila"] / 2, abs_tol=2000)
+    assert isclose(mpares["Enterococcus_faecalis"], simcounts["Enterococcus_faecalis"] / 2, abs_tol=2000)
+    assert isclose(mpares["Salmonella_enterica"], simcounts["Salmonella_enterica"] / 2, abs_tol=2000)
+    assert isclose(mpares["Veillonella_rogosae"], simcounts["Veillonella_rogosae"] / 2, abs_tol=2000 )
 
 
 
@@ -153,10 +189,7 @@ def test_bb_humann_functional_count():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_kraken_bracken_counts_candida():
-    nreads_c_albicans = get_nreads_from_seqkitstats(
-        ".test/simulated/1_depth100000.statsfastq",
-        "tmp_1_depth100000_Candida_albican.fasta_R1.fq"
-    ) * 2
+    nreads_c_albicans = simcounts["Candida_albican"]
     with open ("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out", "r") as inf:
         for line in inf:
             if line.startswith("Candida albicans"):
