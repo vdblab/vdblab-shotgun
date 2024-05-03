@@ -94,7 +94,7 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --prefix {batch} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
         if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
         then
@@ -231,6 +231,7 @@ rule annotate_CAZI_split:
     output:
         overview="cazi_db_scan/{batch}/overview.txt",
         substrate="cazi_db_scan/{batch}/substrate.out",
+        cgc="cazi_db_scan/{batch}/cgc.out",
     params:
         cazi_db=config["cazi_db"],
         contig_annotation_thresh=config["contig_annotation_thresh"],
@@ -248,6 +249,8 @@ rule annotate_CAZI_split:
         # if you can figure out checkpoints that can deal with missing files,
         # you win!
         touch {output.overview}
+        touch {output.substrate}
+        touch {output.cgc}
         run_dbcan {input.faa} protein --out_dir cazi_db_scan/{wildcards.batch}/ -t all --db_dir /app/db -c {input.gff} --cgc_substrate --dia_cpu {threads} --hmm_cpu {threads} --tf_cpu {threads} --stp_cpu {threads} --dbcan_thread {threads} ||  echo "WARNING: no output from this split!"
         """
 
@@ -256,9 +259,11 @@ rule join_CAZI:
     input:
         overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
         substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
+        cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
     output:
         overview=f"{config['sample']}_cazi_overview.txt",
         substrate=f"{config['sample']}_cazi_substrate.out",
+        cgc=f"{config['sample']}_cazi_cgc.out",
     shell:
         """
         # deal with header
@@ -271,6 +276,11 @@ rule join_CAZI:
         for f in {input.substrate}
         do
             tail -n+2 $f >> {output.substrate}
+        done
+        head -n 1 {input.cgc[0]} > {output.cgc}
+        for f in {input.cgc}
+        do
+            tail -n+2 $f >> {output.cgc}
         done
         """
 
@@ -295,18 +305,15 @@ rule join_metaerg_outputs:
         # deal with header
         head -n 1 {input.gff[0]} > {output.gff}
         for f in {input.gff}
-        do
-            IFS='/'; name_arr=($f); unset IFS;
-            part=${{name_arr[@]: -3: 1}}
-            tail -n+2 $f >> seqkit replace -p 'ID=[^;]*;' -r 'ID=megahit_'$part'_{{nr}};' $f >> {output.gff}
+        do  # in order to have unique "gene names" downstream need to overwrite names as we merge:
+            #IFS='/'; name_arr=($f); unset IFS;
+            #part=${{name_arr[@]: -3: 1}}
+            #tail -n+2 $f >> seqkit replace -p 'ID=[^;]*;' -r 'ID=assembled_region_'$part'_{{nr}};' $f >> {output.gff}
+            tail -n+2 $f >> {output.gff}
         done
-                # deal with header
-        head -n 1 {input.ffn[0]} > {output.ffn}
         for f in {input.ffn}
         do
-            IFS='/'; name_arr=($f); unset IFS;
-            part=${{name_arr[@]: -3: 1}}
-            seqkit replace -p '.+' -r 'megahit_'$part'_{{nr}}' $f >> {output.ffn}
+            $f >> {output.ffn}
         done
         """
 
@@ -369,6 +376,30 @@ rule bedtools_coverage:
         bedtools coverage -g {input.length_file} -sorted -a {input.bed_file} -counts -b {input.bamfile} > {output.coverage}
         """
 
+rule create_RPM_counts:
+    input:
+        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
+        overview=f"{config['sample']}_cazi_overview.txt",
+        substrate=f"{config['sample']}_cazi_substrate.out",
+        cgc=f"{config['sample']}_cazi_cgc.out",
+        r1=config["R1"],
+    output:
+        rpm_file=f"{config['sample']}_annoted_cazymes_RPM.tsv",
+    conda:
+        "../envs/annotate_output_parse.yaml"
+    shell:
+        """
+        num_reads="$(expr $(zcat {input.r1} | wc -l) / 4)"
+        python ../scripts/generate_RPM_annotation_files.py \
+            {input.coverage} \
+            {input.substrate} \
+            {input.cgc} \
+            {input.overview} \
+            {output.rpm_file} \
+            $num_reads
+        """
+
+
 
 rule clean_up:
     """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
@@ -377,7 +408,7 @@ rule clean_up:
     input:
         agg_file="{sample}_metaerg.gff",
         cazi=f"{config['sample']}_cazi_overview.txt",
-        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
+        rpm_file=f"{config['sample']}_annoted_cazymes_RPM.tsv",
     output:
         touch("{sample}.cleaned_dirs"),
     shell:
