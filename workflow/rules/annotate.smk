@@ -376,6 +376,7 @@ rule bedtools_coverage:
         bedtools coverage -g {input.length_file} -sorted -a {input.bed_file} -counts -b {input.bamfile} > {output.coverage}
         """
 
+
 rule create_RPM_counts:
     input:
         coverage=f"{config['sample']}_annotated_gene_coverage.txt",
@@ -398,7 +399,6 @@ rule create_RPM_counts:
             {output.rpm_file} \
             $num_reads
         """
-
 
 
 rule clean_up:
