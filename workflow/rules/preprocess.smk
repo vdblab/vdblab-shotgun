@@ -53,7 +53,8 @@ rule all:
         ),
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
         host_reads=expand(
-            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz", rd=config["readdirs"]
+            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",
+            rd=config["readdirs"],
         ),
 
 
@@ -349,7 +350,8 @@ rule aligned_host_reads_to_fastq:
         bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
         reads=temp(
             expand(
-                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=config["readdirs"]
+                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq",
+                rd=config["readdirs"],
             )
         ),
     #        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),

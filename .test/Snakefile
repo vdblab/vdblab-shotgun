@@ -39,7 +39,12 @@ all_results = [
 rule all:
     input:
         all_results,
-        expand("clean_{rep}_depth{depth}_{simtype}.done", rep=reps, depth=total_depths, simtype=simtypes),
+        expand(
+            "clean_{rep}_depth{depth}_{simtype}.done",
+            rep=reps,
+            depth=total_depths,
+            simtype=simtypes,
+        ),
 
 
 rule get_references:
@@ -111,7 +116,9 @@ rule simulate:
             "{rep}_depth{depth}_{simtype}_individual_reference_fastq_present"
         ),
     params:
-        reads_or_coverage = lambda wildcards: "--rcount $nreads" if wildcards.simtype == "equalreads" else "--fcov .5",
+        reads_or_coverage=lambda wildcards: "--rcount $nreads"
+        if wildcards.simtype == "equalreads"
+        else "--fcov .5",
         tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}_{wildcards.simtype}",
     container:
         "docker://ghcr.io/vdblab/art:2016.06.05"
@@ -131,6 +138,7 @@ rule simulate:
     cat {params.tmppre}*R1.fq | pigz --best > {output.R1}
     cat {params.tmppre}*R2.fq | pigz --best > {output.R2}
     """
+
 
 rule stats:
     input:
