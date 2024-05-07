@@ -20,21 +20,39 @@ case $rawdataset in
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.bz2]
 	addnconf="dedup_platform=HiSeq"
 	;;
+    evensim)
+	nshards=1
+	if [[ "$mode" == pre* ]] # note double brackets
+	   then
+	       # simulated a high duplicate library
+	       mkdir -p $PWD/.test/simulated/duplicated/
+	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz
+	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz]
+	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz]
+	else
+	    R1=[$PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz]
+	    R2=[$PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz]
+	fi
+	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
+	;;
     sim)
 	nshards=1
 	if [[ "$mode" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
-	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
 	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
 	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
 	else
-	    R1=[$PWD/.test/simulated/1_depth100000_R1.fastq.gz]
-	    R2=[$PWD/.test/simulated/1_depth100000_R2.fastq.gz]
+	    R1=[$PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz]
+	    R2=[$PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz]
 	fi
 
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers

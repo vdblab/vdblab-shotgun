@@ -4,14 +4,15 @@ import sys
 from math import isclose
 from pathlib import Path
 
-def get_simulated_organism_counts(path=".test/simulated/1_depth100000.statsfastq"):
+def get_simulated_organism_counts(path=".test/simulated/1_depth100000_equalreads.statsfastq"):
+    base_to_replace = os.path.splitext(os.path.basename(path))[0]
     res = {}
     with open (path, "r") as inf:
         for i, line in enumerate(inf):
             if i == 0:
                 continue
             line = line.strip().split()
-            line[0] = line[0].replace("tmp_1_depth100000_", "")
+            line[0] = line[0].replace("tmp_" + base_to_replace + "_", "")
             organism = line[0].split(".fasta")[0]
             count = int(line[3].replace(",", ""))
             if organism in res:
@@ -20,15 +21,15 @@ def get_simulated_organism_counts(path=".test/simulated/1_depth100000.statsfastq
                 res[organism] =  count
     return res
 
-simcounts = get_simulated_organism_counts(".test/simulated/1_depth100000.statsfastq")
-
+simcounts_equalreads = get_simulated_organism_counts(".test/simulated/1_depth100000_equalreads.statsfastq")
+simcounts_equalcoverage = get_simulated_organism_counts(".test/simulated/1_depth100000_equalcoverage.statsfastq")
 def running_as_github_action():
     return "GITHUB_ACTION" in os.environ and os.environ["GITHUB_ACTION"] is not None
 
 
 def test_simulated_data_present():
     # TODO: test hashes of files?
-    assert os.path.exists(".test/simulated/1_depth100000.statsfastq"), "no simulated data present; see readme to simulate data"
+    assert os.path.exists(".test/simulated/1_depth100000_equalreads.statsfastq"), "no simulated data present; see readme to simulate data"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_host_deplete_results_present():
@@ -45,7 +46,8 @@ def test_simulated_bb_se_present():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_depletes_correct_n_reads():
-    nreads_human = simcounts["t2t_chr21"]
+    print(simcounts_equalreads)
+    nreads_human = simcounts_equalreads["t2t_chr21"]
 
 #    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
     with open("tmppre_sim/reports/473_hostdepletion.stats", "r") as inf:
@@ -58,7 +60,7 @@ def test_preprocess_depletes_correct_n_reads():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_se__depletes_correct_n_reads():
-    nreads_human = simcounts["t2t_chr21"] / 2
+    nreads_human = simcounts_equalreads["t2t_chr21"] / 2
     with open("tmppre-se_sim/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             if line.startswith("473"):
@@ -72,7 +74,7 @@ def test_preprocess_check_dedup():
     create a dataset with a 100% duplication rate, so we should see a
     high duplication rate here
     """
-    nreads_total = simcounts["1_depth100000_R1.fastq.gz"] * 2
+    nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"] * 2
     with open("tmppre_sim/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
@@ -92,7 +94,7 @@ def test_preprocess_se_check_dedup():
     considering just R1 but wouldn't be considered duplicates when
     considering both R1 and R2.
     """
-    nreads_total = simcounts["1_depth100000_R1.fastq.gz"]
+    nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"]
     with open("tmppre-se_sim/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
@@ -147,13 +149,13 @@ def test_bb_metaphlan_est_counts():
 
     # there are multiple E. coli in the mock
     assert isclose(mpares["Escherichia_coli"],
-                   sum([v for k,v in simcounts.items() if k.startswith("Escherichia_coli")]),
+                   sum([v for k,v in simcounts_equalreads.items() if k.startswith("Escherichia_coli")]),
                    abs_tol=1200), "bad e.coli count"
 
-    assert isclose(mpares["Akkermansia_muciniphila"], simcounts["Akkermansia_muciniphila"], abs_tol=2000)
-    assert isclose(mpares["Enterococcus_faecalis"], simcounts["Enterococcus_faecalis"], abs_tol=2000)
-    assert isclose(mpares["Salmonella_enterica"], simcounts["Salmonella_enterica"], abs_tol=2000)
-    assert isclose(mpares["Veillonella_rogosae"], simcounts["Veillonella_rogosae"], abs_tol=2000 )
+    assert isclose(mpares["Akkermansia_muciniphila"], simcounts_equalreads["Akkermansia_muciniphila"], abs_tol=2000)
+    assert isclose(mpares["Enterococcus_faecalis"], simcounts_equalreads["Enterococcus_faecalis"], abs_tol=2000)
+    assert isclose(mpares["Salmonella_enterica"], simcounts_equalreads["Salmonella_enterica"], abs_tol=2000)
+    assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"], abs_tol=2000 )
 
 
 def test_bb_metaphlan_se_est_counts():
@@ -167,13 +169,32 @@ def test_bb_metaphlan_se_est_counts():
 
     # there are multiple E. coli in the mock
     assert isclose(mpares["Escherichia_coli"],
-                   sum([v for k,v in simcounts.items() if k.startswith("Escherichia_coli")]) / 2,
+                   sum([v for k,v in simcounts_equalreads.items() if k.startswith("Escherichia_coli")]) / 2,
                    abs_tol=1200), "bad e.coli count"
 
-    assert isclose(mpares["Akkermansia_muciniphila"], simcounts["Akkermansia_muciniphila"] / 2, abs_tol=2000)
-    assert isclose(mpares["Enterococcus_faecalis"], simcounts["Enterococcus_faecalis"] / 2, abs_tol=2000)
-    assert isclose(mpares["Salmonella_enterica"], simcounts["Salmonella_enterica"] / 2, abs_tol=2000)
-    assert isclose(mpares["Veillonella_rogosae"], simcounts["Veillonella_rogosae"] / 2, abs_tol=2000 )
+    assert isclose(mpares["Akkermansia_muciniphila"], simcounts_equalreads["Akkermansia_muciniphila"] / 2, abs_tol=2000)
+    assert isclose(mpares["Enterococcus_faecalis"], simcounts_equalreads["Enterococcus_faecalis"] / 2, abs_tol=2000)
+    assert isclose(mpares["Salmonella_enterica"], simcounts_equalreads["Salmonella_enterica"] / 2, abs_tol=2000)
+    assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"] / 2, abs_tol=2000 )
+
+def test_bb_metaphlan_se_even_coverate_relab():
+    mpares_relab = {}
+    with open("tmpbio-se_evensim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+        for line in inf:
+            if "s__" in line and "t__" not in line:
+                line = line.split()
+                species = line[0].split("s__")[1]
+                mpares_relab[species] =  float(line[2])
+    print(mpares_relab)
+    target_relab = (1/21) *100
+    # there are multiple E. coli in the mock
+    assert isclose(target_relab * 5, mpares_relab["Escherichia_coli"],
+                   abs_tol=3), "bad e.coli count"
+
+    assert isclose(mpares_relab["Akkermansia_muciniphila"], target_relab, abs_tol=1)
+    assert isclose(mpares_relab["Enterococcus_faecalis"], target_relab, abs_tol=1)
+    assert isclose(mpares_relab["Salmonella_enterica"], target_relab, abs_tol=1)
+    assert isclose(mpares_relab["Veillonella_rogosae"], target_relab, abs_tol=1 )
 
 
 
@@ -189,7 +210,7 @@ def test_bb_humann_functional_count():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_kraken_bracken_counts_candida():
-    nreads_c_albicans = simcounts["Candida_albican"]
+    nreads_c_albicans = simcounts_equalreads["Candida_albican"]
     with open ("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out", "r") as inf:
         for line in inf:
             if line.startswith("Candida albicans"):

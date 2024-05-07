@@ -336,7 +336,7 @@ rule make_phanta_manifest:
     PHANTA needs the full path, and Input_R1 is relative the relative paths if we are using the concatenated lanes
     """
     input:
-        get_kraken_input,
+        unpack(get_kraken_input),
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:

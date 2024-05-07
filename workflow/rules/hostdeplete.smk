@@ -184,16 +184,19 @@ rule s03_get_unmapped:
             samtools view -u -f 12 -F 256 {input.bam} > tmp_unmap_unmap_{wildcards.sample}.bam
 
             samtools merge -u tmp_unmapped_{wildcards.sample}.bam tmp_unmap_map_{wildcards.sample}.bam tmp_map_unmap_{wildcards.sample}.bam tmp_unmap_unmap_{wildcards.sample}.bam
+
             samtools flagstat tmp_unmapped_{wildcards.sample}.bam
 
             # note this outputs uncompressed only
-            bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
+
+            samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq {params.bamtofastq_outputstring}  -
+            #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
         else
             # this is way easier
-            # R1 unmapped
+            # samtools fastq requires name sorted input
             samtools view -u -f 4 {input.bam} > tmp_unmapped_{wildcards.sample}.bam
             samtools flagstat tmp_unmapped_{wildcards.sample}.bam
-            samtools fastq {params.bamtofastq_outputstring}  tmp_unmapped_{wildcards.sample}.bam
+            samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq {params.bamtofastq_outputstring}  -
             #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
 
         fi

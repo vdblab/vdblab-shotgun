@@ -53,8 +53,7 @@ rule all:
         ),
         sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
         host_reads=expand(
-            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",
-            rd=config["readdirs"],
+            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz", rd=config["readdirs"]
         ),
 
 
@@ -118,12 +117,12 @@ rule bbmap_dedup:
     params:
         allowed_subs=3,
         flags=bbmap_dedup_params_flags,
-        inputstring=lambda wc, input: f"in1={input.reads[0]} out2={input.reads[1]}"
+        inputstring=lambda wc, input: f"in={input.reads[0]} in2={input.reads[1]}"
         if is_paired()
-        else f"in1={input.reads[0]}",
-        outputstring=lambda wc, output: f"out1={output.reads[0]} out2={output.reads[1]}"
+        else f"in={input.reads[0]}",
+        outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
         if is_paired()
-        else f"out1={output.reads[0]}",
+        else f"out={output.reads[0]}",
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
         * (max(input.size // 1000000, 1024) * 16),
@@ -213,7 +212,7 @@ rule bbmap_run:
     threads: 8
     params:
         filter_params=config["filter_params"],
-        inputstring=lambda wc, input: f"in={input['R1']} out2={input['R2']}"
+        inputstring=lambda wc, input: f"in={input['R1']} in2={input['R2']}"
         if is_paired()
         else f"in={input['R1']}",
         outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
@@ -350,8 +349,7 @@ rule aligned_host_reads_to_fastq:
         bam=temp("host/{id}/{sample}_shard{shard}.{db}.bam"),
         reads=temp(
             expand(
-                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq",
-                rd=config["readdirs"],
+                "host/{{id}}/{{sample}}_shard{{shard}}.{{db}}.R{rd}.fq", rd=config["readdirs"]
             )
         ),
     #        R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
