@@ -106,6 +106,7 @@ def test_bb_metaphlan_bacteria_relab():
     # print((99885*2) *est_relab, float(bact_total))
     #assert isclose((99885*2) * est_relab, int(bact_total)),  "Bad estimated counts"
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_est_counts():
     mpares = {}
     with open("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
