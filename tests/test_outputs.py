@@ -23,9 +23,9 @@ def get_simulated_organism_counts(path=".test/simulated/1_depth100000_equalreads
 
 simcounts_equalreads = get_simulated_organism_counts(".test/simulated/1_depth100000_equalreads.statsfastq")
 simcounts_equalcoverage = get_simulated_organism_counts(".test/simulated/1_depth100000_equalcoverage.statsfastq")
+
 def running_as_github_action():
     return "GITHUB_ACTION" in os.environ and os.environ["GITHUB_ACTION"] is not None
-
 
 def test_simulated_data_present():
     # TODO: test hashes of files?
@@ -39,6 +39,7 @@ def test_simulated_host_deplete_results_present():
 def test_simulated_bb_kraken_run_present():
     assert os.path.exists("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery sim`"
     assert os.path.exists("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out"), "no kraken results for sumulated data; please run `bash test.sh kraken sim`"
+
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_bb_se_present():
@@ -138,6 +139,7 @@ def test_bb_metaphlan_bacteria_relab():
     # print((99885*2) *est_relab, float(bact_total))
     #assert isclose((99885*2) * est_relab, int(bact_total)),  "Bad estimated counts"
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_est_counts():
     mpares = {}
     with open("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
@@ -196,6 +198,15 @@ def test_bb_metaphlan_se_even_coverate_relab():
     assert isclose(mpares_relab["Salmonella_enterica"], target_relab, abs_tol=1)
     assert isclose(mpares_relab["Veillonella_rogosae"], target_relab, abs_tol=1 )
 
+    # there are multiple E. coli in the mock
+    assert isclose(mpares["Escherichia_coli"],
+                   sum([v for k,v in simcounts.items() if k.startswith("Escherichia_coli")]),
+                   abs_tol=1200), "bad e.coli count"
+
+    assert isclose(mpares["Akkermansia_muciniphila"], simcounts["Akkermansia_muciniphila"], abs_tol=2000)
+    assert isclose(mpares["Enterococcus_faecalis"], simcounts["Enterococcus_faecalis"], abs_tol=2000)
+    assert isclose(mpares["Salmonella_enterica"], simcounts["Salmonella_enterica"], abs_tol=2000)
+    assert isclose(mpares["Veillonella_rogosae"], simcounts["Veillonella_rogosae"], abs_tol=2000 )
 
 
 

@@ -74,11 +74,11 @@ rule get_references:
 
     # borrowed some logic from https://www.biostars.org/p/294920/ to smoosh together sequences
     # otherwise, art with generate nreads PER Sequence, not per genome
-        for fasta in D6331.refseq/genomes/*fasta
-        do
+    for fasta in D6331.refseq/genomes/*fasta
+    do
         name=$(basename $fasta | sed "s|.fasta||g")
-    cat $fasta |  grep -v "^>" | awk  -v header=">${{name}}_concatenated" 'BEGIN {{ ORS=""; print header "\\n" }} {{ print }}'  > {output.mockdir}/${{name}}.fasta
-        done
+        cat $fasta |  grep -v "^>" | awk  -v header=">${{name}}_concatenated" 'BEGIN {{ ORS=""; print header "\\n" }} {{ print }}'  > {output.mockdir}/${{name}}.fasta
+    done
 
     """
 
