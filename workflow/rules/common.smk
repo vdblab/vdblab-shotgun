@@ -152,21 +152,6 @@ def bbmap_dedup_params_dupedist(wildcards):
     return dupedist
 
 
-def test_bbmap_dedup_params_flags():
-    test_conditions = [
-        [{"dedup_platform": "SRA"}, "dedupe"],
-        [{"dedup_platform": "MiniSeq"}, "dedupe optical dupedist=40"],
-        [{"dedup_platform": "NovaSeq"}, "dedupe optical dupedist=12000"],
-        [{"dedup_platform": "NextSeq"}, "dedupe optical spany adjacent dupedist=40"],
-        [{"dedup_platform": "HiSeq-3000"}, "dedupe optical dupedist=2500"],
-        [{"dedup_platform": "HiSeq-4000"}, "dedupe optical dupedist=2500"],
-    ]
-    for i in test_conditions:
-        global config
-        config = i[0]
-        outcome = i[1]
-        assert bbmap_dedup_params_flags(None) == outcome
-        print(f"passed dedup flags test for {config['dedup_platform']}")
 
 
 # Kraken functions

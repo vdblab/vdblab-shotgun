@@ -178,7 +178,7 @@ use rule split_fastq from utils as utils_split_fastq with:
     output:
         reads=temp(
             expand(
-                "split_fastq/{{sample}}_{readdir}1.part_{shard}.fastq.gz",
+                "split_fastq/{{sample}}_R{readdir}.part_{shard}.fastq.gz",
                 shard=SHARDS,
                 readdir=config["readdirs"],
             )
@@ -187,8 +187,11 @@ use rule split_fastq from utils as utils_split_fastq with:
         e="logs/split_fastq_{sample}.e",
         o="logs/split_fastq_{sample}.o",
     params:
-        outdir="split_fastq",
-        nshards=config["nshards"],
+        outdir=lambda wc, output: os.path.dirname(output.reads[0]),
+        inputstring=lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}"
+        if is_paired()
+        else f"--read1 {input['R1']}",
+        nshards=1,
 
 
 # Trim adapters with BBMap
