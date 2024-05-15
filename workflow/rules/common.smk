@@ -116,7 +116,7 @@ def get_config_inputs(wc):
         }
 
 
-def bbmap_dedup_params_flags(wildcards):
+def bbmap_dedup_params_flags(wildcards, config):
     # normal optical duplicate removal (HiSeq, MiSeq, etc)
     # should use these flags
     flags = "dedupe optical"
@@ -131,12 +131,12 @@ def bbmap_dedup_params_flags(wildcards):
         if config["dedup_platform"] == "SRA":
             flags = "dedupe"
         else:
-            dupedist = bbmap_dedup_params_dupedist(wildcards)
+            dupedist = bbmap_dedup_params_dupedist(wildcards, config)
             flags += f" dupedist={dupedist}"
     return flags
 
 
-def bbmap_dedup_params_dupedist(wildcards):
+def bbmap_dedup_params_dupedist(wildcards, config):
     # default for unspecified platform, HiSeq up to 2500, and NextSeq
     dupedist = 40
 
@@ -150,8 +150,6 @@ def bbmap_dedup_params_dupedist(wildcards):
         dupedist = 2500
 
     return dupedist
-
-
 
 
 # Kraken functions

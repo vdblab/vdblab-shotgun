@@ -33,9 +33,9 @@ def test_bbmap_dedup_params_flags():
         [{"dedup_platform": "HiSeq-3000"}, "dedupe optical dupedist=2500"],
         [{"dedup_platform": "HiSeq-4000"}, "dedupe optical dupedist=2500"],
     ]
+    config = {}
     for i in test_conditions:
-        global config
         config = i[0]
         outcome = i[1]
-        assert bbmap_dedup_params_flags(None) == outcome
+        assert bbmap_dedup_params_flags(None, config) == outcome
         print(f"passed dedup flags test for {config['dedup_platform']}")

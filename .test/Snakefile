@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 # is a string so we dont have weird issues where ints get cast to floats, adding a ".0"
-total_depths = ["100000", "10000000"]  # config["total_depths"]
+total_depths = ["100000"]  # config["total_depths"]
 reps = 1  # config["reps"]
 simtypes = ["equalreads", "equalcoverage"]
 output_reads = expand(
@@ -104,14 +104,18 @@ rule make_input_table:
                 if each_non_spike != 0:
                     outf.write(f"{mock}\t{each_non_spike}\n")
 
+
 def reads_or_coverage(wildcards):
     # this is lazy lazy lazy
     if int(wildcards.depth) > 1000000:
         fcov = 5
     else:
         fcov = 0.5
-    reads_or_coverage = f"--rcount $nreads" if wildcards.simtype == "equalreads" else f"--fcov {fcov}"
+    reads_or_coverage = (
+        f"--rcount $nreads" if wildcards.simtype == "equalreads" else f"--fcov {fcov}"
+    )
     return reads_or_coverage
+
 
 rule simulate:
     input:

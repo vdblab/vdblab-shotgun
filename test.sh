@@ -57,6 +57,25 @@ case $rawdataset in
 
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
 	;;
+    sim4shards )
+	nshards=4
+	if [[ "$mode" == pre* ]] # note double brackets
+	   then
+	       # simulated a high duplicate library
+	       mkdir -p $PWD/.test/simulated/duplicated/
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
+	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
+	else
+	    R1=[$PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz]
+	    R2=[$PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz]
+	fi
+
+	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
+	;;
     small)
 	nshards=2
 	if [ ! -d "${PWD}/.test/SRR18369973/" ]

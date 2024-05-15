@@ -117,7 +117,7 @@ rule bbmap_dedup:
     threads: 8
     params:
         allowed_subs=3,
-        flags=bbmap_dedup_params_flags,
+        flags=lambda wc: bbmap_dedup_params_flags(wc, config),
         inputstring=lambda wc, input: f"in={input.reads[0]} in2={input.reads[1]}"
         if is_paired()
         else f"in={input.reads[0]}",
@@ -191,7 +191,7 @@ use rule split_fastq from utils as utils_split_fastq with:
         inputstring=lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}"
         if is_paired()
         else f"--read1 {input['R1']}",
-        nshards=1,
+        nshards=config["nshards"],
 
 
 # Trim adapters with BBMap
@@ -347,6 +347,14 @@ rule merge_shards:
 
 
 rule aligned_host_reads_to_fastq:
+    """
+    for single-end data the samtools flags mean exclude reads that
+    read unmapped (0x4)
+    not primary alignment (0x100)
+    read fails platform/vendor quality checks (0x200)
+    read is PCR or optical duplicate (0x400)
+    supplementary alignment (0x800)
+    """
     input:
         bam="{id}/{sample}_shard{shard}.{db}.bam",
     output:
@@ -366,7 +374,7 @@ rule aligned_host_reads_to_fastq:
         # if is_paired()
         # else f"-fq {output.unmapped_reads[0]}",
         # "paired" or "single", to avoid dealing with bool conversion between yaml, snakemake, and bash
-        aligned_samflags="-f 2 -F 512" if is_paired() else "-F 512",
+        aligned_samflags="-f 2 -F 512" if is_paired() else "-F 3844",
     threads: 8
     resources:
         runtime=8 * 60,
@@ -375,7 +383,7 @@ rule aligned_host_reads_to_fastq:
     shell:
         """
         # get the aligned reads
-        samtools view {params.aligned_samflags} -b -o {output.bam} {input.bam}
+        samtools view {params.aligned_samflags} -b  {input.bam} | samtools sort -n - > {output.bam}
         # convert to fastq
         samtools fastq {params.bamtofastq_outputstring} {output.bam}
         """
