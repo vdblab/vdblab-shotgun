@@ -94,7 +94,7 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --prefix {batch} --force || echo "Finished running Metaerg"
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --prefix {wildcards.batch} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
         if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
         then

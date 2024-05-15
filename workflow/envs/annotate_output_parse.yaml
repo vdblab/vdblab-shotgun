@@ -1,0 +1,7 @@
+name: annotate_output_parse
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - pandas=2.2.0
