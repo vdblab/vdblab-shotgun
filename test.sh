@@ -3,7 +3,7 @@ set -ux
 set -o pipefail
 set -o errexit
 
-mode=$1
+stage=$1
 rawdataset=$2
 case $rawdataset in
     tiny)
@@ -20,9 +20,9 @@ case $rawdataset in
 	R2=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R2_001.fastq.bz2]
 	addnconf="dedup_platform=HiSeq"
 	;;
-    evensim)
+    equalcov)
 	nshards=1
-	if [[ "$mode" == pre* ]] # note double brackets
+	if [[ "$stage" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
@@ -38,9 +38,9 @@ case $rawdataset in
 	fi
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
 	;;
-    sim)
+    equalreads)
 	nshards=1
-	if [[ "$mode" == pre* ]] # note double brackets
+	if [[ "$stage" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
@@ -57,9 +57,9 @@ case $rawdataset in
 
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
 	;;
-    sim4shards )
+    equal4shards )
 	nshards=4
-	if [[ "$mode" == pre* ]] # note double brackets
+	if [[ "$stage" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
 	       mkdir -p $PWD/.test/simulated/duplicated/
@@ -108,13 +108,13 @@ esac
 echo $R1
 
 common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
-case $mode in
+case $stage in
 
-    full | all)
+     all)
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/,/scratch/" \
-            --directory tmpall_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473 \
 	    R1=$R1 \
@@ -129,7 +129,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-            --directory tmppre_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -139,11 +139,11 @@ case $mode in
 	    nshards=$nshards \
 	    stage=preprocess
 	;;
-    prese )
+    preprocess-se )
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-            --directory tmppre-se_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -163,7 +163,7 @@ case $mode in
 	    --use-singularity \
             --singularity-prefix /github/workspace/.singularity/ \
             --singularity-args '-B /github/' \
-            --directory tmppre_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -178,7 +178,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmppre_testing/   \
+	    --directory tmppreprocess_testing/   \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
@@ -192,7 +192,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmppre_testing/   \
+	    --directory tmppreprocess_testing/   \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -202,7 +202,7 @@ case $mode in
 	  nshards=$nshards \
 	  stage=preprocess
 	;;
-    biobakery | bb)
+    biobakery )
 	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
 	if [ ! -d "tmppre_${rawdataset}/" ]
 	then
@@ -211,7 +211,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-            --directory tmpbio_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppre_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -220,7 +220,7 @@ case $mode in
 	    stage=biobakery -f metaphlan/473_metaphlan3_profile.txt
 	;;
 
-    biobakeryse )
+    biobakery-se )
 	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
 	if [ ! -d "tmppre-se_${rawdataset}/" ]
 	then
@@ -231,7 +231,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpbio-se_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppre-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -244,7 +244,7 @@ case $mode in
 	snakemake \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
 	    --snakefile workflow/Snakefile_mtx \
-            --directory tmpmtx/ \
+	    --directory tmp${stage}_${rawdataset}/ \
             --config \
             sample=473  \
 	    R1=$R1 \
@@ -253,11 +253,11 @@ case $mode in
 	    mpa_profile=/data/brinkvd/data/shotgun/test/C011815_metaphlan3_profile.txt
 	;;
 
-    kraken | kraken2 )
+    kraken )
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-            --directory tmpkraken_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
@@ -266,11 +266,11 @@ case $mode in
 	    kraken2_db=/data/brinkvd/resources/dbs/kraken/k2_pluspf_08gb_20230314/ \
 	    stage=kraken
 	;;
-    assembly)
+    assembly )
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpassembly_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -281,7 +281,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpbin_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
@@ -293,7 +293,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmpannotate_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -316,7 +316,7 @@ case $mode in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -332,7 +332,7 @@ case $mode in
 	    snakemake \
 		$common_args \
 		--singularity-args "-B ${PWD},/data/brinkvd/" \
-		--directory tmprgi_${rawdataset}/ \
+		--directory tmp${stage}_${rawdataset}/ \
 		--config sample=473 \
 		R1=$R1 \
 		R2=$R2 \
@@ -344,6 +344,6 @@ case $mode in
 
 	;;
     *)
-	echo -e "unknown mode; please chose from all, preprocess, prese, preprocess-gha, biobakery, biobakeryse, bin, kraken2, assembly, annotate, rgi, figs. Exiting\n"
+	echo -e "unknown stage; please chose from all, preprocess, preprocess-se, preprocess-gha, biobakery, biobakery-se, bin, kraken, assembly, annotate, rgi, figs. Exiting\n"
 	;;
 esac

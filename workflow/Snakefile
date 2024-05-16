@@ -255,7 +255,7 @@ if config["stage"] == "all":
         input:
             fq=touch("input_F"),
         output:
-            f1=temp(touch("output_F")),
+            fq=temp(touch("output_F")),
 
     use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
         input:

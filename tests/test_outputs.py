@@ -33,24 +33,24 @@ def test_simulated_data_present():
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_host_deplete_results_present():
-    assert os.path.exists("tmppre_sim/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess sim`"
+    assert os.path.exists("tmppreprocess_equalreads/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess equalreads`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_sharded_host_deplete_results_present():
-    assert os.path.exists("tmppre_sim4shards/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess sim4shards`"
+    assert os.path.exists("tmppreprocess_equalreads4shards/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess equalreads4shards`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_bb_kraken_run_present():
-    assert os.path.exists("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery sim`"
-    assert os.path.exists("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out"), "no kraken results for sumulated data; please run `bash test.sh kraken sim`"
+    assert os.path.exists("tmpbiobakery_equalreads/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakery equalreads`"
+    assert os.path.exists("tmpkraken_equalreads/kraken2/473_kraken2.bracken.S.out"), "no kraken results for sumulated data; please run `bash test.sh kraken equalreads`"
 
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_bb_se_present():
-    assert os.path.exists("tmpbio-se_sim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakeryse sim`"
+    assert os.path.exists("tmpbiobakery-se_equalreads/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakeryse equalreads`"
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_bb_se_even_present():
-    assert os.path.exists("tmpbio-se_evensim/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakeryse evensim`"
+    assert os.path.exists("tmpbiobakery-se_equalcov/metaphlan/473_metaphlan3_profile.txt"), "no metaphlan results for simulated data; please run `bash test.sh biobakeryse equalcov`"
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_preprocess_depletes_correct_n_reads():
@@ -58,7 +58,7 @@ def test_preprocess_depletes_correct_n_reads():
     nreads_human = simcounts_equalreads["t2t_chr21"]
 
 #    sample\tbowtie2_human\tbowtie2_human_aligned\tsnap_human\tsnap_human_aligned\tbowtie2_mouse\tbowtie2_mouse_aligned\tsnap_mouse\tsnap_mouse_aligned
-    with open("tmppre_sim/reports/473_hostdepletion.stats", "r") as inf:
+    with open("tmppreprocess_equalreads/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             if line.startswith("473"):
                 nreads_human_detected = line.split("\t")[2]
@@ -68,14 +68,14 @@ def test_preprocess_depletes_correct_n_reads():
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_sharding_doesntbreak_host_depletion():
     nreads_human_detected_1shard = 0
-    with open("tmppre_sim/reports/473_hostdepletion.stats", "r") as inf:
+    with open("tmppreprocess_equalreads/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             # ignore header
             if not line.startswith("sample"):
                 # we will have one line per shard, so this sums them all
                 nreads_human_detected_1shard = nreads_human_detected_1shard + int(line.split("\t")[2])
     nreads_human_detected_4shards = 0
-    with open("tmppre_sim4shards/reports/473_hostdepletion.stats", "r") as inf:
+    with open("tmppreprocess_equalreads4shards/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             # ignore header
             if not line.startswith("sample"):
@@ -97,7 +97,7 @@ def test_preprocess_se_depletes_correct_n_reads():
     """
     nreads_human = simcounts_equalreads["t2t_chr21"] / 2
     nreads_human_detected = 0
-    with open("tmppre-se_sim/reports/473_hostdepletion.stats", "r") as inf:
+    with open("tmppreprocess-se_equalreads/reports/473_hostdepletion.stats", "r") as inf:
         for line in inf:
             # ignore header
             if not line.startswith("sample"):
@@ -113,7 +113,7 @@ def test_preprocess_check_dedup():
     high duplication rate here
     """
     nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"] * 2
-    with open("tmppre_sim/reports/473_dedup.stats", "r") as inf:
+    with open("tmppreprocess_equalreads/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
                 ndups_found = int(line.split("\t")[1])
@@ -133,7 +133,7 @@ def test_preprocess_se_check_dedup():
     considering both R1 and R2.
     """
     nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"]
-    with open("tmppre-se_sim/reports/473_dedup.stats", "r") as inf:
+    with open("tmppreprocess-se_equalreads/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
                 ndups_found = int(line.split("\t")[1])
@@ -161,7 +161,7 @@ def test_bb_metaphlan_bacteria_relab():
                     nontarget_relative_kingdom_coverage = nontarget_relative_kingdom_coverage + (1000/float(line[6]))
     print("relative target and nontarget coverages, and ratio")
     print(target_relative_kingdom_coverage, nontarget_relative_kingdom_coverage, target_relative_kingdom_coverage/nontarget_relative_kingdom_coverage)
-    with open("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+    with open("tmpbiobakery_equalreads/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
         for line in inf:
             line = line.strip().split("\t")
             if len(line) > 1:
@@ -179,7 +179,7 @@ def test_bb_metaphlan_bacteria_relab():
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_est_counts():
     mpares = {}
-    with open("tmpbio_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+    with open("tmpbiobakery_equalreads/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
         for line in inf:
             if "s__" in line and "t__" not in line:
                 line = line.split()
@@ -199,7 +199,7 @@ def test_bb_metaphlan_est_counts():
 
 def test_bb_metaphlan_se_est_counts():
     mpares = {}
-    with open("tmpbio-se_sim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+    with open("tmpbiobakery-se_equalreads/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
         for line in inf:
             if "s__" in line and "t__" not in line:
                 line = line.split()
@@ -218,7 +218,7 @@ def test_bb_metaphlan_se_est_counts():
 
 def test_bb_metaphlan_se_even_coverate_relab():
     mpares_relab = {}
-    with open("tmpbio-se_evensim/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
+    with open("tmpbiobakery-se_equalcov/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
         for line in inf:
             if "s__" in line and "t__" not in line:
                 line = line.split()
@@ -250,7 +250,7 @@ def test_bb_humann_functional_count():
 @pytest.mark.skip(reason="We will revisit this test once we relax the confidence parameter")
 def test_kraken_bracken_counts_candida():
     nreads_c_albicans = simcounts_equalreads["Candida_albican"]
-    with open ("tmpkraken_sim/kraken2/473_kraken2.bracken.S.out", "r") as inf:
+    with open ("tmpkraken_equalreads/kraken2/473_kraken2.bracken.S.out", "r") as inf:
         for line in inf:
             if line.startswith("Candida albicans"):
                 detected_c_albicans = line.strip().split("\t")[5]
