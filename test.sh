@@ -22,20 +22,8 @@ case $rawdataset in
 	;;
     equalcov)
 	nshards=1
-	if [[ "$stage" == pre* ]] # note double brackets
-	   then
-	       # simulated a high duplicate library
-	       mkdir -p $PWD/.test/simulated/duplicated/
-	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz
-	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R1.fastq.gz]
-	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_equalcoverage_R2.fastq.gz]
-	else
-	    R1=[$PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz]
-	    R2=[$PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz]
-	fi
+	R1=[$PWD/.test/simulated/1_depth100000_equalcoverage_R1.fastq.gz]
+	R2=[$PWD/.test/simulated/1_depth100000_equalcoverage_R2.fastq.gz]
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
 	;;
     equalreads)
@@ -43,11 +31,14 @@ case $rawdataset in
 	if [[ "$stage" == pre* ]] # note double brackets
 	   then
 	       # simulated a high duplicate library
-	       mkdir -p $PWD/.test/simulated/duplicated/
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       if [ ! -f "$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz" ];
+		  then
+		      mkdir -p $PWD/.test/simulated/duplicated/
+		      cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+		      cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+		      cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+		      cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       fi
 	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
 	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
 	else
@@ -57,16 +48,19 @@ case $rawdataset in
 
 	addnconf="dedup_platform=SRA" # art doesnt give Illumina headers
 	;;
-    equal4shards )
+    equalreads4shards )
 	nshards=4
 	if [[ "$stage" == pre* ]] # note double brackets
 	   then
-	       # simulated a high duplicate library
-	       mkdir -p $PWD/.test/simulated/duplicated/
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
-	       cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       if [ ! -f "$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz" ];
+	       then
+		   # simulated a high duplicate library
+		   mkdir -p $PWD/.test/simulated/duplicated/
+		   cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+		   cat $PWD/.test/simulated/1_depth100000_equalreads_R1.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz
+		   cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz > $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+		   cat $PWD/.test/simulated/1_depth100000_equalreads_R2.fastq.gz >> $PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz
+	       fi
 	       R1=[$PWD/.test/simulated/duplicated/1_depth100000_R1.fastq.gz]
 	       R2=[$PWD/.test/simulated/duplicated/1_depth100000_R2.fastq.gz]
 	else
@@ -204,9 +198,10 @@ case $stage in
 	;;
     biobakery )
 	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
-	if [ ! -d "tmppre_${rawdataset}/" ]
+	if [ ! -d "tmppreprocess_${rawdataset}/" ]
 	then
-	    echo "tmppre_${rawdataset}/ not present; please run `bash test.sh preprocess-se $rawdataset`"
+	    echo "tmppreprocess_${rawdataset}/ not present; please run `bash test.sh preprocess $rawdataset`"
+	    exit 1
 	fi
 	snakemake \
 	    $common_args \
@@ -214,17 +209,18 @@ case $stage in
 	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
-	    R1=[$PWD/tmppre_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
-	    R2=[$PWD/tmppre_${rawdataset}/hostdepleted/473_R2.fastq.gz] \
+	    R1=[$PWD/tmppreprocess_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
+	    R2=[$PWD/tmppreprocess_${rawdataset}/hostdepleted/473_R2.fastq.gz] \
 	    $addnconf \
 	    stage=biobakery -f metaphlan/473_metaphlan3_profile.txt
 	;;
 
     biobakery-se )
 	# use the preprocessed, host-depleted input so we can get better estimated reads from metaphlan
-	if [ ! -d "tmppre-se_${rawdataset}/" ]
+	if [ ! -d "tmppreprocess-se_${rawdataset}/" ]
 	then
-	    echo "tmppre-se_${rawdataset}/ not present; please run `bash test.sh preprocess-se $rawdataset`"
+	    echo "tmppreprocess-se_${rawdataset}/ not present; please run `bash test.sh preprocess-se $rawdataset`"
+	    exit 1
 	fi
 
 	# just run through metaphlan in the interest of time; humann needs lots of resources
@@ -234,7 +230,7 @@ case $stage in
 	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
-	    R1=[$PWD/tmppre-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
+	    R1=[$PWD/tmppreprocess-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
 	    lib_layout=single \
 	    $addnconf \
 	    stage=biobakery -f metaphlan/473_metaphlan3_profile.txt
