@@ -2,6 +2,7 @@ import os
 import pytest
 import sys
 from math import isclose
+import gzip
 from pathlib import Path
 
 def get_simulated_organism_counts(path=".test/simulated/1_depth100000_equalreads.statsfastq"):
@@ -64,6 +65,34 @@ def test_preprocess_depletes_correct_n_reads():
                 nreads_human_detected = line.split("\t")[2]
 
     assert isclose(int(nreads_human), int(nreads_human_detected), abs_tol=10)
+
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_preprocess_host_reads_fq_has_correct_n_reads():
+    print(simcounts_equalreads)
+    nreads_human = simcounts_equalreads["t2t_chr21"]
+
+    nreads_in_host_fq = 0
+    with gzip.open('tmppreprocess_equalreads/host/473_all_host_reads_R1.fastq.gz', 'rb') as inf:
+        for line in inf:
+            if line.decode().startswith("@"):
+                nreads_in_host_fq = nreads_in_host_fq + 1
+
+    assert isclose(int(nreads_human)/2, nreads_in_host_fq, abs_tol=10)
+
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
+def test_preprocess_se_host_reads_fq_has_correct_n_reads():
+    print(simcounts_equalreads)
+    nreads_human = simcounts_equalreads["t2t_chr21"]
+
+    nreads_in_host_fq = 0
+    with gzip.open('tmppreprocess-se_equalreads/host/473_all_host_reads_R1.fastq.gz', 'rb') as inf:
+        for line in inf:
+            if line.decode().startswith("@"):
+                nreads_in_host_fq = nreads_in_host_fq + 1
+    # see comments elsewhere; higher percieved duplication in single-end data
+    # leads to fewer host reads in the deduplicated input dataset
+    assert isclose(int(nreads_human)/2, nreads_in_host_fq, abs_tol=50)
 
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_sharding_doesntbreak_host_depletion():

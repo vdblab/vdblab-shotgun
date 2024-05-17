@@ -371,8 +371,7 @@ rule aligned_host_reads_to_fastq:
         # with the pairing flags that may or may not be set in true single-end data
         bamtofastq_outputstring=lambda wc, output: f"-1 {output.reads[0]} -2 {output.reads[1]}"
         if is_paired()
-        else f"-o {output.reads[0]}",
-        #else f"> {output.reads[0]}",
+        else f"> {output.reads[0]}",
         # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
         # if is_paired()
         # else f"-fq {output.unmapped_reads[0]}",
