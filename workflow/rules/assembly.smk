@@ -91,15 +91,13 @@ module utils:
         True
 
 
-use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        fq=get_concat_input,
     output:
-        R1=temp("concatenated/{sample}_R1.fastq.gz"),
-        R2=temp("concatenated/{sample}_R2.fastq.gz"),
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
-        e="logs/concat_r1_r2_{sample}.e",
+        e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
 
 rule megahit:

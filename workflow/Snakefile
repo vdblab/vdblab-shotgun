@@ -49,6 +49,8 @@ for entries like R1/R2, its eaiest to set those in the conditional block below, 
 if config["stage"] == "all":
     config["assembly"] = f"megahit_{config['sample']}.assembly.fasta"
 
+config["readdirs"] = get_readdirs()
+
 
 """
 similarly, we have to mock the downsample parameters if we aren't running with stage=downsample
@@ -56,6 +58,13 @@ similarly, we have to mock the downsample parameters if we aren't running with s
 if config["stage"] != "downsample":
     config["depths"] = [0]
     config["reps"] = [0]
+
+
+if not is_paired():
+    if not config["stage"] in ["preprocess", "biobakery"]:
+        raise ValueError(
+            "Single-end analysis has only been implemented for the preprocess and biobakery modules"
+        )
 
 
 #
@@ -102,21 +111,6 @@ use rule * from kraken as kraken_*
 
 
 #
-# Assembly Module
-#
-module assembly:
-    snakefile:
-        "rules/assembly.smk"
-    config:
-        config
-    skip_validation:
-        True
-
-
-use rule * from assembly as assembly_*
-
-
-#
 # Utils Module
 #
 module utils:
@@ -127,82 +121,86 @@ module utils:
 
 
 #
-# RGI Module
+# Assembly Module
 #
-module rgi:
-    snakefile:
-        "rules/RGI.smk"
-    config:
-        config
+if is_paired():
 
-
-use rule * from rgi as rgi_*
-
-
-#
-# Binning Module
-#
-module binning:
-    snakefile:
-        "rules/binning.smk"
-    config:
-        config
-
-
-use rule * from binning as binning_*
-
-
-#
-# annotation Module
-#
-if config["stage"] in ["annotate", "all"]:
-
-    module annotate:
+    module assembly:
         snakefile:
-            "rules/annotate.smk"
+            "rules/assembly.smk"
         config:
             config
         skip_validation:
             True
 
-    use rule * from annotate as annotate_*
+    use rule * from assembly as assembly_*
 
+    #
+    # RGI Module
+    #
+    module rgi:
+        snakefile:
+            "rules/RGI.smk"
+        config:
+            config
 
-#
-# downsample Module
-#
-module downsample:
-    snakefile:
-        "rules/downsample.smk"
-    config:
-        config
-    skip_validation:
-        True
+    use rule * from rgi as rgi_*
 
+    #
+    # Binning Module
+    #
+    module binning:
+        snakefile:
+            "rules/binning.smk"
+        config:
+            config
 
-use rule * from downsample as downsample_*
+    use rule * from binning as binning_*
 
+    #
+    # annotation Module
+    #
+    if config["stage"] in ["annotate", "all"]:
 
-#
-# hla Module
-#
-module hla:
-    snakefile:
-        "rules/HLA.smk"
-    config:
-        config
-    skip_validation:
-        True
+        module annotate:
+            snakefile:
+                "rules/annotate.smk"
+            config:
+                config
+            skip_validation:
+                True
 
-
-use rule * from hla as hla_*
-
-
-if config["stage"] == "classify_bins":
+        use rule * from annotate as annotate_*
 
     #
     # hla Module
     #
+    module hla:
+        snakefile:
+            "rules/HLA.smk"
+        config:
+            config
+        skip_validation:
+            True
+
+    use rule * from hla as hla_*
+
+    #
+    # downsample Module
+    #
+    module downsample:
+        snakefile:
+            "rules/downsample.smk"
+        config:
+            config
+        skip_validation:
+            True
+
+    use rule * from downsample as downsample_*
+
+
+if config["stage"] == "classify_bins":
+
     module classify_bins:
         snakefile:
             "rules/classify_bins.smk"
@@ -226,6 +224,10 @@ needing this probably means I could specify file names more cleanly :/
 """
 
 if config["stage"] == "all":
+    if config["lib_layout"] != "paired":
+        raise ValueError(
+            f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)"
+        )
 
     use rule cat_pair from biobakery as biobakery_cat_pair with:
         input:
@@ -249,13 +251,11 @@ if config["stage"] == "all":
             R1=["hostdepleted/{sample}_R1.fastq.gz"],
             R2=["hostdepleted/{sample}_R2.fastq.gz"],
 
-    use rule concat_R1_R2 from kraken as kraken_concat_R1_R2 with:
+    use rule concat_lanes_fix_names from kraken as kraken_concat_lanes_fix_names with:
         input:
-            R1=touch("input_F"),
-            R2=touch("input_R"),
+            fq=touch("input_F"),
         output:
-            R1=temp(touch("output_F")),
-            R2=temp(touch("output_R")),
+            fq=temp(touch("output_F")),
 
     use rule kraken_standard_run from kraken as kraken_kraken_standard_run with:
         input:

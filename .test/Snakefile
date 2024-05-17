@@ -7,19 +7,21 @@ from pathlib import Path
 
 
 # is a string so we dont have weird issues where ints get cast to floats, adding a ".0"
-total_depths = "100000"  # config["total_depths"]
+total_depths = ["100000"]  # config["total_depths"]
 reps = 1  # config["reps"]
-
+simtypes = ["equalreads", "equalcoverage"]
 output_reads = expand(
-    "{rep}_depth{depth}_R{readdir}.fastq.gz",
+    "{rep}_depth{depth}_{simtype}_R{readdir}.fastq.gz",
     rep=reps,
     depth=total_depths,
     readdir=[1, 2],
+    simtype=simtypes,
 )
 output_stats = expand(
-    "{rep}_depth{depth}.statsfastq",
+    "{rep}_depth{depth}_{simtype}.statsfastq",
     rep=reps,
     depth=total_depths,
+    simtype=simtypes,
 )
 
 
@@ -37,7 +39,12 @@ all_results = [
 rule all:
     input:
         all_results,
-        expand("clean_{rep}_depth{depth}.done", rep=reps, depth=total_depths),
+        expand(
+            "clean_{rep}_depth{depth}_{simtype}.done",
+            rep=reps,
+            depth=total_depths,
+            simtype=simtypes,
+        ),
 
 
 rule get_references:
@@ -57,16 +64,20 @@ rule get_references:
     # snakemake doesn't create outputs labeled as directories
     mkdir -p {output.mockdir}
 
-    # add some of the human genome to our reference pool
-    curl -s  "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_060945.1&rettype=fasta&retmode=txt"> D6331.refseq/genomes/t2t_chr21.fasta
-
+    # add some of the human genome chr21 to our reference pool. Since chr21 is
+    # still pretty large and we want tests to run fast, here we subset to the first 24000
+    # lines of the 644155  original lines.
+    # the temp file is so we don't get curl  errors from piping the result
+    curl -s  "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nucleotide&id=NC_060945.1&rettype=fasta&retmode=txt" > chr21_temp
+    head -n 25000 chr21_temp > D6331.refseq/genomes/t2t_chr21.fasta
+    rm chr21_temp
 
     # borrowed some logic from https://www.biostars.org/p/294920/ to smoosh together sequences
     # otherwise, art with generate nreads PER Sequence, not per genome
     for fasta in D6331.refseq/genomes/*fasta
     do
-      name=$(basename $fasta | sed "s|.fasta||g")
-      cat $fasta | grep -v "^>" | awk  -v header=">${{name}}_concatenated" 'BEGIN {{ ORS=""; print header "\\n" }} {{ print }}' > {output.mockdir}/${{name}}.fasta
+        name=$(basename $fasta | sed "s|.fasta||g")
+        cat $fasta |  grep -v "^>" | awk  -v header=">${{name}}_concatenated" 'BEGIN {{ ORS=""; print header "\\n" }} {{ print }}'  > {output.mockdir}/${{name}}.fasta
     done
 
     """
@@ -94,18 +105,31 @@ rule make_input_table:
                     outf.write(f"{mock}\t{each_non_spike}\n")
 
 
+def reads_or_coverage(wildcards):
+    # this is lazy lazy lazy
+    if int(wildcards.depth) > 1000000:
+        fcov = 5
+    else:
+        fcov = 0.5
+    reads_or_coverage = (
+        f"--rcount $nreads" if wildcards.simtype == "equalreads" else f"--fcov {fcov}"
+    )
+    return reads_or_coverage
+
+
 rule simulate:
     input:
         mockdir="mock",
         intable="sim_tables/{rep}_depth{depth}.tab",
     output:
-        R1="{rep}_depth{depth}_R1.fastq.gz",
-        R2="{rep}_depth{depth}_R2.fastq.gz",
+        R1="{rep}_depth{depth}_{simtype}_R1.fastq.gz",
+        R2="{rep}_depth{depth}_{simtype}_R2.fastq.gz",
         intermediate_trigger=touch(
-            "{rep}_depth{depth}_individual_reference_fastq_present"
+            "{rep}_depth{depth}_{simtype}_individual_reference_fastq_present"
         ),
     params:
-        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}",
+        reads_or_coverage=lambda wildcards: reads_or_coverage(wildcards),
+        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}_{wildcards.simtype}",
     container:
         "docker://ghcr.io/vdblab/art:2016.06.05"
     threads: 4
@@ -117,24 +141,24 @@ rule simulate:
     cat {input.intable} | while read ref nreads
     do
         refbase=$(basename $ref)
-        art_illumina --seqSys HS25 --in $ref  --paired --len 150 --rcount $nreads --mflen 500 --sdev 10 --out {params.tmppre}_${{refbase}}_R --rndSeed {wildcards.rep}
+        art_illumina --seqSys HS25 --in $ref  --paired --len 150 {params.reads_or_coverage} --mflen 500 --sdev 10 --out {params.tmppre}_${{refbase}}_R --rndSeed {wildcards.rep}
     done
 
     ls {params.tmppre}*
-    cat {params.tmppre}*R1.fq | pigz > {output.R1}
-    cat {params.tmppre}*R2.fq | pigz > {output.R2}
+    cat {params.tmppre}*R1.fq | pigz --best > {output.R1}
+    cat {params.tmppre}*R2.fq | pigz --best > {output.R2}
     """
 
 
 rule stats:
     input:
-        R1="{rep}_depth{depth}_R1.fastq.gz",
-        R2="{rep}_depth{depth}_R2.fastq.gz",
-        intermediate_trigger="{rep}_depth{depth}_individual_reference_fastq_present",
+        R1="{rep}_depth{depth}_{simtype}_R1.fastq.gz",
+        R2="{rep}_depth{depth}_{simtype}_R2.fastq.gz",
+        intermediate_trigger="{rep}_depth{depth}_{simtype}_individual_reference_fastq_present",
     output:
-        stats="{rep}_depth{depth}.statsfastq",
+        stats="{rep}_depth{depth}_{simtype}.statsfastq",
     params:
-        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}",
+        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}_{wildcards.simtype}",
     container:
         "docker://ghcr.io/vdblab/seqkit:2.3.1"
     threads: 8
@@ -149,12 +173,12 @@ rule stats:
 
 rule cleanup:
     input:
-        "{rep}_depth{depth}_individual_reference_fastq_present",
-        "{rep}_depth{depth}.statsfastq",
+        "{rep}_depth{depth}_{simtype}_individual_reference_fastq_present",
+        "{rep}_depth{depth}_{simtype}.statsfastq",
     output:
-        touch("clean_{rep}_depth{depth}.done"),
+        touch("clean_{rep}_depth{depth}_{simtype}.done"),
     params:
-        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}",
+        tmppre=lambda wildcards: f"tmp_{wildcards.rep}_depth{wildcards.depth}_{wildcards.simtype}",
     shell:
         """
         rm {params.tmppre}*fq

@@ -74,12 +74,14 @@ rule all:
 
 #
 # Utils Module
-if len(config["R1"]) == 1:
-    input_R1 = config["R1"]
-    input_R2 = config["R2"]
-else:
-    input_R1 = f"concatenated/{config['sample']}_R1.fastq.gz"
-    input_R2 = f"concatenated/{config['sample']}_R2.fastq.gz"
+def get_kraken_input(wc):
+    if len(config["R1"]) == 1:
+        input_R1 = config["R1"]
+        input_R2 = config["R2"]
+    else:
+        input_R1 = f"concatenated/{config['sample']}_R1.fastq.gz"
+        input_R2 = f"concatenated/{config['sample']}_R2.fastq.gz"
+    return {"R1": input_R1, "R2": input_R2}
 
 
 module utils:
@@ -91,15 +93,13 @@ module utils:
         True
 
 
-use rule concat_R1_R2 from utils as utils_concat_R1_R2 with:
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        fq=get_concat_input,
     output:
-        R1=temp("concatenated/{sample}_R1.fastq.gz"),
-        R2=temp("concatenated/{sample}_R2.fastq.gz"),
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
-        e="logs/concat_r1_r2_{sample}.e",
+        e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
 
 rule kraken_standard_run:
@@ -122,8 +122,7 @@ rule kraken_standard_run:
     do get are high quality and representative
     """
     input:
-        R1=input_R1,
-        R2=input_R2,
+        unpack(get_kraken_input),
         db=config["kraken2_db"],
     output:
         out="kraken2/{sample}_kraken2.out",
@@ -337,12 +336,11 @@ rule make_phanta_manifest:
     PHANTA needs the full path, and Input_R1 is relative the relative paths if we are using the concatenated lanes
     """
     input:
-        R1=input_R1,
-        R2=input_R2,
+        unpack(get_kraken_input),
     output:
         manifest=temp("phanta_inputs.tsv"),
     params:
-        thisdir=os.getcwd() if isinstance(input_R1, str) else "",
+        thisdir=lambda wc, input: os.getcwd() if isinstance(input.R1, str) else "",
         sample=config["sample"],
     shell:
         """echo -e "{params.sample}\t{params.thisdir}/{input.R1}\t{params.thisdir}/{input.R2}" > {output.manifest}"""
@@ -356,8 +354,6 @@ def get_singularity_args(wildcards):
 rule phanta:
     # we need the results dir because if we try to initiate two snakemake workflows from the same --directory we get LockErrors
     input:
-        R1=input_R1,
-        R2=input_R2,
         manifest=rules.make_phanta_manifest.output.manifest,
         readlen_file=parse_read_lengths,
     output:
