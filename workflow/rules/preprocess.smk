@@ -114,7 +114,6 @@ rule bbmap_dedup:
     output:
         reads=temp(expand("dedup/{{sample}}_R{rd}.fastq.gz", rd=config["readdirs"])),
         dedup_stats="reports/{sample}_dedup.stats",
-    threads: 8
     params:
         allowed_subs=3,
         flags=lambda wc: bbmap_dedup_params_flags(wc, config),
@@ -124,10 +123,11 @@ rule bbmap_dedup:
         outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
         if is_paired()
         else f"out={output.reads[0]}",
+    threads: 8
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
-        * (max(input.size // 1000000, 1024) * 16),
-        runtime=24 * 60,
+        * (max(input.size // 1000000, 1024) * 10),
+        runtime=lambda wildcards, attempt: 1 * 60 * attempt * attempt,
     log:
         # this is annoying but we want to be able to extract the stats from
         # the logs, which we can't do without the logs as a file. Perhaps
@@ -379,7 +379,7 @@ rule aligned_host_reads_to_fastq:
         aligned_samflags="-f 2 -F 512" if is_paired() else "-F 3844",
     threads: 8
     resources:
-        runtime=8 * 60,
+        runtime=1 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -414,7 +414,7 @@ rule make_combined_host_reads_fastq:
         R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
     threads: 8
     resources:
-        runtime=8 * 60,
+        runtime=2 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -441,7 +441,8 @@ rule sortmerna_run:
         if is_paired()
         else f"--reads {input['R1']}",
     resources:
-        mem_mb=16000,
+        mem_mb=lambda wc, attempt: 6 * 1024 * attempt,
+        runtime=lambda wc, attempt: 2 * attempt * attempt * attempt,
     threads: 16
     message:
         "Quantify rRNA for qPCR normalization and 16S comparison"
