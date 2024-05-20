@@ -126,8 +126,8 @@ rule bbmap_dedup:
     threads: 8
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
-        * (max(input.size // 1000000, 1024) * 16),
-        runtime=lambda wildcards, attempt:  1 * 60 * attempt,
+        * (max(input.size // 1000000, 1024) * 10),
+        runtime=lambda wildcards, attempt: 1 * 60 * attempt * attempt,
     log:
         # this is annoying but we want to be able to extract the stats from
         # the logs, which we can't do without the logs as a file. Perhaps
@@ -441,7 +441,8 @@ rule sortmerna_run:
         if is_paired()
         else f"--reads {input['R1']}",
     resources:
-        mem_mb=16 * 1024,
+        mem_mb=lambda wc, attempt: 6 * 1024 * attempt,
+        runtime=lambda wc, attempt: 2 * attempt * attempt * attempt,
     threads: 16
     message:
         "Quantify rRNA for qPCR normalization and 16S comparison"

@@ -86,8 +86,9 @@ rule humann3_run_uniref90:
         mem_mb=lambda wildcards, attempt, input: attempt
         * 1024
         * max(input.fastq.size // 1000000000, 1)
-        * 10,
-        runtime=lambda wc, attempt: 16 * 60 * attempt,
+        * 5
+        * attempt,
+        runtime=lambda wc, attempt: 8 * 60 * attempt,
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
@@ -265,9 +266,9 @@ rule metaphlan_run:
         "../envs/metaphlan.yaml"
     resources:
         # first submission is given 30GB, then 45,
-        mem_mb=lambda wildcards, attempt: (0.5 + (attempt / 2)) * 1024 * 30,
+        mem_mb=lambda wildcards, attempt: 30 * 1024 * attempt,
         runtime=lambda wc, attempt: 2 * 60 * attempt,
-    threads: 64
+    threads: 32
     log:
         e="logs/metaphlan_{sample}.e",
     shell:

@@ -85,7 +85,10 @@ rule s01_bowtie2:
         input_string=lambda wildcards, input: f"-1 {input.R1} -2 {input.R2}"
         if is_paired()
         else f"-U {input.R1}",
-    threads: 24
+    threads: 16
+    resources:
+        mem_mb=lambda wc, attempt: 12 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1 * 60 * attempt,
     shell:
         """
           (bowtie2 \
@@ -124,10 +127,9 @@ rule s02_snapalign:
         db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
         cmd=config["lib_layout"],
     resources:
-        mem_mb=lambda wildcards, attempt, input: attempt
-        * (max(input.size // 1000000, 1024) * 10),
-        runtime=48 * 60,
-    threads: 24  # Use at least two threads
+        mem_mb=lambda wc, attempt: 10 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1.5 * 60 * attempt,
+    threads: 16  # Use at least two threads
     shell:
         """
         snap-aligner {params.cmd} {params.db_prefix} \
