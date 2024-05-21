@@ -442,7 +442,7 @@ rule sortmerna_run:
         else f"--reads {input['R1']}",
     resources:
         mem_mb=lambda wc, attempt: 6 * 1024 * attempt,
-        runtime=lambda wc, attempt: 2 * attempt * attempt * attempt,
+        runtime=lambda wc, attempt: 2 * 60 * attempt * attempt * attempt,
     threads: 16
     message:
         "Quantify rRNA for qPCR normalization and 16S comparison"
