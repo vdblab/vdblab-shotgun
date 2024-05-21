@@ -4,6 +4,7 @@ import yaml
 import shutil
 
 from pathlib import Path
+from snakemake.utils import validate
 
 
 include: "common.smk"
@@ -29,8 +30,9 @@ human_bowtie_outputs = f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.ba
 human_snap_outputs = f"02-snap/{config['sample']}.{snap_human_db_name}.bam"
 mouse_bowtie_outputs = f"04-bowtie/{config['sample']}.{bowtie2_mouse_db_name}.bam"
 mouse_snap_outputs = f"05-snap/{config['sample']}.{snap_mouse_db_name}.bam"
-cleaned_reads_R1 = f"06-nohuman-nomouse/{config['sample']}.R1.fastq.gz"
-cleaned_reads_R2 = f"06-nohuman-nomouse/{config['sample']}.R2.fastq.gz"
+cleaned_reads = expand(
+    f"06-nohuman-nomouse/{config['sample']}.R{{rd}}.fastq.gz", rd=config["readdirs"]
+)
 table = f"{config['sample']}_depletion.stats"
 
 
@@ -40,28 +42,15 @@ rule hostdeplete_all:
         mouse_bowtie_outputs,
         human_snap_outputs,
         mouse_snap_outputs,
-        cleaned_reads_R2,
+        cleaned_reads,
         table,
 
 
-module bowtie2:
-    snakefile:
-        "bowtie2.smk"
-    config:
-        config
-
-
-module snap:
-    snakefile:
-        "snap.smk"
-    config:
-        config
-
-
-use rule bowtie2 from bowtie2 as bowtie2_human with:
+rule s01_bowtie2:
+    container:
+        config["docker_bowtie2"]
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        unpack(get_config_inputs),
         idx=multiext(
             config["bowtie2_human_index_base"],
             ".1.bt2",
@@ -72,51 +61,164 @@ use rule bowtie2 from bowtie2 as bowtie2_human with:
             ".rev.2.bt2",
         ),
     output:
-        bam=temp(f"01-bowtie/{config['sample']}.{bowtie2_human_db_name}.bam"),
-        unmapped_R1=temp(
-            f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R1.fastq.gz"
-        ),
-        unmapped_R2=temp(
-            f"01-bowtie/{config['sample']}.without_{bowtie2_human_db_name}.R2.fastq.gz"
+        bam=temp(f"01-bowtie/{{sample}}.{bowtie2_human_db_name}.bam"),
+        unmapped_reads=temp(
+            expand(
+                "01-bowtie/{{sample}}.without_"
+                + bowtie2_human_db_name
+                + ".R{rd}.fastq.gz",
+                rd=config["readdirs"],
+            )
         ),
     log:
-        e=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.e",
-        o=f"logs/bowtie2_{config['sample']}.{bowtie2_human_db_name}.o",
+        e=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.e",
+        o=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.o",
+    params:
+        umapped_string=lambda wildcards, output: "--un-conc-gz "
+        + output["unmapped_reads"][0].replace(".R1.fastq.gz", ".R%.fastq.gz")
+        if is_paired()
+        else "--un-gz " + output["unmapped_reads"][0],
+        db_prefix=lambda wildcards, input: os.path.splitext(
+            os.path.splitext(input.idx[0])[0]
+        )[0],
+        extra="",  # optional parameters
+        input_string=lambda wildcards, input: f"-1 {input.R1} -2 {input.R2}"
+        if is_paired()
+        else f"-U {input.R1}",
+    threads: 16
+    resources:
+        mem_mb=lambda wc, attempt: 12 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1 * 60 * attempt,
+    shell:
+        """
+          (bowtie2 \
+         --threads {threads} \
+         {params.input_string} \
+         {params.umapped_string} \
+         -x {params.db_prefix} \
+        | samtools view -bh --threads $(({threads} - 1)) - \
+        ) > {output.bam} 2> {log.e}
+        """
 
 
-use rule snapalign from snap as snapalign_human with:
+rule s02_snapalign:
+    container:
+        config["docker_snap"]
     input:
         # using the direct syntax breaks when importing module
         # presumably some namespace clashing with bowtie2 when we redefine it
         # the others below seem to be fine
         #        R1=rules.bowtie2_human.output.unmapped_R1,
         #        R2=rules.bowtie2_human.output.unmapped_R2,
-        R1=f"01-bowtie/{{sample}}.without_{bowtie2_human_db_name}.R1.fastq.gz",
-        R2=f"01-bowtie/{{sample}}.without_{bowtie2_human_db_name}.R2.fastq.gz",
+        # fstrings + expand + wildcards == :(
+        reads=expand(
+            "01-bowtie/{{sample}}.without_"
+            + bowtie2_human_db_name
+            + ".R{rd}.fastq.gz",
+            rd=config["readdirs"],
+        ),
         idx_genome=f"{config['snap_human_index_dir']}Genome",
     output:
         bam=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam"),
     log:
         e=f"logs/snap_{{sample}}.{snap_human_db_name}.e",
         o=f"logs/snap_{{sample}}.{snap_human_db_name}.o",
+    params:
+        db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
+        cmd=config["lib_layout"],
+    resources:
+        mem_mb=lambda wc, attempt: 10 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1.5 * 60 * attempt,
+    threads: 16  # Use at least two threads
+    shell:
+        """
+        snap-aligner {params.cmd} {params.db_prefix} \
+        {input.reads}  -o {output.bam} -t {threads} -xf 2.0
+        """
 
 
-use rule get_unmapped from snap as get_unmapped_human with:
+rule s03_get_unmapped:
+    """ see mgen/10.1099/mgen.0.000393
+       > This two-stage approach first classified, and then discarded,
+         ‘human’ reads using one method, and then performed a second round of
+          classification using a second method. In this way, a
+         method with high precision could be supplemented by a
+        method with high sensitivity, maximizing the utility of both.
+
+    # uses logic from https://gist.github.com/darencard/72ddd9e6c08aaff5ff64ca512a04a6dd
+
+    """
+    container:
+        config["docker_bowtie2"]
     input:
-        bam=rules.snapalign_human.output.bam,
+        bam=f"02-snap/{{sample}}.{snap_human_db_name}.bam",
     output:
-        unmapped_R1=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R1.fastq"),
-        unmapped_R2=temp(f"03-nohuman/{{sample}}.without_{snap_human_db_name}.R2.fastq"),
-        flagstat=temp(f"{rules.snapalign_human.output.bam}.flagstat"),
+        unmapped_reads=temp(
+            expand(
+                "03-nohuman/{{sample}}.without_" + snap_human_db_name + ".R{rd}.fastq",
+                rd=config["readdirs"],
+            )
+        ),
+        flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
+    params:
+        bamtofastq_outputstring=lambda wc, output: f"-1 {output.unmapped_reads[0]} -2 {output.unmapped_reads[1]}"
+        if is_paired()
+        else f"-0 {output.unmapped_reads[0]}",
+        # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
+        # if is_paired()
+        # else f"-fq {output.unmapped_reads[0]}",
+        # "paired" or "single", to avoid dealing with bool conversion between yaml, snakemake, and bash
+        lib_layout=config["lib_layout"],
     log:
         e=f"logs/get_unmapped_human_{{sample}}.e",
         o=f"logs/get_unmapped_human_{{sample}}.o",
+    threads: 8
+    shell:
+        """
+        samtools flagstat {input.bam} > {output.flagstat}
+        if [ "{params.lib_layout}" = "paired" ] ;
+        then
+            # R1 unmapped, R2 mapped, only primary
+            samtools view -u -f 4 -F 264 {input.bam} > tmp_unmap_map_{wildcards.sample}.bam
+            # R1 mapped, R2 unmapped, only primary
+            samtools view -u -f 8 -F 260 {input.bam} > tmp_map_unmap_{wildcards.sample}.bam
+            # R1 & R2 unmapped
+            samtools view -u -f 12 -F 256 {input.bam} > tmp_unmap_unmap_{wildcards.sample}.bam
+
+            samtools merge -u tmp_unmapped_{wildcards.sample}.bam tmp_unmap_map_{wildcards.sample}.bam tmp_map_unmap_{wildcards.sample}.bam tmp_unmap_unmap_{wildcards.sample}.bam
+
+            samtools flagstat tmp_unmapped_{wildcards.sample}.bam
+
+            # note this outputs uncompressed only
+
+            samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq {params.bamtofastq_outputstring}  -
+            #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
+        else
+            # this is way easier
+            # samtools fastq requires name sorted input
+            samtools view -u -f 4 {input.bam} > tmp_unmapped_{wildcards.sample}.bam
+            samtools flagstat tmp_unmapped_{wildcards.sample}.bam
+            samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq {params.bamtofastq_outputstring}  -
+            #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam {params.bamtofastq_outputstring}
+
+        fi
+        rm tmp*_{wildcards.sample}.bam
+        """
 
 
-use rule bowtie2 from bowtie2 as bowtie2_mouse with:
+def get_mouse_bowtie_inputs(wc):
+    res = {"R1": None}
+    if is_paired():
+        res["R1"] = rules.s03_get_unmapped.output.unmapped_reads[0]
+        res["R2"] = rules.s03_get_unmapped.output.unmapped_reads[1]
+    else:
+        res["R1"] = rules.s03_get_unmapped.output.unmapped_reads[0]
+    return res
+
+
+use rule s01_bowtie2 as s04_bowtie2_mouse with:
     input:
-        R1=rules.get_unmapped_human.output.unmapped_R1,
-        R2=rules.get_unmapped_human.output.unmapped_R2,
+        unpack(get_mouse_bowtie_inputs),
         idx=multiext(
             config["bowtie2_mouse_index_base"],
             ".1.bt2",
@@ -128,21 +230,27 @@ use rule bowtie2 from bowtie2 as bowtie2_mouse with:
         ),
     output:
         bam=temp(f"04-bowtie/{{sample}}.{bowtie2_mouse_db_name}.bam"),
-        unmapped_R1=temp(
-            f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R1.fastq.gz"
-        ),
-        unmapped_R2=temp(
-            f"04-bowtie/{{sample}}.without_{bowtie2_mouse_db_name}.R2.fastq.gz"
+        unmapped_reads=temp(
+            expand(
+                "04-bowtie/{{sample}}.without_"
+                + bowtie2_mouse_db_name
+                + ".R{rd}.fastq.gz",
+                rd=config["readdirs"],
+            )
         ),
     log:
         e=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.e",
         o=f"logs/bowtie2_{{sample}}.{bowtie2_mouse_db_name}.o",
 
 
-use rule snapalign from snap as snapalign_mouse with:
+use rule s02_snapalign as s05_snapalign_mouse with:
     input:
-        R1=rules.bowtie2_mouse.output.unmapped_R1,
-        R2=rules.bowtie2_mouse.output.unmapped_R2,
+        reads=expand(
+            "04-bowtie/{{sample}}.without_"
+            + bowtie2_mouse_db_name
+            + ".R{rd}.fastq.gz",
+            rd=config["readdirs"],
+        ),
         idx_genome=f"{config['snap_mouse_index_dir']}Genome",
     output:
         bam=temp(f"05-snap/{{sample}}.{snap_mouse_db_name}.bam"),
@@ -151,13 +259,14 @@ use rule snapalign from snap as snapalign_mouse with:
         o=f"logs/snap_{{sample}}.{snap_mouse_db_name}.o",
 
 
-use rule get_unmapped from snap as get_unmapped_human_mouse with:
+use rule s03_get_unmapped as s06_get_unmapped_human_mouse with:
     input:
-        bam=rules.snapalign_mouse.output.bam,
+        bam=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam",
     output:
-        unmapped_R1=temp(f"06-nohuman-nomouse/{{sample}}.R1.fastq"),
-        unmapped_R2=temp(f"06-nohuman-nomouse/{{sample}}.R2.fastq"),
-        flagstat=f"{rules.snapalign_mouse.output.bam}.flagstat",
+        unmapped_reads=temp(
+            expand("06-nohuman-nomouse/{{sample}}.R{rd}.fastq", rd=config["readdirs"])
+        ),
+        flagstat=f"05-snap/{{sample}}.{snap_mouse_db_name}.bam.flagstat",
     log:
         e=f"logs/get_unmapped_human_mouse_{{sample}}.e",
         o=f"logs/get_unmapped_human_mouse_{{sample}}.o",

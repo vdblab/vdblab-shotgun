@@ -1,7 +1,10 @@
 ## Inputs
+lib_layout: "paired"
 assembly: ""
+
 ## bbmap
 adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
+filter_params: "minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo"
 
 ## General Parameters
 retries: 3
