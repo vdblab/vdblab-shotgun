@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import pandas as pd
 
 main_dir = '/data/peledj/baichom1/Projects/Peled_Analysis/2024/01_Enterococcus_Nutrition_MTX/cazyme_pipeline/'
@@ -51,6 +52,14 @@ def write_dbcan_info_file(aligned_file, substrate_file, cgc_file, overview_file,
     caz_df['RPM'] = ((10**6)*caz_df['counts'])/num_reads
     caz_df.to_csv(save_file, sep = '\t')
 
+def count_num_reads_compressed_file(file_name):
+    ''' 
+    Small helper function which will take a compressed fastq file and return the number of reads.
+        -file_name = str (or path) the location of the file to count number of reads for. 
+    '''
+    command = f"echo $(($(zcat {file_name} | wc -l)/4))"
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+    return float(result.stdout)
 
 if __name__ == "__main__":
     '''
@@ -61,12 +70,23 @@ if __name__ == "__main__":
         - cgc_file = the run_dbcan cgc.out file. 
         - overview_file = the run_dbcan overview file. 
         - save_file = name of the file to write the RPM outputs to.
-        - num_reads = the number of reads in the host-depleted file. 
+        - r1 = the location of the r1 files for calculating the number of reads in the host-depleted file. 
     '''
-    aligned_file = sys.argv[1]
-    substrate_file = sys.argv[2]
-    cgc_file = sys.argv[3]
-    overview_file = sys.argv[4]
-    save_file = sys.argv[5]
-    num_reads = sys.argv[6]
+    if "snakemake" not in globals():
+        # assume taking in variables from the main argv:
+        aligned_file = sys.argv[1]
+        substrate_file = sys.argv[2]
+        cgc_file = sys.argv[3]
+        overview_file = sys.argv[4]
+        save_file = sys.argv[5]
+        r1 = sys.argv[6]
+    else:
+        aligned_file = snakemake.input.coverage
+        substrate_file = snakemake.input.substrate
+        cgc_file = snakemake.input.cgc
+        overview_file = snakemake.input.overview
+        save_file = snakemake.output.rpm_file
+        r1 = snakemake.input.r1
+    num_reads = count_num_reads_compressed_file(str(r1))
+    print(f"Num reads: {num_reads}")
     write_dbcan_info_file(aligned_file, substrate_file, cgc_file, overview_file, save_file, num_reads)

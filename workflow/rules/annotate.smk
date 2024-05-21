@@ -40,7 +40,7 @@ outputs = [
     f"{config['sample']}_amrfinder.tab",
     f"{config['sample']}_cazi_overview.txt",
     f"{config['sample']}_cazi_substrate.out",
-    f"{config['sample']}_annotated_gene_coverage.txt",
+    f"{config['sample']}_annotated_cazymes_RPM.tsv",
     abricates,
     f"{config['sample']}.cleaned_dirs",
 ]
@@ -94,7 +94,7 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} {input.assembly} --prefix {wildcards.batch} --force || echo "Finished running Metaerg"
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} --locustag {wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
         if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
         then
@@ -216,7 +216,6 @@ rule split_assembly:
         seqkit shuffle {output.assembly} --two-pass  |
         seqkit seq --min-len {params.minlen} --threads {threads} | \
             seqkit split2 --by-part {params.nbatches} --out-dir {params.outdir}  > {log.o} 2>> {log.e}
-        ls tmp/
         """
 
 
@@ -255,36 +254,6 @@ rule annotate_CAZI_split:
         """
 
 
-rule join_CAZI:
-    input:
-        overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
-        substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
-        cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
-    output:
-        overview=f"{config['sample']}_cazi_overview.txt",
-        substrate=f"{config['sample']}_cazi_substrate.out",
-        cgc=f"{config['sample']}_cazi_cgc.out",
-    shell:
-        """
-        # deal with header
-        head -n 1 {input.overview[0]} > {output.overview}
-        for f in {input.overview}
-        do
-            tail -n+2 $f >> {output.overview}
-        done
-        head -n 1 {input.substrate[0]} > {output.substrate}
-        for f in {input.substrate}
-        do
-            tail -n+2 $f >> {output.substrate}
-        done
-        head -n 1 {input.cgc[0]} > {output.cgc}
-        for f in {input.cgc}
-        do
-            tail -n+2 $f >> {output.cgc}
-        done
-        """
-
-
 rule join_metaerg_outputs:
     input:
         gff=expand(
@@ -305,26 +274,23 @@ rule join_metaerg_outputs:
         # deal with header
         head -n 1 {input.gff[0]} > {output.gff}
         for f in {input.gff}
-        do  # in order to have unique "gene names" downstream need to overwrite names as we merge:
-            #IFS='/'; name_arr=($f); unset IFS;
-            #part=${{name_arr[@]: -3: 1}}
-            #tail -n+2 $f >> seqkit replace -p 'ID=[^;]*;' -r 'ID=assembled_region_'$part'_{{nr}};' $f >> {output.gff}
+        do
             tail -n+2 $f >> {output.gff}
         done
         for f in {input.ffn}
         do
-            $f >> {output.ffn}
+            cat $f >> {output.ffn}
         done
         """
 
 
 rule align_annotated_genes:
     input:
-        ffn=f"{config['sample']}_metaerg.ffn",
+        ffn="annotation/annotation_{batch}/data/cds.ffn",
         r1=config["R1"],
         r2=config["R2"],
     output:
-        bamfile=f"tmp/{config['sample']}_bamfile.bam",
+        bamfile="tmp/{batch}_aligned_reads.bam",
     container:
         config["docker_bowtie2"]
     resources:
@@ -333,8 +299,8 @@ rule align_annotated_genes:
         threads=16,
         cores=16,
     params:
-        bowtie_dir=f"./tmp_bowtie_indices_{config['sample']}",
-        bowtie_index=f"./tmp_bowtie_indices_{config['sample']}/{config['sample']}_bowtie2_index",
+        bowtie_dir="./tmp_bowtie_indices_{batch}",
+        bowtie_index="./tmp_bowtie_indices_{batch}/{batch}_bowtie2_index",
     shell:
         """
         mkdir -p {params.bowtie_dir}
@@ -349,10 +315,10 @@ rule align_annotated_genes:
 
 rule seqkit_annotate_ffn:
     input:
-        ffn=f"{config['sample']}_metaerg.ffn",
+        ffn="annotation/annotation_{batch}/data/cds.ffn",
     output:
-        length_file=f"tmp/{config['sample']}_seqkit.length",
-        bed_file=f"tmp/{config['sample']}_seqkit.bed",
+        length_file="tmp/{batch}_seqkit.length",
+        bed_file="tmp/{batch}_seqkit.bed",
     container:
         config["docker_seqkit"]
     shell:
@@ -364,11 +330,11 @@ rule seqkit_annotate_ffn:
 
 rule bedtools_coverage:
     input:
-        length_file=f"tmp/{config['sample']}_seqkit.length",
-        bed_file=f"tmp/{config['sample']}_seqkit.bed",
-        bamfile=f"tmp/{config['sample']}_bamfile.bam",
+        length_file="tmp/{batch}_seqkit.length",
+        bed_file="tmp/{batch}_seqkit.bed",
+        bamfile="tmp/{batch}_aligned_reads.bam",
     output:
-        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
+        coverage="tmp/{batch}_annotated_gene_coverage.txt",
     container:
         config["docker_bedtools"]
     shell:
@@ -379,27 +345,50 @@ rule bedtools_coverage:
 
 rule create_RPM_counts:
     input:
-        coverage=f"{config['sample']}_annotated_gene_coverage.txt",
+        coverage="tmp/{batch}_annotated_gene_coverage.txt",
+        overview="cazi_db_scan/{batch}/overview.txt",
+        substrate="cazi_db_scan/{batch}/substrate.out",
+        cgc="cazi_db_scan/{batch}/cgc.out",
+        r1=config["R1"],
+    output:
+        rpm_file="tmp/{batch}_annoted_cazymes_RPM.tsv",
+    conda:
+        "../envs/annotate_output_parse.yaml"
+    log:
+        e="tmp/{batch}_create_RPM.err",
+        o="tmp/{batch}_create_RPM.out",
+    script:
+        "../scripts/generate_RPM_annotation_files.py"
+
+
+rule join_CAZI:
+    input:
+        overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
+        substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
+        cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
+        rpm=expand("tmp/{batch}_annoted_cazymes_RPM.tsv", batch=BATCHES),
+    output:
         overview=f"{config['sample']}_cazi_overview.txt",
         substrate=f"{config['sample']}_cazi_substrate.out",
         cgc=f"{config['sample']}_cazi_cgc.out",
-        r1=config["R1"],
-    output:
-        rpm_file=f"{config['sample']}_annoted_cazymes_RPM.tsv",
-    conda:
-        "../envs/annotate_output_parse.yaml"
+        rpm=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     shell:
         """
-        num_reads="$(expr $(zcat {input.r1} | wc -l) / 4)"
-        python ../scripts/generate_RPM_annotation_files.py \
-            {input.coverage} \
-            {input.substrate} \
-            {input.cgc} \
-            {input.overview} \
-            {output.rpm_file} \
-            $num_reads
+        join_files(){
+            # infile list is first arg, outfile is second arg. 
+            # deal with header
+            head -n 1 {$1[0]} > {$2}
+            for f in {$1}
+            do
+                tail -n+2 $f >> {$2}
+            done
+        }
+        
+        join_files input.overview output.overview
+        join_files input.substrate output.substrate
+        join_files input.cgc output.cgc
+        join_files input.rpm output.rpm
         """
-
 
 rule clean_up:
     """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
@@ -408,11 +397,12 @@ rule clean_up:
     input:
         agg_file="{sample}_metaerg.gff",
         cazi=f"{config['sample']}_cazi_overview.txt",
-        rpm_file=f"{config['sample']}_annoted_cazymes_RPM.tsv",
+        rpm_file=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     output:
         touch("{sample}.cleaned_dirs"),
     shell:
         """
-        find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
-        rm -r tmp/
+        #find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        #rm -r tmp/
+        echo "commented out stuff should add it back!!"
         """
