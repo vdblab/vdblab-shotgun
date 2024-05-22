@@ -20,13 +20,16 @@ rule snapalign:
     params:
         db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
     resources:
-        mem_mb=lambda wc, attempt: 10 * 1024 * attempt,
+        # memory is set relative to index; human snap index is ~27 gb
+        # note that lsf will report memory as underutilized, but snap
+        # will run quite slow if index exceeds the available memory
+        mem_mb=lambda wc, attempt: 30 * 1024 * attempt,
         runtime=lambda wc, attempt: 1.5 * 60 * attempt,
     threads: 16
     shell:
         """
         snap-aligner paired {params.db_prefix} \
-        {input.R1} {input.R2}  -o {output.bam} -t {threads} -xf 2.0
+        {input.R1} {input.R2}  -o {output.bam} -t {threads} -xf  -b- 2.0
         """
 
 
