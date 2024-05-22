@@ -92,7 +92,7 @@ rule humann3_run_uniref90:
         * 1024
         * max(input.fastq.size // 1000000000, 1)
         * 5 * attempt,
-        runtime=8 * 60 * attempt,
+        runtime=lambda wc, attempt: 8 * 60 * attempt,
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
@@ -269,7 +269,7 @@ rule metaphlan_run:
     conda:
         "../envs/metaphlan.yaml"
     resources:
-        mem_mb= mem_mb=lambda wildcards, attempt: 30 * 1024 * attempt,
+        mem_mb=lambda wildcards, attempt: 30 * 1024 * attempt,
         runtime=lambda wc, attempt: 2 * 60 * attempt,
     threads: 64
     log:
