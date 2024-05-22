@@ -29,7 +29,7 @@ rule snapalign:
     shell:
         """
         snap-aligner paired {params.db_prefix} \
-        {input.R1} {input.R2}  -o {output.bam} -t {threads} -xf  -b- 2.0
+        {input.R1} {input.R2}  -o {output.bam} -t {threads}  -b- -xf 2.0
         """
 
 
