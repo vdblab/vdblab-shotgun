@@ -20,10 +20,9 @@ rule snapalign:
     params:
         db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
     resources:
-        mem_mb=lambda wildcards, attempt, input: attempt
-        * (max(input.size // 1000000, 1024) * 10),
-        runtime=48 * 60,
-    threads: 24  # Use at least two threads
+        mem_mb=lambda wc, attempt: 10 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1.5 * 60 * attempt,
+    threads: 16
     shell:
         """
         snap-aligner paired {params.db_prefix} \

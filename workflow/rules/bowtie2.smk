@@ -61,7 +61,10 @@ rule bowtie2:
             os.path.splitext(input.idx[0])[0]
         )[0],
         extra="",  # optional parameters
-    threads: 24
+    threads: 16
+    resources:
+        mem_mb=lambda wc, attempt: 12 * 1024 * attempt,
+        runtime=lambda wc, attempt: 1 * 60 * attempt,
     shell:
         """
           (bowtie2 \

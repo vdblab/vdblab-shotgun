@@ -125,8 +125,8 @@ rule bbmap_dedup:
         flags=bbmap_dedup_params_flags,
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
-        * (max(input.size // 1000000, 1024) * 16),
-        runtime=24 * 60,
+        * (max(input.size // 1000000, 1024) * 10),
+        runtime=lambda wildcards, attempt: 1 * 60 * attempt * attempt,
     log:
         # this is annoying but we want to be able to extract the stats from
         # the logs, which we can't do without the logs as a file. Perhaps
@@ -341,7 +341,7 @@ rule aligned_host_reads_to_fastq:
         R2=temp("host/{id}/{sample}_shard{shard}.{db}.R2.fq"),
     threads: 8
     resources:
-        runtime=8 * 60,
+        runtime=2 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -376,7 +376,7 @@ rule make_combined_host_reads_fastq:
         R1="host/{sample}_all_host_reads_R{readdir}.fastq.gz",
     threads: 8
     resources:
-        runtime=8 * 60,
+        runtime=2 * 60,
     container:
         config["docker_bowtie2"]
     shell:
@@ -399,7 +399,8 @@ rule sortmerna_run:
             ".blast.gz", ""
         ),
     resources:
-        mem_mb=16000,
+        mem_mb=lambda wc, attempt: 6 * 1024 * attempt,
+        runtime=lambda wc, attempt: 2 * 60 * attempt * attempt * attempt,
     threads: 16
     message:
         "Quantify rRNA for qPCR normalization and 16S comparison"
