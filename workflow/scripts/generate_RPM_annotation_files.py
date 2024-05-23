@@ -9,46 +9,33 @@ align_dir = ''.join([main_dir, 'bwa_align/'])
 save_dir = ''.join([main_dir, 'detailed_dbcan/'])
 
 def write_dbcan_info_file(aligned_file, substrate_file, cgc_file, overview_file, save_file, num_reads):
-
+    ''' 
+    Will handle merging the information from the various files into one summary file.
+    '''
+    # contains an overview from run_dbcan
     overview_df = pd.read_csv(overview_file, sep = "\t")
-    counts_df = pd.read_csv(aligned_file, sep = '\t', names=['bam_name', 'zero', 'length', 'counts']).drop('zero', axis = 'columns')
-    
-    # from the substrate file we will take the predicted substrate and the "k_n" name they are assigned to:
-    s_k_n = []; s_sub = []
-    with open(substrate_file, 'r') as sub_f:
-        line = sub_f.readline()
-        while line:
-            if line.startswith('k'):
-                tab_parts = line.split('\t')
-                s_k_n.append(tab_parts[0].split('|')[0])
-                s_sub.append(tab_parts[2])
-            line = sub_f.readline()
-    sub_df = pd.DataFrame({
-        'k_name' : s_k_n,
-        'substrate' : s_sub,
-    })
 
-    # the cgc file acts as a "key file" connecting the "k_n"s used in the substrate file, and the bam_gene names;
-    bam_n = []; k_n = []; type_n = []
-    with open(cgc_file, 'r') as cgc_f:
-        line = cgc_f.readline()
-        while line:
-            if not line.startswith('+'):
-                sub_lines = line.split("\t")
-                bam_n.append(sub_lines[8])
-                k_n.append(sub_lines[5])
-                type_n.append(sub_lines[1])
-            line = cgc_f.readline()
-    cgc_faa_df = pd.DataFrame({
-        'bam_name' : bam_n,
-        'k_name' : k_n,
-        'caz_type' : type_n,
-    })
+    # counts df currently contains the per-position alignment read count (of the 5' end of reads)
+    # we need to summarize over the whole gene region to get our counts per gene.
+    counts_df = pd.read_csv(aligned_file, sep = '\t', names=['bam_name', 'position', 'counts', 'length', 'fraction']).drop(['position', 'fraction'], axis = 'columns')
+    counts_df = counts_df.groupby('bam_name').agg({"counts": "sum", "length": "max"}).reset_index()
 
+    # substrate file has the annotated substrates for various CGCs - "k_name" is the key:
+    sub_df = pd.read_csv(substrate_file, header=None, skiprows=1, names=['k_name', 'PULID', 'substrate', 'substrate_bitscore', 'signature pairs', 'dbCAN-sub substrate', 'dbCAN-sub substrate score'], sep = "\t")
+    sub_df = sub_df[['k_name', 'substrate', 'substrate_bitscore']]
+    sub_df['k_name'] = sub_df['k_name'].apply(lambda x: x.split('|')[0], axis = 'columns')
+    sub_df['cgc'] = sub_df['k_name'].apply(lambda x: x.split('|')[1], axis = 'columns')
+
+    # the cgc file acts as a "key file" connecting the "k_names"s used in the substrate file, and the bam_name names;
+    cgc_faa_df = pd.read_csv(cgc_file, sep = "\t", comment= '+', names =['_0', 'caz_type', '_2', '_3', 'cgc', 'k_name', '_6', '_7', 'bam_name', '_9', '_10', '_11'])
+    cgc_faa_df = cgc_faa_df[['caz_type', 'cgc', 'k_name', 'bam_name']]
 
     caz_df = overview_df.merge(counts_df, how = 'left', left_on = "Gene ID", right_on = 'bam_name').drop('bam_name', axis= 'columns')
     caz_df = caz_df.merge(cgc_faa_df, how = 'left', left_on = "Gene ID", right_on = "bam_name")
-    caz_df = caz_df.merge(sub_df, how = 'left', on = 'k_name')
+
+    # Note that substrates can match with multiple "bam_names".
+    # in the cgc file there is a one to many mapping of k_names/cgc's and bam_names. 
+    caz_df = caz_df.merge(sub_df, how = 'left', on = ['k_name', 'cgc'])
     caz_df['RPM'] = ((10**6)*caz_df['counts'])/num_reads
     caz_df.to_csv(save_file, sep = '\t')
 

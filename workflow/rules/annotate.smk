@@ -339,7 +339,7 @@ rule bedtools_coverage:
         config["docker_bedtools"]
     shell:
         """
-        bedtools coverage -g {input.length_file} -sorted -a {input.bed_file} -counts -b {input.bamfile} > {output.coverage}
+        bedtools genomecov -5 -ibam {input.bamfile} > {output.coverage}
         """
 
 
@@ -374,20 +374,22 @@ rule join_CAZI:
         rpm=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     shell:
         """
-        join_files(){
-            # infile list is first arg, outfile is second arg. 
+        join_files(){{
+            output_file=$1
+            echo $output_file
             # deal with header
-            head -n 1 {$1[0]} > {$2}
-            for f in {$1}
-            do
-                tail -n+2 $f >> {$2}
+            head -n 1 $2 > $output_file
+            # This weird for loop handles the fact we pass the infiles as
+            # a list - (which doesn't work well in bash):
+            for (( i=2; i <= "$#"; i++ )); do
+                tail -n+2 ${{!i}} >> $output_file
             done
-        }
+        }}
         
-        join_files input.overview output.overview
-        join_files input.substrate output.substrate
-        join_files input.cgc output.cgc
-        join_files input.rpm output.rpm
+        join_files {output.overview} {input.overview}
+        join_files {output.substrate} {input.substrate}
+        join_files {output.cgc} {input.cgc}
+        join_files {output.rpm} {input.rpm}
         """
 
 rule clean_up:
