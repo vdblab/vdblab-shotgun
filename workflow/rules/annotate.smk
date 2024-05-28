@@ -392,6 +392,7 @@ rule join_CAZI:
         join_files {output.rpm} {input.rpm}
         """
 
+
 rule clean_up:
     """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
     this is done last.
