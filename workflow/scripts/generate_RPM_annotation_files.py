@@ -21,10 +21,10 @@ def write_dbcan_info_file(aligned_file, substrate_file, cgc_file, overview_file,
     counts_df = counts_df.groupby('bam_name').agg({"counts": "sum", "length": "max"}).reset_index()
 
     # substrate file has the annotated substrates for various CGCs - "k_name" is the key:
-    sub_df = pd.read_csv(substrate_file, header=None, skiprows=1, names=['k_name', 'PULID', 'substrate', 'substrate_bitscore', 'signature pairs', 'dbCAN-sub substrate', 'dbCAN-sub substrate score'], sep = "\t")
-    sub_df = sub_df[['k_name', 'substrate', 'substrate_bitscore']]
-    sub_df['k_name'] = sub_df['k_name'].apply(lambda x: x.split('|')[0], axis = 'columns')
-    sub_df['cgc'] = sub_df['k_name'].apply(lambda x: x.split('|')[1], axis = 'columns')
+    sub_df = pd.read_csv(substrate_file, header=None, skiprows=1, names=['k_name_parts', 'PULID', 'substrate', 'substrate_bitscore', 'signature pairs', 'dbCAN-sub substrate', 'dbCAN-sub substrate score'], sep = "\t")
+    sub_df['k_name'] = sub_df['k_name_parts'].map(lambda x: x.split('|')[0])
+    sub_df['cgc'] = sub_df['k_name_parts'].map(lambda x: x.split('|')[1])
+    sub_df = sub_df[['k_name', 'cgc', 'substrate', 'substrate_bitscore']]
 
     # the cgc file acts as a "key file" connecting the "k_names"s used in the substrate file, and the bam_name names;
     cgc_faa_df = pd.read_csv(cgc_file, sep = "\t", comment= '+', names =['_0', 'caz_type', '_2', '_3', 'cgc', 'k_name', '_6', '_7', 'bam_name', '_9', '_10', '_11'])
