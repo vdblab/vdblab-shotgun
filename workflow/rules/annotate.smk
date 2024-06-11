@@ -36,7 +36,7 @@ abricates = expand(
 
 outputs = [
 #    f"{config['sample']}_antismash.gbk",
-    f"{config['sample']}_antismash.tab",
+#    f"{config['sample']}_antismash.tab",
     f"{config['sample']}_amrfinder.tab",
     f"{config['sample']}_cazi_overview.txt",
     f"{config['sample']}_cazi_substrate.out",
