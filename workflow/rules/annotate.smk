@@ -35,7 +35,7 @@ abricates = expand(
 )
 
 outputs = [
-    f"{config['sample']}_antismash.gbk",
+#    f"{config['sample']}_antismash.gbk",
     f"{config['sample']}_antismash.tab",
     f"{config['sample']}_amrfinder.tab",
     f"{config['sample']}_cazi_overview.txt",
@@ -46,9 +46,9 @@ outputs = [
 ]
 if config["check_contigs"]:
     outputs.extend(
-        [f"{config['sample']}_metaerg.gff", f"{config['sample']}_antismash.gbk"]
+        [f"{config['sample']}_metaerg.gff"] 
     )
-
+#, f"{config['sample']}_antismash.gbk"]
 
 nseqs = 200
 nparts = 10  # will be overriden on workflow start
@@ -107,50 +107,50 @@ rule annotate_orfs:
         """
 
 
-rule antismash:
-    # note that we don't require the web index as antismash can fail on small samples.
-    container:
-        config["docker_antismash"]
-    input:
-        assembly=config["assembly"],
-        gff="{sample}_metaerg.gff",
-    resources:
-        mem_mb=16 * 1024,
-        runtime=6 * 60,
-    threads: 16
-    log:
-        o="logs/antismash_{sample}.log",
-    output:
-        gbk="{sample}_antismash.gbk",
-        outdir=directory("antismash_{sample}"),
-    shell:
-        """
-        set +e -x
-        antismash --cpus {threads} --allow-long-headers \
-            --output-dir antismash_{wildcards.sample} {input.assembly} \
-            --genefinding-gff {input.gff} --verbose --logfile {log.o} \
-            --genefinding-tool none  # ignore contigs without genes: https://www.biostars.org/p/9539337/
-        exitcode=$?
-        if [ ! $exitcode -eq 0 ]
-        then
-            echo "Error running antismash; this can occur if the assembly is very fragmented/poor"
-            touch {output.gbk}
+#rule antismash:
+#    # note that we don't require the web index as antismash can fail on small samples.
+#    container:
+#        config["docker_antismash"]
+#    input:
+#        assembly=config["assembly"],
+#        gff="{sample}_metaerg.gff",
+#    resources:
+#        mem_mb=16 * 1024,
+#        runtime=6 * 60,
+#    threads: 16
+#    log:
+#        o="logs/antismash_{sample}.log",
+#    output:
+#        gbk="{sample}_antismash.gbk",
+#        outdir=directory("antismash_{sample}"),
+#    shell:
+#        """
+#        set +e -x
+#        antismash --cpus {threads} --allow-long-headers \
+#            --output-dir antismash_{wildcards.sample} {input.assembly} \
+#            --genefinding-gff {input.gff} --verbose --logfile {log.o} \
+#            --genefinding-tool none  # ignore contigs without genes: https://www.biostars.org/p/9539337/
+#        exitcode=$?
+#        if [ ! $exitcode -eq 0 ]
+#        then
+#            echo "Error running antismash; this can occur if the assembly is very fragmented/poor"
+#            touch {output.gbk}
+#
+#        else
+#            cat antismash_{wildcards.sample}/*.gbk > {output.gbk}
+#        fi
+#        """
 
-        else
-            cat antismash_{wildcards.sample}/*.gbk > {output.gbk}
-        fi
-        """
 
-
-rule tabulate_antismash:
-    input:
-        gbk="{sample}_antismash.gbk",
-    output:
-        tab="{sample}_antismash.tab",
-    container:
-        config["docker_biopython"]
-    script:
-        "../scripts/parse_antismash_gbk.py"
+#rule tabulate_antismash:
+#    input:
+#        gbk="{sample}_antismash.gbk",
+#    output:
+#        tab="{sample}_antismash.tab",
+#    container:
+#        config["docker_biopython"]
+#    script:
+#        "../scripts/parse_antismash_gbk.py"
 
 
 rule annotate_abricate:
