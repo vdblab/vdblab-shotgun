@@ -6,3 +6,6 @@ tmp*
 msk-lsf/__pycache__
 vdb_16S/test_output/
 tests/__pycache__/
+.test/SRR*/*
+.test/GCF*/*
+workflow/rules/__pycache__/

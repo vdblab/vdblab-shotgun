@@ -128,7 +128,8 @@ rule antismash:
         set +e -x
         antismash --cpus {threads} --allow-long-headers \
             --output-dir antismash_{wildcards.sample} {input.assembly} \
-            --genefinding-gff {input.gff} --verbose --logfile {log.o}
+            --genefinding-gff {input.gff} --verbose --logfile {log.o} \
+            --genefinding-tool none  # ignore contigs without genes: https://www.biostars.org/p/9539337/
         exitcode=$?
         if [ ! $exitcode -eq 0 ]
         then
@@ -222,6 +223,9 @@ rule split_assembly:
 def get_annotate_cazi_runtime(wildcards, attempt):
     return attempt * 3.5 * 60
 
+def get_annotate_cazi_memory(wildcards, attempt):
+    return attempt * 4 * 1024
+
 
 rule annotate_CAZI_split:
     input:
@@ -235,7 +239,7 @@ rule annotate_CAZI_split:
         cazi_db=config["cazi_db"],
         contig_annotation_thresh=config["contig_annotation_thresh"],
     resources:
-        mem_mb=4 * 1024,
+        mem_mb=get_annotate_cazi_memory,
         runtime=get_annotate_cazi_runtime,
     container:
         config["docker_dbcan"]
@@ -405,7 +409,6 @@ rule clean_up:
         touch("{sample}.cleaned_dirs"),
     shell:
         """
-        #find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
-        #rm -r tmp/
-        echo "commented out stuff should add it back!!"
+        find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        rm -r tmp/
         """
