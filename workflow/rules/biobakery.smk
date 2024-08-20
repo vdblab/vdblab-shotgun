@@ -54,8 +54,7 @@ rule all:
 # the cat paired end reads and metaphlan and humann3 part
 rule cat_pair:
     input:
-        R1=config["R1"],
-        R2=config["R2"],
+        unpack(get_config_inputs),
     output:
         joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
     conda:
@@ -63,7 +62,7 @@ rule cat_pair:
     log:
         e="logs/cat_pair_{sample}.e",
     shell:
-        "cat {input.R1} {input.R2} > {output.joined} 2> {log.e}"
+        "cat {input} > {output.joined} 2> {log.e}"
 
 
 rule humann3_run_uniref90:
@@ -87,8 +86,9 @@ rule humann3_run_uniref90:
         mem_mb=lambda wildcards, attempt, input: attempt
         * 1024
         * max(input.fastq.size // 1000000000, 1)
-        * 10,
-        runtime=24 * 60,
+        * 5
+        * attempt,
+        runtime=lambda wc, attempt: 8 * 60 * attempt,
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
@@ -265,9 +265,10 @@ rule metaphlan_run:
     conda:
         "../envs/metaphlan.yaml"
     resources:
-        mem_mb=16 * 1024,
-        runtime=20 * 60,
-    threads: 64
+        # first submission is given 30GB, then 45,
+        mem_mb=lambda wildcards, attempt: 30 * 1024 * attempt,
+        runtime=lambda wc, attempt: 2 * 60 * attempt,
+    threads: 32
     log:
         e="logs/metaphlan_{sample}.e",
     shell:

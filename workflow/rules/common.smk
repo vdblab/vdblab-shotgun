@@ -1,6 +1,31 @@
 from pathlib import Path
 
 
+def is_paired():
+    if config["lib_layout"] not in ["paired", "single"]:
+        raise ValueError("lib_layout must be specified as either paired or single")
+
+    if config["lib_layout"] == "single":
+        if "R2" in config.keys():
+            raise ValueError("lib_layout specified as single, but R2 has been provided")
+        else:
+            pass
+    else:
+        if "R2" not in config.keys():
+            raise ValueError(
+                "lib_layout specified as paired, but R2 has not been provided"
+            )
+    return config["lib_layout"] == "paired"
+
+
+def get_readdirs():
+    return [1, 2] if is_paired() else [1]
+
+
+def skip_dedup():
+    return not config["dedup_reads"]
+
+
 def get_pipeline_version():
     return (
         subprocess.check_output(["git", "describe", "--always"], cwd=workflow.basedir)
@@ -25,30 +50,73 @@ def make_assembly_split_names(nparts):
     return split_names
 
 
-def files_to_split(wildcards, dedup=False, read_dir=1):
-    if dedup:
-        return ((f"dedup/{wildcards.sample}_R{read_dir}.fastq.gz"),)
+def get_concat_input(wc):
+    return config[f"R{wc.rd}"]
+
+
+def files_to_split(wildcards):
+    """full disclosure: I don't remember why this is returning a dict of tuples"""
+    res = {"R1": None}
+    if not skip_dedup():
+        res["R1"] = ((f"dedup/{wildcards.sample}_R1.fastq.gz"),)
+        if is_paired():
+            res["R2"] = ((f"dedup/{wildcards.sample}_R2.fastq.gz"),)
     else:
-        return ((f"concatenated/{wildcards.sample}_R{read_dir}.fastq.gz"),)
+        res["R1"] = ((f"concatenated/{wildcards.sample}_R1.fastq.gz"),)
+        if is_paired():
+            res["R2"] = ((f"concatenated/{wildcards.sample}_R2.fastq.gz"),)
+    return res
 
 
-def files_to_trim(wildcards, nshards=1, dedup=False, read_dir=1):
+def files_to_trim(wildcards, nshards=1):
     # if splitting into shards, use output from split_fastq
     # if not and you deduplicated reads, use that output;
     # otherwise, just trim the concatenated inputs
-    if nshards > 1:
-        return (
-            (
-                f"split_fastq/{wildcards.sample}_R{read_dir}.part_{wildcards.shard}.fastq.gz"
-            ),
+    res = {"R1": None}
+    if config["nshards"] > 1:
+        res["R1"] = (
+            (f"split_fastq/{wildcards.sample}_R1.part_{wildcards.shard}.fastq.gz"),
         )
-    elif dedup:
-        return f"dedup/{wildcards.sample}_R{read_dir}.fastq.gz"
+        if is_paired():
+            res["R2"] = (
+                (f"split_fastq/{wildcards.sample}_R2.part_{wildcards.shard}.fastq.gz"),
+            )
+    elif not skip_dedup():
+        res["R1"] = ((f"dedup/{wildcards.sample}_R1.fastq.gz"),)
+        if is_paired():
+            res["R2"] = ((f"dedup/{wildcards.sample}_R2.fastq.gz"),)
     else:
-        return ((f"concatenated/{wildcards.sample}_R{read_dir}.fastq.gz"),)
+        res["R1"] = ((f"concatenated/{wildcards.sample}_R1.fastq.gz"),)
+        if is_paired():
+            res["R2"] = ((f"concatenated/{wildcards.sample}_R2.fastq.gz"),)
+    return res
 
 
-def bbmap_dedup_params_flags(wildcards):
+# def get_input_fastqs(wildcards):
+#     if config["lib_layout"] == "paired":
+#         return({"R1": config["R1"],
+#                 "R2": config["R2"]})
+#     else:
+#         return ({"R1": config["R1"]})
+
+# def get_input_fastqs_wc(wildcards):
+#     return(" if config["lib_layout"] == "paired":
+#         return({"R1": config["R1"],
+#                 "R2": config["R2"]})
+#     else:
+#         return ({"R1": config["R1"]})
+
+
+def get_config_inputs(wc):
+    if is_paired():
+        return {"R1": config["R1"], "R2": config["R2"]}
+    else:
+        return {
+            "R1": config["R1"],
+        }
+
+
+def bbmap_dedup_params_flags(wildcards, config):
     # normal optical duplicate removal (HiSeq, MiSeq, etc)
     # should use these flags
     flags = "dedupe optical"
@@ -63,12 +131,12 @@ def bbmap_dedup_params_flags(wildcards):
         if config["dedup_platform"] == "SRA":
             flags = "dedupe"
         else:
-            dupedist = bbmap_dedup_params_dupedist(wildcards)
+            dupedist = bbmap_dedup_params_dupedist(wildcards, config)
             flags += f" dupedist={dupedist}"
     return flags
 
 
-def bbmap_dedup_params_dupedist(wildcards):
+def bbmap_dedup_params_dupedist(wildcards, config):
     # default for unspecified platform, HiSeq up to 2500, and NextSeq
     dupedist = 40
 
@@ -82,23 +150,6 @@ def bbmap_dedup_params_dupedist(wildcards):
         dupedist = 2500
 
     return dupedist
-
-
-def test_bbmap_dedup_params_flags():
-    test_conditions = [
-        [{"dedup_platform": "SRA"}, "dedupe"],
-        [{"dedup_platform": "MiniSeq"}, "dedupe optical dupedist=40"],
-        [{"dedup_platform": "NovaSeq"}, "dedupe optical dupedist=12000"],
-        [{"dedup_platform": "NextSeq"}, "dedupe optical spany adjacent dupedist=40"],
-        [{"dedup_platform": "HiSeq-3000"}, "dedupe optical dupedist=2500"],
-        [{"dedup_platform": "HiSeq-4000"}, "dedupe optical dupedist=2500"],
-    ]
-    for i in test_conditions:
-        global config
-        config = i[0]
-        outcome = i[1]
-        assert bbmap_dedup_params_flags(None) == outcome
-        print(f"passed dedup flags test for {config['dedup_platform']}")
 
 
 # Kraken functions

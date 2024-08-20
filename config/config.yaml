@@ -1,7 +1,10 @@
 ## Inputs
+lib_layout: "paired"
 assembly: ""
+
 ## bbmap
 adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
+filter_params: "minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo"
 
 ## General Parameters
 retries: 3
@@ -90,13 +93,14 @@ docker_abricate: "docker://staphb/abricate:1.0.0"
 docker_amrfinder: "docker://nickp60/amrfinder:3.10.24"
 docker_antismash: "docker://antismash/standalone:6.1.1"
 docker_bbtools: "docker://staphb/bbtools:38.97"
+docker_bedtools: "docker://staphb/bedtools:2.31.1"
 docker_biobakery: "docker://ghcr.io/vdblab/biobakery-profiler:20230418a"
 docker_biopython: "docker://nanozoo/biopython:1.74--b03961c"
 docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
 docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
 docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
 docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
-docker_dbcan: "docker://haidyi/run_dbcan:3.0.1"
+docker_dbcan: "docker://ghcr.io/vdblab/dbcan3:4.1.4.12"
 docker_fastqc: "docker://staphb/fastqc:0.11.9"
 docker_gtdbtk: "docker://ecogenomic/gtdbtk:2.3.2"
 docker_hla: "docker://humanlongevity/hla:0.0.0"
