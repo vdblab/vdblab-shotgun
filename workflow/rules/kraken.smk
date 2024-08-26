@@ -338,7 +338,7 @@ rule make_phanta_manifest:
     input:
         unpack(get_kraken_input),
     output:
-        manifest=temp("phanta_inputs.tsv"),
+        manifest=temp("{sample}_phanta_inputs.tsv"),
     params:
         thisdir=lambda wc, input: os.getcwd() if isinstance(input.R1, str) else "",
         sample=config["sample"],
@@ -354,7 +354,7 @@ def get_singularity_args(wildcards):
 rule phanta:
     # we need the results dir because if we try to initiate two snakemake workflows from the same --directory we get LockErrors
     input:
-        manifest=rules.make_phanta_manifest.output.manifest,
+        manifest="{sample}_phanta_inputs.tsv",
         readlen_file=parse_read_lengths,
     output:
         counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
@@ -427,7 +427,7 @@ rule phanta_postprocess:
     input:
         counts="phanta_{sample}/{db}/results/final_merged_outputs/counts.txt",
         tax_relab="phanta_{sample}/{db}/results/final_merged_outputs/relative_taxonomic_abundance.txt",
-        manifest=rules.make_phanta_manifest.output.manifest,
+        manifest="{sample}_phanta_inputs.tsv",
         single_end="phanta_{sample}/{db}/results/classification/single_end",
     output:
         byhost="phanta_{sample}/{db}/results/counts_by_host.tsv",
