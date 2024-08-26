@@ -317,25 +317,9 @@ rule align_annotated_genes:
         """
 
 
-rule seqkit_annotate_ffn:
-    input:
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
-    output:
-        length_file="tmp/{batch}_seqkit.length",
-        bed_file="tmp/{batch}_seqkit.bed",
-    container:
-        config["docker_seqkit"]
-    shell:
-        """
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file} 
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file} 
-        """
-
-
 rule bedtools_coverage:
     input:
-        length_file="tmp/{batch}_seqkit.length",
-        bed_file="tmp/{batch}_seqkit.bed",
+        gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
         bamfile="tmp/{batch}_aligned_reads.bam",
     output:
         coverage="tmp/{batch}_annotated_gene_coverage.txt",
@@ -343,7 +327,7 @@ rule bedtools_coverage:
         config["docker_bedtools"]
     shell:
         """
-        bedtools genomecov -5 -ibam {input.bamfile} > {output.coverage}
+        bedtools coverage -a {input.gff} -b {input.bamfile} > {output.coverage}
         """
 
 
