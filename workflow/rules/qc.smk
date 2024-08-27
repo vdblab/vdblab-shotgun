@@ -43,7 +43,7 @@ def validate_manifest(manifest):
 
 def load_manifest(manifest_path, validate = True):
     """Load in the manifest stored and pivot so each row is an experiment, and columns are files."""
-    manifest = pd.read_csv(manifest_path, sep="\t", header = 1).drop(
+    manifest = pd.read_csv(manifest_path, sep="\t", header = 0).drop(
             columns = ['notes']  # We drop notes from the manifest, but include in the report. 
         ).pivot(
             index = "experiment_id", columns = "file_type", values = "file_path"
