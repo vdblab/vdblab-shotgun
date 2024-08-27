@@ -26,8 +26,8 @@ def get_manifest_notes(manifest_path):
     
     mod_message = ['']
     for row in full_manifest[full_manifest.notes.notna()].iterrows():
-        mod_message.append(f'File {row.file_type} was modified for experiment {row.experiment_id}'
-            f' of sample {config['sample']}.  Reason: {row.notes}.\n')
+        mod_message.append(f"File {row.file_type} was modified for experiment {row.experiment_id}"
+            f" of sample {config['sample']}.  Reason: {row.notes}.\n")
     return ''.join(mod_message)
 
 def validate_manifest(manifest):
