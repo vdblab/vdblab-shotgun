@@ -3,6 +3,6 @@
 tmp*
 *.log.*
 .Rproj.user
-msk-lsf/__pycache__
 vdb_16S/test_output/
-tests/__pycache__/
+.test/*
+*__pycache__*
