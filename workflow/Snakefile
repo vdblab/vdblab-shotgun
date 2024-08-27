@@ -94,6 +94,20 @@ module biobakery:
 
 use rule * from biobakery as biobakery_*
 
+#
+# qc Module
+#
+module qc:
+    snakefile:
+        "rules/qc.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from qc as qc_*
+
 
 #
 # Kraken Module
