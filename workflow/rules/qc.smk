@@ -145,7 +145,8 @@ rule merge_and_check_all_reports:
 
 rule merge_all_experiments:
     input:
-        fqs = get_hostdepleted_fastqs,
+        fqs1 = MANIFEST[f"fq1"].tolist(),
+        fqs2 = MANIFEST[f"fq2"].tolist(),
     output:
         R1 = f"qc/{config['sample']}_qc_merged_R1.fq",
         R2 = f"qc/{config['sample']}_qc_merged_R2.fq",
@@ -154,7 +155,7 @@ rule merge_all_experiments:
         o=f"{LOG_PREFIX}/qc_merge_{config['sample']}.o",
     shell:
         """
-        cat {input.fqs[0]} > {output.R1} 2> {log.e}
-        cat {input.fqs[1]} > {output.R2} 2>> {log.e}
+        cat {input.fqs1} > {output.R1} 2> {log.e}
+        cat {input.fqs2} > {output.R2} 2>> {log.e}
         """
 
