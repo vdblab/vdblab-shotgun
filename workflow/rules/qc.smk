@@ -9,8 +9,6 @@ include: "common.smk"
 envvars:
     "TMPDIR",
 
-min_version("6.0")
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 SORTMERNA_PERCENTAGE_THRESHOLD = 20
