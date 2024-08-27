@@ -145,7 +145,7 @@ rule merge_and_check_all_reports:
 
 rule merge_all_experiments:
     input:
-        fqs = get_hostdepleted_fastqs(),
+        fqs = get_hostdepleted_fastqs,
     output:
         R1 = f"qc/{config['sample']}_qc_merged_R1.fq",
         R2 = f"qc/{config['sample']}_qc_merged_R2.fq",
