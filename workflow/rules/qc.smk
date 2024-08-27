@@ -25,7 +25,7 @@ def get_manifest_notes(manifest_path):
     
     mod_message = ['']
     for row in full_manifest[full_manifest.notes.notna()].iterrows():
-        mod_message.append(f"File {row.file_type} was modified for experiment {row.experiment_id}"
+        mod_message.append(f"File {row.file_type} was modified for experiment {row['experiment.identifier']}"
             f" of sample {config['sample']}.  Reason: {row.notes}.\n")
     return ''.join(mod_message)
 
@@ -46,7 +46,7 @@ def load_manifest(manifest_path, validate = True):
     manifest = pd.read_csv(manifest_path, sep="\t", header = 0).drop(
             columns = ['notes']  # We drop notes from the manifest, but include in the report. 
         ).pivot(
-            index = "experiment_id", columns = "file_type", values = "file_path"
+            index = "experiment.identifier", columns = "file_type", values = "file_path"
         )
     manifest.to_csv("test.csv")
     print(manifest)
