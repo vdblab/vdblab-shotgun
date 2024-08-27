@@ -61,14 +61,14 @@ def get_hostdepleted_fastqs(wildcards):
     """If paired will return [[R1 file list][R2 file list]], else [[R1 file list]]"""
     fqs = []
     for d in get_readdirs():
-        fqs.append(list(MANIFEST.loc[f"fq{d}"]))
+        fqs.append(MANIFEST[f"fq{d}"].tolist())
     return fqs
 
 def get_host_fastqs(wildcards):
     """If paired will return [[R1 file list][R2 file list]], else [[R1 file list]]"""
     fqs = []
     for d in get_readdirs():
-        fqs.append(list(MANIFEST.loc[f"host_fq{d}"]))
+        fqs.append(MANIFEST[f"host_fq{d}"].tolist())
     return fqs
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ rule all:
 
 rule check_sortmerna_rep:
     input: 
-        smr_logs = list(MANIFEST["sortmerna_report"]),
+        smr_logs = MANIFEST["sortmerna_report"].tolist(),
     output:
         sortmerna_report = f"qc/{config['sample']}_pooled_sortme_rna_report.txt",
     log:
