@@ -137,8 +137,8 @@ rule merge_and_check_all_reports:
     shell:
         """
         cat {input.sortmerna_report} > {output.qc_stats} 2> {log.e}
-        if grep -q -i 'error' ${output.qc_stats}; then
-            echo "Error found in qc for sample {config['sample']}. \nPlease check out the qc_stats file for details." | mail -s "Potential IGO rsync error" {params.notification_email}
+        if grep -q -i 'error' {output.qc_stats}; then
+            echo "Error found in qc for sample {{config['sample']}}. \nPlease check out the qc_stats file: {output.qc_stats} for details." | mail -s "Potential IGO rsync error" {params.notification_email}
         fi
         """
 
