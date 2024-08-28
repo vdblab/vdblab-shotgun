@@ -14,7 +14,7 @@ envvars:
 
 SORTMERNA_PERCENTAGE_THRESHOLD = .001
 BBDUK_TRIM_PERCENTAGE_THRESHOLD = 10
-NOTIFICATION_EMAIL = "zzPDL_SKI_microbiome@mskcc.org"
+NOTIFICATION_EMAIL = "baichom1@mskcc.org" #"zzPDL_SKI_microbiome@mskcc.org"
 
 # ---------------------------------------------------------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ rule merge_and_check_all_reports:
         """
         cat {input.sortmerna_report} > {output.qc_stats} 2> {log.e}
         if grep -q -i 'error' {output.qc_stats}; then
-            echo "This is just a test - ignore me! :) {{config['sample']}} {output.qc_stats}" | mail -s "(test) QC Shotgun Error detected" {params.notification_email}
+            echo "This is just a test - ignore me! :) {config['sample']} {output.qc_stats}" | mail -s "(test) QC Shotgun Error detected" {params.notification_email}
         fi
         """
         #Error found in qc for sample {{config['sample']}}. \nPlease check out the qc_stats file: {output.qc_stats} for details.
