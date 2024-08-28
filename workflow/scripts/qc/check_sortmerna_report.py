@@ -13,7 +13,7 @@ def main(exp_ids, logs, threshold, out_f):
         smr_df.to_csv('/data/brinkvd/isabl/data_lake/analyses/27/20/52720/test2.csv')
         print(smr_df.columns)
         smr_df['exp_id'] = exp_ids[i]
-        if smr_df['mean_perc'] > threshold:
+        if any(smr_df['mean_perc'] > threshold):
             error_message += ["Error in sortmerna report for ",
                                exp_ids[i],
                                " value of sortmerna reads was: ",
