@@ -13,9 +13,9 @@ def main(exp_ids, logs, threshold, out_f):
         smr_df['exp_id'] = exp_ids[i]
         print(smr_df['mean_perc'])
         print(threshold)
-        print(any(smr_df['mean_perc'] > threshold))
+        print(any(smr_df['mean_perc'].astype(float) > threshold))
         if any(smr_df['mean_perc'] > threshold):
-            error_message += ["Error in sortmerna report for ",
+            error_message = error_message + ["Error in sortmerna report for ",
                                exp_ids[i],
                                " value of sortmerna reads was: ",
                                smr_df['mean_perc'], '\n']
@@ -25,6 +25,7 @@ def main(exp_ids, logs, threshold, out_f):
             merged_df = smr_df
     merged_df.to_csv(out_f)
     with open(out_f, 'a') as o_f:
+        print(error_message)
         o_f.write(''.join(error_message))
 
 
