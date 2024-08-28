@@ -48,7 +48,6 @@ def load_manifest(manifest_path, validate = True):
         ).pivot(
             index = "experiment.identifier", columns = "file_type", values = "file_path"
         )
-    manifest.to_csv("test.csv")
     print(manifest)
     if validate:
         validate_manifest(manifest)
