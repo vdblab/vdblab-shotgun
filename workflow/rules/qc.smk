@@ -12,7 +12,7 @@ envvars:
 
 # ---------------------------------------------------------------------------------------------------------------------
 
-SORTMERNA_PERCENTAGE_THRESHOLD = 20
+SORTMERNA_PERCENTAGE_THRESHOLD = .001
 BBDUK_TRIM_PERCENTAGE_THRESHOLD = 10
 NOTIFICATION_EMAIL = "zzPDL_SKI_microbiome@mskcc.org"
 
