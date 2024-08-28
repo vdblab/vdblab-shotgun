@@ -11,6 +11,9 @@ def main(exp_ids, logs, threshold, out_f):
     for i, report in enumerate(logs):
         smr_df = pd.read_csv(report, header = 3, sep = '\t')
         smr_df['exp_id'] = exp_ids[i]
+        print(smr_df['mean_perc'])
+        print(threshold)
+        print(any(smr_df['mean_perc'] > threshold))
         if any(smr_df['mean_perc'] > threshold):
             error_message += ["Error in sortmerna report for ",
                                exp_ids[i],
