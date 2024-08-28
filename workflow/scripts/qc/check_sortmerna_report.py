@@ -18,7 +18,8 @@ def main(exp_ids, logs, threshold, out_f):
             error_message = error_message + ["Error in sortmerna report for ",
                                exp_ids[i],
                                " value of sortmerna reads was: ",
-                               smr_df['mean_perc'].tolist()[0], '\n']
+                               str(smr_df['mean_perc'].tolist()[0]),
+                               '\n']
         if merged_df:
             merged_df = merged_df.append(smr_df, ignore_index=True)
         else:
