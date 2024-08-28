@@ -10,8 +10,6 @@ def main(exp_ids, logs, threshold, out_f):
     merged_df = None
     for i, report in enumerate(logs):
         smr_df = pd.read_csv(report, header = 3, sep = '\t')
-        smr_df.to_csv('/data/brinkvd/isabl/data_lake/analyses/27/20/52720/test2.csv')
-        print(smr_df.columns)
         smr_df['exp_id'] = exp_ids[i]
         if any(smr_df['mean_perc'] > threshold):
             error_message += ["Error in sortmerna report for ",
