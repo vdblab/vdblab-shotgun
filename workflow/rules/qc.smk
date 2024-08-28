@@ -133,14 +133,15 @@ rule merge_and_check_all_reports:
         o=f"{LOG_PREFIX}/qc_stats_{config['sample']}.o",
     params:
         notification_email=NOTIFICATION_EMAIL,
+        sample=config['sample']
     shell:
         """
         cat {input.sortmerna_report} > {output.qc_stats} 2> {log.e}
         if grep -q -i 'error' {output.qc_stats}; then
-            echo "This is just a test - ignore me! :) {config['sample']} {output.qc_stats}" | mail -s "(test) QC Shotgun Error detected" {params.notification_email}
+            echo "This is just a test - ignore me! :) {params.sample} {output.qc_stats}" | mail -s "(test) QC Shotgun Error detected" {params.notification_email}
         fi
         """
-        #Error found in qc for sample {{config['sample']}}. \nPlease check out the qc_stats file: {output.qc_stats} for details.
+        #Error found in qc for sample {params.sample}. \nPlease check out the qc_stats file: {output.qc_stats} for details.
 
 rule merge_all_experiments:
     input:
