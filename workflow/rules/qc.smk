@@ -110,7 +110,13 @@ rule all:
         get_all_outputs,
         expand("qc/kraken2/ds{depth}_{sample}_kraken2.report.krona.html",
                sample=config['sample'],
-               depth=10000)
+               depth=10000),
+        expand("qc/kraken2/ds{depth}_{sample}_kraken2.braycurtis_G.tab",
+               sample=config['sample'],
+               depth=10000),
+        expand("qc/kraken2/ds{depth}_{sample}_kraken2.braycurtis_S.tab",
+               sample=config['sample'],
+               depth=10000),
 
 rule check_sortmerna_rep:
     input:
@@ -218,6 +224,25 @@ rule merged_krona:
     shell:
         """
         ktImportText {params.input_string} -o {output.kreport}
+        """
+
+rule beta_diversity:
+    input:
+        kreports=expand("qc/kraken2/ds{{depth}}_{sample}_kraken2.report", sample=EXPERIMENTS),
+    output:
+        table=f"qc/kraken2/ds{{depth}}_{config['sample']}_kraken2.braycurtis_G.tab",
+        table_S=f"qc/kraken2/ds{{depth}}_{config['sample']}_kraken2.braycurtis_S.tab",
+    container:
+        config["docker_kraken"]
+    resources:
+        mem_mb=1 * 1024,
+    threads: 1
+    log:
+        e="logs/krakentools_betadiv_ds{depth}.e",
+    shell:
+        """
+        python3 /KrakenTools/DiversityTools/beta_diversity.py  -i {input.kreports} --type kreport --level G  >  {output.table}
+        python3 /KrakenTools/DiversityTools/beta_diversity.py  -i {input.kreports} --type kreport --level S  >  {output.table_S}
         """
 
 
