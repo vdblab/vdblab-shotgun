@@ -128,7 +128,7 @@ rule kraken_standard_run:
         out="kraken2/{sample}_kraken2.out",
         unclass_R1=temp("kraken2/{sample}_kraken2_unclassified_1.fastq"),
         unclass_R2=temp("kraken2/{sample}_kraken2_unclassified_2.fastq"),
-        report="kraken2/{sample}_kraken2.report",
+        kreport="kraken2/{sample}_kraken2.report",
     params:
         inpstr=lambda wc, input: (
             f"--paired {input.R1} {input.R2}" if hasattr(input, "R2") else input.R1
@@ -156,7 +156,7 @@ rule kraken_standard_run:
             --confidence 0.2 \
             --unclassified-out {params.unclass_template} \
             --db {input.db} \
-            --report {output.report} \
+            --report {output.kreport} \
             {params.inpstr} \
             > {output.out} 2> {log.e}
 
@@ -207,10 +207,10 @@ rule bracken:
     input:
         #db_mers=get_dbs_needed,
         readlen_file=parse_read_lengths,
-        report="kraken2/{sample}_kraken2.report",
+        kreport="kraken2/{sample}_kraken2.report",
         db=config["kraken2_db"],
     output:
-        report="kraken2/{sample}_kraken2.bracken.{taxlevel}.report",
+        kreport="kraken2/{sample}_kraken2.bracken.{taxlevel}.report",
         out="kraken2/{sample}_kraken2.bracken.{taxlevel}.out",
     params:
         threshold=0,
@@ -227,7 +227,7 @@ rule bracken:
         """
         # trim off the approximate and the len part of the read len signal
         READLEN=$(basename {input.readlen_file} | sed 's|len||' | sed  's|approx||')
-        bracken -d {input.db} -i {input.report} -o {output.out} -w {output.report} -r $READLEN -l {wildcards.taxlevel} -t {params.threshold} 2> {log.e}
+        bracken -d {input.db} -i {input.kreport} -o {output.out} -w {output.kreport} -r $READLEN -l {wildcards.taxlevel} -t {params.threshold} 2> {log.e}
         find .
         """
 
@@ -238,9 +238,9 @@ rule kraken2krona:
     option, krakentools will merge individual reports into a single report
     """
     input:
-        report="kraken2/{sample}_kraken2.bracken.S.report",
+        kreport="kraken2/{sample}_kraken2.bracken.S.report",
     output:
-        report="kraken2/{sample}_kraken2.bracken.S.report.krona",
+        kreport="kraken2/{sample}_kraken2.bracken.S.report.krona",
     conda:
         "../envs/kraken2.yaml"
     resources:
@@ -253,16 +253,16 @@ rule kraken2krona:
         o="logs/kraken2krona_{sample}.o",
     shell:
         """
-        kreport2krona.py --report-file {input.report} \
-        --output {output.report} > {log.o} 2> {log.e}
+        kreport2krona.py --report-file {input.kreport} \
+        --output {output.kreport} > {log.o} 2> {log.e}
         """
 
 
 rule krona:
     input:
-        report="kraken2/{sample}_kraken2.bracken.S.report.krona",
+        kreport="kraken2/{sample}_kraken2.bracken.S.report.krona",
     output:
-        report="reports/{sample}_kraken2.bracken.S.report.krona.html",
+        kreport="reports/{sample}_kraken2.bracken.S.report.krona.html",
     container:
         config["docker_krona"]
     resources:
@@ -272,7 +272,7 @@ rule krona:
         e="logs/krona_{sample}.e",
     shell:
         """
-        ktImportText {input.report} -o {output.report}
+        ktImportText {input.kreport} -o {output.kreport}
         """
 
 
