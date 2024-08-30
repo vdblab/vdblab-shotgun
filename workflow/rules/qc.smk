@@ -148,8 +148,8 @@ rule check_sortmerna_rep:
 
 def get_fqs_by_experiment(wildcards):
     paths = {}
-    paths["R1"] = MANIFEST[MANIFEST.index == wildcards.sample]["fq1"].tolist()
-    paths["R2"] = MANIFEST[MANIFEST.index == wildcards.sample]["fq2"].tolist()
+    paths["R1"] = MANIFEST[MANIFEST.index == wildcards.exp]["fq1"].tolist()
+    paths["R2"] = MANIFEST[MANIFEST.index == wildcards.exp]["fq2"].tolist()
 #    print(paths)
     return paths
 
@@ -158,8 +158,8 @@ use rule downsample_fastq from downsample  with:
     input:
         unpack(get_fqs_by_experiment)
     output:
-        R1=temp("tmp/ds{depth}_{sample}_R1_001.fastq.gz"),
-        R2=temp("tmp/ds{depth}_{sample}_R2_001.fastq.gz"),
+        R1=temp("tmp/ds{depth}_{exp}_R1_001.fastq.gz"),
+        R2=temp("tmp/ds{depth}_{exp}_R2_001.fastq.gz"),
     params:
         tmpdir=lambda wildcards, output: os.path.dirname(output.R1),
         seed=lambda wildcards: wildcards.rep if "rep" in wildcards else 1,
@@ -167,16 +167,16 @@ use rule downsample_fastq from downsample  with:
 
 use rule kraken_standard_run from kraken as kracken_standard_run_qc with:
     input:
-        R1="tmp/ds{depth}_{sample}_R1_001.fastq.gz",
-        R2="tmp/ds{depth}_{sample}_R2_001.fastq.gz",
+        R1="tmp/ds{depth}_{exp}_R1_001.fastq.gz",
+        R2="tmp/ds{depth}_{exp}_R2_001.fastq.gz",
         db=config["kraken2_db"],
     output:
-        out=temp("qc/kraken2/ds{depth}_{sample}_kraken2.out"),
-        unclass_R1=temp("qc/kraken2/ds{depth}_{sample}_kraken2_unclassified_1.fastq"),
-        unclass_R2=temp("qc/kraken2/ds{depth}_{sample}_kraken2_unclassified_2.fastq"),
-        kreport="qc/kraken2/ds{depth}_{sample}_kraken2.report"
+        out=temp("qc/kraken2/ds{depth}_{exp}_kraken2.out"),
+        unclass_R1=temp("qc/kraken2/ds{depth}_{exp}_kraken2_unclassified_1.fastq"),
+        unclass_R2=temp("qc/kraken2/ds{depth}_{exp}_kraken2_unclassified_2.fastq"),
+        kreport="qc/kraken2/ds{depth}_{exp}_kraken2.report"
     log:
-        e="logs/kraken_ds{depth}_{sample}.log",
+        e="logs/kraken_ds{depth}_{exp}.log",
 
 rule kraken2krona:
     """ This is only needed when running the whole workflow's snakefile;
@@ -184,17 +184,17 @@ rule kraken2krona:
     option, krakentools will merge individual reports into a single report
     """
     input:
-        kreport="qc/kraken2/ds{depth}_{sample}_kraken2.report",
+        kreport="qc/kraken2/ds{depth}_{exp}_kraken2.report",
     output:
-        kreport="qc/kraken2/ds{depth}_{sample}_kraken2.report.krona",
+        kreport="qc/kraken2/ds{depth}_{exp}_kraken2.report.krona",
     resources:
         mem_mb=2000,
     container:
         config["docker_kraken"]
     threads: 1
     log:
-        e="logs/kraken2krona_ds{depth}_{sample}.e",
-        o="logs/kraken2krona_ds{depth}_{sample}.o",
+        e="logs/kraken2krona_ds{depth}_{exp}.e",
+        o="logs/kraken2krona_ds{depth}_{exp}.o",
     shell:
         """
         kreport2krona.py --report-file {input.kreport} \
@@ -208,7 +208,7 @@ def get_experiment_from_krona_path(path):
 
 rule merged_krona:
     input:
-        kreport=expand("qc/kraken2/ds{{depth}}_{sample}_kraken2.report.krona", sample=EXPERIMENTS),
+        kreport=expand("qc/kraken2/ds{{depth}}_{exp}_kraken2.report.krona", exp=EXPERIMENTS),
     output:
         kreport=f"qc/kraken2/ds{{depth}}_{config['sample']}_kraken2.report.krona.html",
     container:
@@ -228,7 +228,7 @@ rule merged_krona:
 
 rule beta_diversity:
     input:
-        kreports=expand("qc/kraken2/ds{{depth}}_{sample}_kraken2.report", sample=EXPERIMENTS),
+        kreports=expand("qc/kraken2/ds{{depth}}_{exp}_kraken2.report", exp=EXPERIMENTS),
     output:
         table=f"qc/kraken2/ds{{depth}}_{config['sample']}_kraken2.braycurtis_G.tab",
         table_S=f"qc/kraken2/ds{{depth}}_{config['sample']}_kraken2.braycurtis_S.tab",
