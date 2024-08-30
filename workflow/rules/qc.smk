@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 from contextlib import redirect_stderr
 
+wildcard_constraints:
+    depth="\d+",
+
 include: "common.smk"
 module downsample:
     snakefile:
@@ -87,7 +90,6 @@ def get_host_fastqs(wildcards):
 # ---------------------------------------------------------------------------------------------------------------
 
 MANIFEST = load_manifest(config["manifest"])
-print(MANIFEST.shape)
 EXPERIMENTS = get_experiments_from_manifest(MANIFEST)
 LOG_PREFIX = "logs/qc"
 onstart:
@@ -150,7 +152,7 @@ def get_fqs_by_experiment(wildcards):
     paths = {}
     paths["R1"] = MANIFEST[MANIFEST.index == wildcards.exp]["fq1"].tolist()
     paths["R2"] = MANIFEST[MANIFEST.index == wildcards.exp]["fq2"].tolist()
-#    print(paths)
+    assert paths["R1"], f"retrieving fq from manifest with experiment {wildcards.exp} has failed!"
     return paths
 
 
