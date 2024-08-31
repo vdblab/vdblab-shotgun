@@ -221,10 +221,10 @@ rule split_assembly:
 
 
 def get_annotate_cazi_runtime(wildcards, attempt):
-    return attempt * 3.5 * 60
+    return attempt * 6 * 60
 
 def get_annotate_cazi_memory(wildcards, attempt):
-    return attempt * 4 * 1024
+    return attempt * 6 * 1024
 
 
 rule annotate_CAZI_split:

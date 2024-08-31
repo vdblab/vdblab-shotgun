@@ -7,7 +7,7 @@ adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adap
 filter_params: "minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo"
 
 ## General Parameters
-retries: 1
+retries: 3
 
 ## bioBakery
 choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
