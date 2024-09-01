@@ -220,10 +220,11 @@ rule split_assembly:
         """
 
 
-def get_annotate_cazi_runtime(wildcards, attempt):
+
+def get_annotate_runtime(wildcards, attempt):
     return attempt * 6 * 60
 
-def get_annotate_cazi_memory(wildcards, attempt):
+def get_annotate_memory(wildcards, attempt):
     return attempt * 6 * 1024
 
 
@@ -239,8 +240,8 @@ rule annotate_CAZI_split:
         cazi_db=config["cazi_db"],
         contig_annotation_thresh=config["contig_annotation_thresh"],
     resources:
-        mem_mb=get_annotate_cazi_memory,
-        runtime=get_annotate_cazi_runtime,
+        mem_mb=get_annotate_memory,
+        runtime=get_annotate_runtime,
     container:
         config["docker_dbcan"]
     threads: 2
@@ -299,7 +300,7 @@ rule align_annotated_genes:
         config["docker_bowtie2"]
     resources:
         mem_mb=16 * 1024,
-        runtime=get_annotate_cazi_runtime,
+        runtime=get_annotate_runtime,
         threads=16,
         cores=16,
     params:
@@ -316,13 +317,15 @@ rule align_annotated_genes:
         rm -rf {params.bowtie_dir}
         """
 
-
 rule bedtools_coverage:
     input:
         gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
         bamfile="tmp/{batch}_aligned_reads.bam",
     output:
-        coverage="tmp/{batch}_annotated_gene_coverage.txt",
+        coverage="tmp/{batch}_annotated_gene_coverage.txt",    
+    resources:
+        mem_mb=get_annotate_memory,
+        runtime=get_annotate_runtime,
     container:
         config["docker_bedtools"]
     shell:
@@ -342,6 +345,9 @@ rule create_RPM_counts:
         rpm_file="tmp/{batch}_annoted_cazymes_RPM.tsv",
     conda:
         "../envs/annotate_output_parse.yaml"
+    resources:
+        mem_mb=get_annotate_memory,
+        runtime=get_annotate_runtime,
     log:
         e="tmp/{batch}_create_RPM.err",
         o="tmp/{batch}_create_RPM.out",
