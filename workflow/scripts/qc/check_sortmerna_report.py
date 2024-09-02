@@ -7,7 +7,7 @@ import traceback
 
 def main(exp_ids, logs, threshold, out_f):
     error_message = [""]
-    merged_df = None
+    merged_df = pd.DataFrame()
     for i, report in enumerate(logs):
         smr_df = pd.read_csv(report, header = 3, sep = '\t')
         smr_df['exp_id'] = exp_ids[i]
@@ -17,7 +17,7 @@ def main(exp_ids, logs, threshold, out_f):
                                " value of sortmerna reads was: ",
                                str(smr_df['mean_perc'].tolist()[0]),
                                '\n']
-        if merged_df:
+        if not merged_df.empty():
             merged_df = merged_df.append(smr_df, ignore_index=True)
         else:
             merged_df = smr_df
@@ -28,7 +28,7 @@ def main(exp_ids, logs, threshold, out_f):
 
 
 if __name__ == "__main__":
-    
+
     with open(snakemake.log.e, "w") as ef, open(snakemake.log.o, "w") as of:
         sys.stderr = ef
         sys.stdout = of
