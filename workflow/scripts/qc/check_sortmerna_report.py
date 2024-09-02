@@ -17,7 +17,7 @@ def main(exp_ids, logs, threshold, out_f):
                                " value of sortmerna reads was: ",
                                str(smr_df['mean_perc'].tolist()[0]),
                                '\n']
-        if not merged_df.empty():
+        if not merged_df.empty:
             merged_df = merged_df.append(smr_df, ignore_index=True)
         else:
             merged_df = smr_df
