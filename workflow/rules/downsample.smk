@@ -121,7 +121,7 @@ rule downsample_fastq:
             # as it avoids having to read the whole thing into memory, which happens
             #  when you sample directly to a number of reads using -n
             # Don't ask why piping isn't working >:(
-            fq_tmpfile={params.tmpdir}/tmp.fq.gz
+            fq_tmpfile={output.R1}.tmp
             seqkit sample --rand-seed {params.seed} --threads {threads} {input.R1} \
               -p $generous_proportion -o $fq_tmpfile
             seqkit head  -n $reads_per_file -o {output.R1} $fq_tmpfile
