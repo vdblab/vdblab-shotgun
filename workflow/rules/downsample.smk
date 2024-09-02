@@ -24,6 +24,7 @@ samples = [config["sample"]]
 
 wildcard_constraints:
     rep="\d+",
+    depth="\d+",
 
 
 downsampled_fastqs_r1 = expand(
@@ -81,7 +82,9 @@ rule downsample_fastq:
         R1="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R1_001.fastq.gz",
         R2="ds{depth}_rep{rep}/ds{depth}_rep{rep}_{sample}_R2_001.fastq.gz",
     params:
-        tmpdir="ds{depth}_rep{rep}",
+        tmpdir=lambda wildcards, output: os.path.dirname(output.R1),
+        seed=lambda wildcards: wildcards.rep if "rep" in wildcards else 1,
+        return_too_shallow="no",
     container:
         config["docker_seqkit"]
     threads: 4  # see their docs
@@ -99,30 +102,36 @@ rule downsample_fastq:
 
         if [ "$nreads" -lt "$reads_per_file" ]
         then
-        echo "Insufficient depth to downsample to requested depth"
-        exit 1
+            if [ "{params.return_too_shallow}" == "no" ]
+            then
+                echo "Insufficient depth to downsample to requested depth"
+                exit 1
+            else
+                cp {input.R1} {output.R1}
+                cp {input.R2} {output.R2}
+            fi
+        else
+
+            # calculate the proportion needed, but avoid rounding issues by doing the *1.2 factor
+            generous_proportion=$( echo "print($reads_per_file/$nreads * 1.2)" | python3)
+            # get min of 1 in case the proportion *1.2 exceeds 1
+            generous_proportion=$( echo "print(min($generous_proportion, 1.0))" | python3)
+
+            # sample -p + head is seqkit's recommended approach for downsampling,
+            # as it avoids having to read the whole thing into memory, which happens
+            #  when you sample directly to a number of reads using -n
+            # Don't ask why piping isn't working >:(
+            fq_tmpfile={params.tmpdir}/tmp.fq.gz
+            seqkit sample --rand-seed {params.seed} --threads {threads} {input.R1} \
+              -p $generous_proportion -o $fq_tmpfile
+            seqkit head  -n $reads_per_file -o {output.R1} $fq_tmpfile
+            rm $fq_tmpfile
+
+            seqkit sample --rand-seed {params.seed} --threads {threads} {input.R2} \
+              -p $generous_proportion -o $fq_tmpfile
+            seqkit head -n $reads_per_file -o {output.R2} $fq_tmpfile
+            rm $fq_tmpfile
         fi
-
-        # calculate the proportion needed, but avoid rounding issues by doing the *1.2 factor
-        generous_proportion=$( echo "print($reads_per_file/$nreads * 1.2)" | python3)
-        # get min of 1 in case the proportion *1.2 exceeds 1
-        generous_proportion=$( echo "print(min($generous_proportion, 1.0))" | python3)
-
-        # sample -p + head is seqkit's recommended approach for downsampling,
-        # as it avoids having to read the whole thing into memory, which happens
-        #  when you sample directly to a number of reads using -n
-        # Don't ask why piping isn't working >:(
-        fq_tmpfile={params.tmpdir}/tmp.fq.gz
-        seqkit sample --rand-seed {wildcards.rep} --threads {threads} {input.R1} \
-          -p $generous_proportion -o $fq_tmpfile
-        seqkit head  -n $reads_per_file -o {output.R1} $fq_tmpfile
-        rm $fq_tmpfile
-
-        seqkit sample --rand-seed {wildcards.rep} --threads {threads} {input.R2} \
-          -p $generous_proportion -o $fq_tmpfile
-        seqkit head -n $reads_per_file -o {output.R2} $fq_tmpfile
-        rm $fq_tmpfile
-
         """
 
 
