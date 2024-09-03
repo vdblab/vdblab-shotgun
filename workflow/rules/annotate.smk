@@ -317,6 +317,9 @@ rule align_annotated_genes:
         rm -rf {params.bowtie_dir}
         """
 
+def get_bedtools_memory(wildcards, attempt):
+    return attempt * 16 * 1024
+
 rule bedtools_coverage:
     input:
         gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
@@ -324,8 +327,10 @@ rule bedtools_coverage:
     output:
         coverage="tmp/{batch}_annotated_gene_coverage.txt",    
     resources:
-        mem_mb=get_annotate_memory,
+        mem_mb=get_bedtools_memory,
         runtime=get_annotate_runtime,
+        threads=16,
+        cores=16,
     container:
         config["docker_bedtools"]
     shell:
