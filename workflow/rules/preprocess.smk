@@ -379,7 +379,7 @@ rule aligned_host_reads_to_fastq:
         aligned_samflags="-f 2 -F 512" if is_paired() else "-F 3844",
     threads: 8
     resources:
-        runtime=1 * 60,
+        runtime=2 * 60,
     container:
         config["docker_bowtie2"]
     shell:
