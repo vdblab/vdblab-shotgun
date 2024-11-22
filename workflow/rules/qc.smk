@@ -109,7 +109,7 @@ def get_host_fastqs(wildcards):
 # ---------------------------------------------------------------------------------------------------------------
 
 LOG_PREFIX = "logs/qc"
-MANIFEST  = pd.DataFrame(columns=['sortmerna_report', 'fq1', 'fq2'])
+MANIFEST = pd.DataFrame(columns=["sortmerna_report", "fq1", "fq2"])
 EXPERIMENTS = None
 
 
