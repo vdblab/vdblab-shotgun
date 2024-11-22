@@ -58,6 +58,9 @@ similarly, we have to mock the downsample parameters if we aren't running with s
 if config["stage"] != "downsample":
     config["depths"] = [0]
     config["reps"] = [0]
+if config["stage"] != "qc":
+    config["manifest"] = None
+    config["sortmerna_report"] = None
 
 
 if not is_paired():
@@ -93,6 +96,7 @@ module biobakery:
 
 
 use rule * from biobakery as biobakery_*
+
 
 #
 # qc Module
