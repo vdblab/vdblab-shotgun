@@ -121,7 +121,7 @@ rule humann3_stage2_shard_unaligned_nucleotide_reads:
     output:
         unaligned_shards=temp(
             expand(
-                "humann/split_unaligned_fasta/{{sample}}_.part_{shard}.fa",
+                "humann/split_unaligned_fasta/{{sample}}_humann3_nucleotide_align_bowtie2_unaligned.part_{shard}.fa",
                 shard=SHARDS,
             )
         ),
@@ -154,12 +154,12 @@ rule humann3_stage2_shard_unaligned_nucleotide_reads:
 
 rule humann3_stage3_translated_alignment_of_shards:
     input:
-        unaligned_shard = lambda wc : f"humann/split_unaligned_fasta/{wc.sample}_.part_{wc.shard}.fa",
+        unaligned_shard = "humann/split_unaligned_fasta/{sample}_humann3_nucleotide_align_bowtie2_unaligned.part_{shard}.fa",
     output:
-        translated_aligned_reads = temp(f"humann/translated_aligned_reads/translated_aligned.part_{wc.shard}.tsv"),
+        translated_aligned_reads =temp("humann/translated_aligned_reads/{sample}_translated_aligned.part_{shard}.tsv"),
     params:
-        diamond_db=config["diamond_db_file"]
-        evalue_threshold=1.0 #from humann defaults
+        diamond_db=config["diamond_db_file"],
+        evalue_threshold=1.0, #from humann defaults
         outdir=lambda w, output: os.path.dirname(output[0]),
     container:
         config["docker_diamond"]
@@ -168,8 +168,8 @@ rule humann3_stage3_translated_alignment_of_shards:
         runtime=lambda wc, attempt: 5 * 60 * attempt,
     threads: 4
     log:
-        e="logs/humann_translation_align_diamond_{sample}.e",
-        o="logs/humann_translation_align_diamond_{sample}.o",
+        e="logs/humann_translation_align_diamond_{sample}_{shard}.e",
+        o="logs/humann_translation_align_diamond_{sample}_{shard}.o",
     shell:
         """
         diamond blastx \
@@ -184,9 +184,10 @@ rule humann3_stage3_translated_alignment_of_shards:
 rule humann3_stage4_combine_all_tsvs:
     input:
         nucleotide_aligned_tsv="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
-        translation_aligned_shards=expand("humann/translated_aligned_reads/translated_aligned.part_{wc.shard}.tsv"),
+        translation_aligned_shards=expand("humann/translated_aligned_reads/{{sample}}_translated_aligned.part_{shard}.tsv",
+                shard=SHARDS),
     output:
-        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv,
+        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv",
     resources:
         mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
         runtime=lambda wc, attempt: 5 * 60 * attempt,
@@ -202,7 +203,7 @@ rule humann3_stage4_combine_all_tsvs:
 
 rule humann3_stage5_rerun_humann_on_all_alignments:
     input:
-        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv,
+        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv",
     output:
         ab="humann/{sample}_humann3_pathabundance.tsv",
         genefam="humann/{sample}_humann3_genefamilies.tsv",
