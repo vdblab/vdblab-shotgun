@@ -12,6 +12,7 @@ retries: 3
 ## bioBakery
 choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
 uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
+diamond_db_file: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/uniref90_201901b_full.dmnd"
 utility_mapping_db: "/data/brinkvd/resources/dbs/utility_mapping/utility_mapping/"
 metaphlan_db: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
 skip_sample2markers: false
@@ -101,6 +102,7 @@ docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
 docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
 docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
 docker_dbcan: "docker://ghcr.io/vdblab/dbcan3:4.1.4.12"
+docker_diamond : "docker://pegi3s/diamond:2.1.9"
 docker_fastqc: "docker://staphb/fastqc:0.11.9"
 docker_gtdbtk: "docker://ecogenomic/gtdbtk:2.3.2"
 docker_hla: "docker://humanlongevity/hla:0.0.0"

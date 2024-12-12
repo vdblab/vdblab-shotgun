@@ -65,18 +65,16 @@ rule cat_pair:
         "cat {input} > {output.joined} 2> {log.e}"
 
 
-rule humann3_run_uniref90:
+rule humann3_stage1_nucleotide:
     input:
         fastq="kneaddata/{sample}_knead_cat.fastq.gz",
         metaphlan_profile="metaphlan/{sample}_metaphlan3_profile.txt",
         choco_db=config["choco_db"],
-        uniref90_db=config["uniref90_db"],
     output:
-        ab="humann/{sample}_humann3_pathabundance.tsv",
-        genefam="humann/{sample}_humann3_genefamilies.tsv",
-        stats="humann/{sample}_humann3_stats.txt",
+        aligned_tsv="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
+        unaligned_fa="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
     params:
-        out_prefix="{sample}_humann3",
+        out_prefix="{sample}_humann3_nucleotide_align",
         out_dir=lambda w, output: os.path.dirname(output[0]),
     container:
         config["docker_biobakery"]
@@ -86,16 +84,15 @@ rule humann3_run_uniref90:
         mem_mb=lambda wildcards, attempt, input: attempt
         * 1024
         * max(input.fastq.size // 1000000000, 1)
-        * 5
-        * attempt,
+        * 5,
         runtime=lambda wc, attempt: 8 * 60 * attempt,
-    threads: 64
+    threads: 30
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
     # they dont actually log errors to their --o-log :(
     log:
-        e="logs/humann_{sample}.e",
-        o="logs/humann_{sample}.o",
+        e="logs/humann_nucleotide_align_{sample}.e",
+        o="logs/humann_nucleotide_align_{sample}.o",
     shell:
         """
         # see https://forum.biobakery.org/t/metaphlan-v4-0-2-and-huma-3-6-metaphlan-taxonomic-profile-provided-was-not-generated-with-the-expected-database/4296/8
@@ -104,12 +101,10 @@ rule humann3_run_uniref90:
             --input {input.fastq} \
             --output {params.out_dir} \
             --output-basename {params.out_prefix} \
-            --search-mode uniref90 \
+            --bypass-translated-search \
             --remove-column-description-output \
-            --protein-database {input.uniref90_db} \
             --nucleotide-database {input.choco_db} \
             --taxonomic-profile {wildcards.sample}_tmp_metaphlan.tsv  \
-            --remove-temp-output \
             --output-max-decimals 5 \
             --threads {threads} \
             > {log.o} 2> {log.e}
@@ -118,6 +113,122 @@ rule humann3_run_uniref90:
             grep "reads" | \
             grep "\: [0-9]" \
             > {output.stats}
+        """
+
+rule humann3_stage2_shard_unaligned_nucleotide_reads:
+    input:
+        unaligned_reads = "humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
+    output:
+        unaligned_shards=temp(
+            expand(
+                "humann/split_unaligned_fasta/{{sample}}_.part_{shard}.fa",
+                shard=SHARDS,
+            )
+        ),
+    params:
+        num_shards=len(SHARDS),
+        out_dir=lambda w, output: os.path.dirname(output[0]),
+    container:
+        config["docker_seqkit"]
+    conda:
+        "../envs/humann.yaml"
+    resources:
+        mem_mb=lambda wildcards, attempt, input: attempt
+        * 1024
+        * max(input.unaligned_reads.size // 1000000000, 1)
+        * 5,
+        runtime=lambda wc, attempt: 60 * attempt,
+    threads: 4  # see their docs (apparently!)
+    log:
+        e="logs/humann_shard_{sample}.e",
+        o="logs/humann_shard_{sample}.o",
+    shell:
+        """
+        seqkit split2 \
+            --threads {threads} \
+            --read1 {input.unaligned_reads} \
+            --by-part {params.num_shards} \
+            --force \
+            --out-dir {params.out_dir}
+        """
+
+rule humann3_stage3_translated_alignment_of_shards:
+    input:
+        unaligned_shard = lambda wc : f"humann/split_unaligned_fasta/{wc.sample}_.part_{wc.shard}.fa",
+    output:
+        translated_aligned_reads = temp(f"humann/translated_aligned_reads/translated_aligned.part_{wc.shard}.tsv"),
+    params:
+        diamond_db=config["diamond_db_file"]
+        evalue_threshold=1.0 #from humann defaults
+        outdir=lambda w, output: os.path.dirname(output[0]),
+    container:
+        config["docker_diamond"]
+    resources:
+        mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
+        runtime=lambda wc, attempt: 5 * 60 * attempt,
+    threads: 4
+    log:
+        e="logs/humann_translation_align_diamond_{sample}.e",
+        o="logs/humann_translation_align_diamond_{sample}.o",
+    shell:
+        """
+        diamond blastx \
+            --query {input.unaligned_shard} \
+            --evalue {params.evalue_threshold} \
+            --threads {threads} \
+            --db {params.diamond_db} \
+            --out {output.translated_aligned_reads} \
+            --tmpdir {output.outdir}"
+        """
+
+rule humann3_stage4_combine_all_tsvs:
+    input:
+        nucleotide_aligned_tsv="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
+        translation_aligned_shards=expand("humann/translated_aligned_reads/translated_aligned.part_{wc.shard}.tsv"),
+    output:
+        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv,
+    resources:
+        mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
+        runtime=lambda wc, attempt: 5 * 60 * attempt,
+    threads: 4
+    log:
+        e="logs/humann_combine_shards_{sample}.e",
+        o="logs/humann_combine_shards_{sample}.o",
+    shell:
+        """
+        cat {input.nucleotide_aligned_tsv} > {output.all_aligned_tsv}
+        cat {input.translated_aligned_reads} >> {output.all_aligned_tsv}
+        """
+
+rule humann3_stage5_rerun_humann_on_all_alignments:
+    input:
+        all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv,
+    output:
+        ab="humann/{sample}_humann3_pathabundance.tsv",
+        genefam="humann/{sample}_humann3_genefamilies.tsv",
+        stats="humann/{sample}_humann3_stats.txt",
+    params:
+        out_prefix="{sample}_humann3",
+        out_dir=lambda w, output: os.path.dirname(output[0]),
+    resources:
+        mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
+        runtime=lambda wc, attempt: 5 * 60 * attempt,
+    threads: 4
+    log:
+        e="logs/humann_combine_shards_{sample}.e",
+        o="logs/humann_combine_shards_{sample}.o",
+    shell:
+        """
+        humann \
+            --input {input.all_aligned_tsv} \
+            --input-format blastm8 \
+            --output {params.out_dir} \
+            --output-basename {params.out_prefix} \
+            --bypass-nucleotide-search \
+            --bypass-translated-search \
+            --remove-column-description-output \
+            --output-max-decimals 5 \
+            --threads {threads}
         """
 
 
