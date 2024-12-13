@@ -65,16 +65,17 @@ rule cat_pair:
         "cat {input} > {output.joined} 2> {log.e}"
 
 
-rule humann3_stage1_nucleotide:
+#    humann3 section:
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Stage 1: we get the reads which align to the nucleotide db within human
+rule humann3_step1_nucleotide:
     input:
         fastq="kneaddata/{sample}_knead_cat.fastq.gz",
         metaphlan_profile="metaphlan/{sample}_metaphlan3_profile.txt",
         choco_db=config["choco_db"],
     output:
-        # in the case where there is no Chocodb, we only generate the log:
+        # in the case where there is no custom Chocodb built, we only generate the log:
         log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log"
-        #aligned_tsv="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
-        #unaligned_fa="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
     params:
         out_prefix="{sample}_humann3_nucleotide_align",
         out_dir=lambda w, output: os.path.dirname(os.path.dirname(output[0])),
@@ -111,8 +112,9 @@ rule humann3_stage1_nucleotide:
             --threads {threads} \
             > {log.o} 2> {log.e}
         """
-
-rule humann3_stage2_shard_unaligned_nucleotide_reads:
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+# Stage 2: Because the translated alignment step in humann is slow, we shard the unaligned reads, and align them externally with diamond.
+rule humann3_step2_shard_unaligned_nucleotide_reads:
     input:
         log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log",
     output:
@@ -149,11 +151,11 @@ rule humann3_stage2_shard_unaligned_nucleotide_reads:
             --out-dir {params.out_dir}
         """
 
-rule humann3_stage3_translated_alignment_of_shards:
+rule humann3_step3_translated_alignment_of_shards:
     input:
         unaligned_shard = "humann/split_unaligned_fasta/{sample}_humann3_nucleotide_align_bowtie2_unaligned.part_{shard}.fa",
     output:
-        translated_aligned_reads =temp("humann/translated_aligned_reads/{sample}_translated_aligned.part_{shard}.tsv"),
+        translated_aligned_reads = "humann/translated_aligned_reads/{sample}_translated_aligned.part_{shard}.tsv",
     params:
         diamond_db=config["diamond_db_file"],
         evalue_threshold=1.0, #from humann defaults
@@ -175,10 +177,13 @@ rule humann3_stage3_translated_alignment_of_shards:
             --threads {threads} \
             --db {params.diamond_db} \
             --out {output.translated_aligned_reads} \
-            --tmpdir {params.outdir}"
+            --tmpdir {params.outdir}  > {log.o} 2> {log.e}
         """
 
-rule humann3_stage4_combine_all_tsvs:
+#  Stage 3: Pooled alignment results from both the original nucleotide alignment and the sharded alignment to diamond and run humann one last time
+#-----------------------------------------------------------------------------------------------------------------------------------------------
+
+rule humann3_step4_combine_all_tsvs:
     input:
         log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log",
         translation_aligned_shards=expand("humann/translated_aligned_reads/{{sample}}_translated_aligned.part_{shard}.tsv",
@@ -194,28 +199,32 @@ rule humann3_stage4_combine_all_tsvs:
         o="logs/humann_combine_shards_{sample}.o",
     shell:
         """
-        NUC_ALIGN_OUT=humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv
+        NUC_ALIGN_OUT=humann/{wildcards.sample}_humann3_nucleotide_align_temp/{wildcards.sample}_humann3_nucleotide_align_bowtie2_aligned.tsv
         if [ -f $NUC_ALIGN_OUT ]; then cat $NUC_ALIGN_OUT > {output.all_aligned_tsv}; fi
-        cat {input.translated_aligned_reads} >> {output.all_aligned_tsv}
+        cat {input.translation_aligned_shards} >> {output.all_aligned_tsv}
         """
 
-rule humann3_stage5_rerun_humann_on_all_alignments:
+rule humann3_step5_rerun_humann_on_all_alignments:
     input:
         all_aligned_tsv="humann/{sample}_humann3_all_aligned.tsv",
     output:
         ab="humann/{sample}_humann3_pathabundance.tsv",
         genefam="humann/{sample}_humann3_genefamilies.tsv",
-        stats="humann/{sample}_humann3_stats.txt",
+        #stats="humann/{sample}_humann3_stats.txt",
     params:
         out_prefix="{sample}_humann3",
         out_dir=lambda w, output: os.path.dirname(output[0]),
+    container:
+        config["docker_biobakery"]
+    conda:
+        "../envs/humann.yaml"
     resources:
         mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
         runtime=lambda wc, attempt: 5 * 60 * attempt,
     threads: 4
     log:
-        e="logs/humann_combine_shards_{sample}.e",
-        o="logs/humann_combine_shards_{sample}.o",
+        e="logs/humann_rerun_humann_all_alignments_{sample}.e",
+        o="logs/humann_rerun_humann_all_alignments_{sample}.o",
     shell:
         """
         humann \
@@ -227,9 +236,32 @@ rule humann3_stage5_rerun_humann_on_all_alignments:
             --bypass-translated-search \
             --remove-column-description-output \
             --output-max-decimals 5 \
-            --threads {threads}
+            --threads {threads} \
+            > {log.o} 2> {log.e}
         """
 
+rule humann3_step6_cleanup_humann:
+    input:
+        ab="humann/{sample}_humann3_pathabundance.tsv",
+        genefam="humann/{sample}_humann3_genefamilies.tsv",
+    output:
+        log="logs/humann_cleaning_up_temp_files_{sample}.o"
+    params:
+        keep_temp_files=config['keep_temp_human_files']
+    resources:
+        mem_mb=1024,
+        runtime=60,
+    threads: 4
+    shell:
+        """
+        if [ ! {params.keep_temp_files} ]; then
+            rm -rf humann/split_unaligned_fasta
+            rm -rf humann/{sample}_humann3_nucleotide_align_humann_temp
+            rm -rf humann/translated_aligned_reads
+        fi
+        """
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------
 
 # Renormalize gene family and pathway abundance from RPK to relative abundance(CPM)
 # for input of lefse
