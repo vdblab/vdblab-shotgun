@@ -8,9 +8,11 @@ rule split_fastq:
         reads=[],
     params:
         outdir=lambda wc, output: os.path.dirname(output.reads[0]),
-        inputstring=lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}"
-        if is_paired()
-        else f"--read1 {input['R1']}",
+        inputstring=lambda wc, input: (
+            f"--read1 {input['R1']} --read2 {input['R2']}"
+            if is_paired()
+            else f"--read1 {input['R1']}"
+        ),
         nshards=1,
     container:
         "docker://pegi3s/seqkit:2.3.0"
@@ -59,6 +61,7 @@ rule concat_lanes_fix_names:
       any standard sample name /file name relationship.
     - this is also a "convenient" place to deal with non-gzipped files. default is frmt is "gz"
     """
+
     #
     input:
         fq=[],

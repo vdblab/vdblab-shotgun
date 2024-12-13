@@ -117,12 +117,16 @@ rule bbmap_dedup:
     params:
         allowed_subs=3,
         flags=lambda wc: bbmap_dedup_params_flags(wc, config),
-        inputstring=lambda wc, input: f"in={input.reads[0]} in2={input.reads[1]}"
-        if is_paired()
-        else f"in={input.reads[0]}",
-        outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
-        if is_paired()
-        else f"out={output.reads[0]}",
+        inputstring=lambda wc, input: (
+            f"in={input.reads[0]} in2={input.reads[1]}"
+            if is_paired()
+            else f"in={input.reads[0]}"
+        ),
+        outputstring=lambda wc, output: (
+            f"out={output.reads[0]} out2={output.reads[1]}"
+            if is_paired()
+            else f"out={output.reads[0]}"
+        ),
     threads: 8
     resources:
         mem_mb=lambda wildcards, input, attempt: attempt
@@ -188,9 +192,11 @@ use rule split_fastq from utils as utils_split_fastq with:
         o="logs/split_fastq_{sample}.o",
     params:
         outdir=lambda wc, output: os.path.dirname(output.reads[0]),
-        inputstring=lambda wc, input: f"--read1 {input['R1']} --read2 {input['R2']}"
-        if is_paired()
-        else f"--read1 {input['R1']}",
+        inputstring=lambda wc, input: (
+            f"--read1 {input['R1']} --read2 {input['R2']}"
+            if is_paired()
+            else f"--read1 {input['R1']}"
+        ),
         nshards=config["nshards"],
 
 
@@ -216,15 +222,21 @@ rule bbmap_run:
     threads: 8
     params:
         filter_params=config["filter_params"],
-        inputstring=lambda wc, input: f"in={input['R1']} in2={input['R2']}"
-        if is_paired()
-        else f"in={input['R1']}",
-        outputstring=lambda wc, output: f"out={output.reads[0]} out2={output.reads[1]}"
-        if is_paired()
-        else f"out={output.reads[0]}",
-        outputrmstring=lambda wc, output: f"outm={output.rm_reads[0]} outm2={output.rm_reads[1]}"
-        if is_paired()
-        else f"outm={output.rm_reads[0]}",
+        inputstring=lambda wc, input: (
+            f"in={input['R1']} in2={input['R2']}"
+            if is_paired()
+            else f"in={input['R1']}"
+        ),
+        outputstring=lambda wc, output: (
+            f"out={output.reads[0]} out2={output.reads[1]}"
+            if is_paired()
+            else f"out={output.reads[0]}"
+        ),
+        outputrmstring=lambda wc, output: (
+            f"outm={output.rm_reads[0]} outm2={output.rm_reads[1]}"
+            if is_paired()
+            else f"outm={output.rm_reads[0]}"
+        ),
     resources:
         mem_mb=4000,
     container:
@@ -369,9 +381,11 @@ rule aligned_host_reads_to_fastq:
     params:
         # we pipe the output from single-end runs to hopefully avoid any issues
         # with the pairing flags that may or may not be set in true single-end data
-        bamtofastq_outputstring=lambda wc, output: f"-1 {output.reads[0]} -2 {output.reads[1]}"
-        if is_paired()
-        else f"> {output.reads[0]}",
+        bamtofastq_outputstring=lambda wc, output: (
+            f"-1 {output.reads[0]} -2 {output.reads[1]}"
+            if is_paired()
+            else f"> {output.reads[0]}"
+        ),
         # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
         # if is_paired()
         # else f"-fq {output.unmapped_reads[0]}",
@@ -437,9 +451,11 @@ rule sortmerna_run:
         aligned_prefix=lambda wildcards, output: output["blast"].replace(
             ".blast.gz", ""
         ),
-        inputstring=lambda wc, input: f"--reads {input['R1']} --reads {input['R1']}"
-        if is_paired()
-        else f"--reads {input['R1']}",
+        inputstring=lambda wc, input: (
+            f"--reads {input['R1']} --reads {input['R1']}"
+            if is_paired()
+            else f"--reads {input['R1']}"
+        ),
     resources:
         mem_mb=lambda wc, attempt: 6 * 1024 * attempt,
         runtime=lambda wc, attempt: 2 * 60 * attempt * attempt * attempt,
