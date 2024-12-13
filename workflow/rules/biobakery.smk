@@ -71,11 +71,13 @@ rule humann3_stage1_nucleotide:
         metaphlan_profile="metaphlan/{sample}_metaphlan3_profile.txt",
         choco_db=config["choco_db"],
     output:
-        aligned_tsv="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
-        unaligned_fa="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
+        # in the case where there is no Chocodb, we only generate the log:
+        log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log"
+        #aligned_tsv="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
+        #unaligned_fa="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
     params:
         out_prefix="{sample}_humann3_nucleotide_align",
-        out_dir=lambda w, output: os.path.dirname(output[0]),
+        out_dir=lambda w, output: os.path.dirname(os.path.dirname(output[0])),
     container:
         config["docker_biobakery"]
     conda:
@@ -108,16 +110,11 @@ rule humann3_stage1_nucleotide:
             --output-max-decimals 5 \
             --threads {threads} \
             > {log.o} 2> {log.e}
-
-        cat {log.o} | \
-            grep "reads" | \
-            grep "\: [0-9]" \
-            > {output.stats}
         """
 
 rule humann3_stage2_shard_unaligned_nucleotide_reads:
     input:
-        unaligned_reads = "humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_unaligned.fa",
+        log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log",
     output:
         unaligned_shards=temp(
             expand(
@@ -133,10 +130,7 @@ rule humann3_stage2_shard_unaligned_nucleotide_reads:
     conda:
         "../envs/humann.yaml"
     resources:
-        mem_mb=lambda wildcards, attempt, input: attempt
-        * 1024
-        * max(input.unaligned_reads.size // 1000000000, 1)
-        * 5,
+        mem_mb=lambda wc, attempt: attempt * 1024 * 5,
         runtime=lambda wc, attempt: 60 * attempt,
     threads: 4  # see their docs (apparently!)
     log:
@@ -144,9 +138,12 @@ rule humann3_stage2_shard_unaligned_nucleotide_reads:
         o="logs/humann_shard_{sample}.o",
     shell:
         """
+        NUC_ALIGN_OUT=humann/{wildcards.sample}_humann3_nucleotide_align_humann_temp/{wildcards.sample}_humann3_nucleotide_align_bowtie2_unaligned.fa
+        ORIGINAL_FASTQ=kneaddata/{wildcards.sample}_knead_cat.fastq.gz
+        if [ ! -f $NUC_ALIGN_OUT ]; then zcat $ORIGINAL_FASTQ > $NUC_ALIGN_OUT; fi
         seqkit split2 \
             --threads {threads} \
-            --read1 {input.unaligned_reads} \
+            --read1 $NUC_ALIGN_OUT \
             --by-part {params.num_shards} \
             --force \
             --out-dir {params.out_dir}
@@ -178,12 +175,12 @@ rule humann3_stage3_translated_alignment_of_shards:
             --threads {threads} \
             --db {params.diamond_db} \
             --out {output.translated_aligned_reads} \
-            --tmpdir {output.outdir}"
+            --tmpdir {params.outdir}"
         """
 
 rule humann3_stage4_combine_all_tsvs:
     input:
-        nucleotide_aligned_tsv="humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv",
+        log="humann/{sample}_humann3_nucleotide_align_humann_temp/{sample}_humann3_nucleotide_align.log",
         translation_aligned_shards=expand("humann/translated_aligned_reads/{{sample}}_translated_aligned.part_{shard}.tsv",
                 shard=SHARDS),
     output:
@@ -197,7 +194,8 @@ rule humann3_stage4_combine_all_tsvs:
         o="logs/humann_combine_shards_{sample}.o",
     shell:
         """
-        cat {input.nucleotide_aligned_tsv} > {output.all_aligned_tsv}
+        NUC_ALIGN_OUT=humann/{sample}_humann3_nucleotide_align_temp/{sample}_humann3_nucleotide_align_bowtie2_aligned.tsv
+        if [ -f $NUC_ALIGN_OUT ]; then cat $NUC_ALIGN_OUT > {output.all_aligned_tsv}; fi
         cat {input.translated_aligned_reads} >> {output.all_aligned_tsv}
         """
 
