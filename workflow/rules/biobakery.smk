@@ -166,7 +166,7 @@ rule humann3_step3_translated_alignment_of_shards:
     container:
         config["docker_diamond"]
     resources:
-        mem_mb=lambda wc, attempt: 1024 * 5 * attempt,
+        mem_mb=lambda wc, attempt: 1024 * (20 + 10 * attempt),
         runtime=lambda wc, attempt: 5 * 60 * attempt,
     threads: 4
     log:
