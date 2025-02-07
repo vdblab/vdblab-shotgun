@@ -2,27 +2,34 @@ import os
 import sys
 from collections import defaultdict
 
+
 include: "common.smk"
 
 
-sylphdbpath=config["sylphdbpath"]
+sylphdbpath = config["sylphdbpath"]
 
 
 dbs = {
     "fungi": {
         "db": os.path.join(sylphdbpath, "fungi-refseq-2024-07-25-c200-v0.3.syldb"),
-        "metadata": os.path.join(sylphdbpath, "fungi_refseq_2024-07-25_metadata.tsv.gz")},
+        "metadata": os.path.join(
+            sylphdbpath, "fungi_refseq_2024-07-25_metadata.tsv.gz"
+        ),
+    },
     "viruses": {
         "db": os.path.join(sylphdbpath, "imgvr_c200_v0.3.0.syldb"),
-        "metadata": os.path.join(sylphdbpath, "IMGVR_4.1_metadata.tsv.gz")},
+        "metadata": os.path.join(sylphdbpath, "IMGVR_4.1_metadata.tsv.gz"),
+    },
     "prok": {
         "db": os.path.join(sylphdbpath, "gtdb-r220-c200-dbv1.syldb"),
-        "metadata": os.path.join(sylphdbpath, "gtdb_r220_metadata.tsv.gz")}
-    }
+        "metadata": os.path.join(sylphdbpath, "gtdb_r220_metadata.tsv.gz"),
+    },
+}
 
 merged_anno_db = os.path.join(config["sylphdbpath"], "3kingdom_metadata.tsv")
 if "R2" not in config:
     raise ValueError("This is not configured to work on single-end data")
+
 
 rule all:
     input:
@@ -57,32 +64,39 @@ use rule concat_lanes_fix_names from utils as utils_sylph_concat_lanes_fix_names
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
+
 rule sketch:
     input:
         unpack(get_sylph_input),
     output:
-        sketch="sketches/{sampleid}.paired.sylsp"
+        sketch="sketches/{sampleid}.paired.sylsp",
     params:
         inpstr=lambda wc, input: (
-            f"-1 {input.R1} -2 {input.R2}" if hasattr(input, "R2") else f"-1 {input.R1}"
+            f"-1 {input.R1} -2 {input.R2}"
+            if hasattr(input, "R2")
+            else f"-1 {input.R1}"
         ),
         outdir=lambda wc, output: os.path.dirname(output.sketch),
-
     threads: 3
-    container: "docker://ghcr.io/vdblab/sylph:0.6.1a"
-    shell:"sylph sketch {params.inpstr} --sample-names {wildcards.sampleid} --sample-output-directory {params.outdir} -t {threads}"
+    container:
+        "docker://ghcr.io/vdblab/sylph:0.6.1a"
+    shell:
+        "sylph sketch {params.inpstr} --sample-names {wildcards.sampleid} --sample-output-directory {params.outdir} -t {threads}"
+
 
 rule profile:
     input:
         sketch="sketches/{sampleid}.paired.sylsp",
         db=[y["db"] for x, y in dbs.items()],
     output:
-        profile="profiles/{sampleid}.tsv"
+        profile="profiles/{sampleid}.tsv",
     threads: 3
-    container: "docker://ghcr.io/vdblab/sylph:0.6.1a"
+    container:
+        "docker://ghcr.io/vdblab/sylph:0.6.1a"
     resources:
-        mem_mb = lambda wc, attempt: 1024 * attempt * 22,
-    shell:"sylph profile {input.db} {input.sketch} -o {output.profile}"
+        mem_mb=lambda wc, attempt: 1024 * attempt * 22,
+    shell:
+        "sylph profile {input.db} {input.sketch} -o {output.profile}"
 
 
 # rule merge_anno:
@@ -93,18 +107,22 @@ rule profile:
 #     shell:
 #         "cat {input.db} > {output}"
 
+
 rule create_taxa_profile:
     input:
         profile="profiles/{sampleid}.tsv",
         dbmeta=merged_anno_db,
     output:
-        profile="taxprofiles/{sampleid}.sylphmpa"
+        profile="taxprofiles/{sampleid}.sylphmpa",
     resources:
-        mem_mb = lambda wc, attempt: 1024 * attempt * 8,
+        mem_mb=lambda wc, attempt: 1024 * attempt * 8,
     params:
-        prefix = lambda wc, output: os.path.dirname(output.profile) + "/",
-    container: "docker://ghcr.io/vdblab/sylph:0.6.1a"
-    shell: "sylph_to_taxprof.py -s {input.profile} -m  {input.dbmeta}  -o {params.prefix}"
+        prefix=lambda wc, output: os.path.dirname(output.profile) + "/",
+    container:
+        "docker://ghcr.io/vdblab/sylph:0.6.1a"
+    shell:
+        "sylph_to_taxprof.py -s {input.profile} -m  {input.dbmeta}  -o {params.prefix}"
+
 
 # rule micom_agg:
 #     input:
