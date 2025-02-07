@@ -42,7 +42,6 @@ outputs = [
     f"{config['sample']}_cazi_substrate.out",
     f"{config['sample']}_annotated_cazymes_RPM.tsv",
     abricates,
-    f"{config['sample']}.cleaned_dirs",
 ]
 if config["check_contigs"]:
     outputs.extend(
