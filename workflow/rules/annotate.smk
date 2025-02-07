@@ -409,6 +409,7 @@ rule clean_up:
         touch("{sample}.cleaned_dirs"),
     shell:
         """
-        find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
-        rm -r tmp/
+        #find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
+        #rm -r tmp/
+        echo "commented out stuff should add it back!!"
         """
