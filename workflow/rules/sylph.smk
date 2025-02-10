@@ -50,7 +50,6 @@ rule all:
         addn_profiles,
 
 
-# Utils Module
 def get_sylph_input(wc):
     if len(config["R1"]) == 1:
         input_R1 = config["R1"]
@@ -61,6 +60,7 @@ def get_sylph_input(wc):
     return {"R1": input_R1, "R2": input_R2}
 
 
+# Utils Module
 module utils:
     snakefile:
         "utils.smk"
@@ -72,7 +72,7 @@ module utils:
 
 use rule concat_lanes_fix_names from utils as utils_sylph_concat_lanes_fix_names with:
     input:
-        fq=get_concat_input,
+        fq=get_sylph_input,
     output:
         fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
