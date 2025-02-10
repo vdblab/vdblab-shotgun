@@ -1,3 +1,4 @@
+import glob
 import os
 import sys
 from collections import defaultdict
@@ -8,6 +9,19 @@ include: "common.smk"
 
 sylphdbpath = config["sylphdbpath"]
 
+addn_profiles = []
+if config["addn_dbs"]:
+    addn_dbs = {}
+    for _db in  config["addn_dbs"]:
+        dbname = os.path.basename(_db).replace(".syldb", "")
+        metadata_path = glob.glob(_db.replace("syldb", "metadata*"))
+        if not metadata_path or len(metadata_path) > 1:
+            raise ValueError("Additional databases must have corresponding metadata, eg path/to/db.syldb must had path/to/db.metadata.tsv")
+        addn_dbs[dbname] = {
+            "db": _db,
+            "metadata": metadata_path[0]
+            }
+    addn_profiles = expand(f"addn_taxprofiles/{{db}}/{config['sample']}.sylphmpa", db=addn_dbs.keys())
 
 dbs = {
     "fungi": {
@@ -30,10 +44,10 @@ merged_anno_db = os.path.join(config["sylphdbpath"], "3kingdom_metadata.tsv")
 if "R2" not in config:
     raise ValueError("This is not configured to work on single-end data")
 
-
 rule all:
     input:
         f"taxprofiles/{config['sample']}.sylphmpa",
+        addn_profiles,
 
 
 # Utils Module
@@ -96,16 +110,7 @@ rule profile:
     resources:
         mem_mb=lambda wc, attempt: 1024 * attempt * 22,
     shell:
-        "sylph profile {input.db} {input.sketch} -o {output.profile}"
-
-
-# rule merge_anno:
-#     input:
-#         db=[y["metadata"] for x, y in dbs.items()],
-#     output:
-#         "3kingdommeta.tsv.gz"
-#     shell:
-#         "cat {input.db} > {output}"
+        "sylph profile -t {threads}  {input.db} {input.sketch} -o {output.profile}"
 
 
 rule create_taxa_profile:
@@ -124,15 +129,22 @@ rule create_taxa_profile:
         "sylph_to_taxprof.py -s {input.profile} -m  {input.dbmeta}  -o {params.prefix}"
 
 
-# rule micom_agg:
-#     input:
-#         profile=expand("taxprofiles/{sampleid}.sylphmpa", sampleid = [f"{x}" for x, y in inputs.items()]),
-#     output:
-#         "micom_species.csv"
-#     shell:""" echo -e "sample_id,genus,species,abundance" > {output}
-#     for f in {input.profile}
-#     do
-#        x=$( basename $f | sed "s|.sylphmpa||g")
-#        cat $f | grep "s__" | grep -v "t__" | sed "s|^.*g__|g__|g" | sed "s | \t g" | cut -f 1-3 | sed "s|^|$x\t|g" | tr '	' ,
-#     done >> {output}
-# """
+def get_addn_db(wildcards):
+    return(addn_dbs[wildcards.db]["db"])
+def get_addn_metadata(wildcards):
+    return(addn_dbs[wildcards.db]["metadata"])
+
+
+use rule profile as profile_addn with:
+    input:
+        sketch="sketches/{sampleid}.paired.sylsp",
+        db=get_addn_db,
+    output:
+        profile="addn_db_profiles/{db}/{sampleid}.tsv",
+
+use rule create_taxa_profile as create_taxa_profile_addn with:
+    input:
+        profile="addn_db_profiles/{db}/{sampleid}.tsv",
+        dbmeta=get_addn_metadata,
+    output:
+        profile="addn_taxprofiles/{db}/{sampleid}.sylphmpa",

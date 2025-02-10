@@ -59,6 +59,7 @@ kaiju_fmi: "/data/brinkvd/resources/kaiju/kaiju_db_nr_.fmi"
 ## Sylph
 
 sylphdbpath: "/data/brinkvd/resources/dbs/sylph/20250205-3kingdom/"
+addn_dbs: []
 
 ## Run params
 nshards: 4

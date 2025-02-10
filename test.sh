@@ -332,6 +332,18 @@ case $stage in
 	    $addnconf \
 	    stage=sylph
 	;;
+    sylph_addn )
+	snakemake \
+	    $common_args \
+	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --directory tmp${stage}_${rawdataset}/ \
+	    --config sample=473a \
+	    R1=$R1 \
+	    R2=$R2 \
+	    $addnconf \
+	    addn_dbs=[/data/brinkvd/resources/dbs/sylph/agora2/agora2.syldb] \
+	    stage=sylph
+	;;
 
     figs )
 	for stage in all preprocess biobakery binning kraken assembly annotate rgi
@@ -351,6 +363,6 @@ case $stage in
 
 	;;
     *)
-	echo -e "unknown stage; please chose from all, preprocess, preprocess-se, preprocess-gha, biobakery, biobakery-se, bin, kraken, assembly, annotate, rgi, sylph, figs. Exiting\n"
+	echo -e "unknown stage; please chose from all, preprocess, preprocess-se, preprocess-gha, biobakery, biobakery-se, bin, kraken, assembly, annotate, rgi, sylph,sylph_addn, figs. Exiting\n"
 	;;
 esac
