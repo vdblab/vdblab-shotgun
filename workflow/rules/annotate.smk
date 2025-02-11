@@ -222,6 +222,7 @@ rule split_assembly:
 def get_annotate_cazi_runtime(wildcards, attempt):
     return attempt * 3.5 * 60
 
+
 def get_annotate_cazi_memory(wildcards, attempt):
     return attempt * 4 * 1024
 
@@ -390,4 +391,3 @@ rule join_CAZI:
         join_files {output.cgc} {input.cgc}
         join_files {output.rpm} {input.rpm}
         """
-
