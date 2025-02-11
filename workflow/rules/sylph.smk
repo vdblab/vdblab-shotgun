@@ -12,16 +12,17 @@ sylphdbpath = config["sylphdbpath"]
 addn_profiles = []
 if config["addn_dbs"]:
     addn_dbs = {}
-    for _db in  config["addn_dbs"]:
+    for _db in config["addn_dbs"]:
         dbname = os.path.basename(_db).replace(".syldb", "")
         metadata_path = glob.glob(_db.replace("syldb", "metadata*"))
         if not metadata_path or len(metadata_path) > 1:
-            raise ValueError("Additional databases must have corresponding metadata, eg path/to/db.syldb must had path/to/db.metadata.tsv")
-        addn_dbs[dbname] = {
-            "db": _db,
-            "metadata": metadata_path[0]
-            }
-    addn_profiles = expand(f"addn_taxprofiles/{{db}}/{config['sample']}.sylphmpa", db=addn_dbs.keys())
+            raise ValueError(
+                "Additional databases must have corresponding metadata, eg path/to/db.syldb must had path/to/db.metadata.tsv"
+            )
+        addn_dbs[dbname] = {"db": _db, "metadata": metadata_path[0]}
+    addn_profiles = expand(
+        f"addn_taxprofiles/{{db}}/{config['sample']}.sylphmpa", db=addn_dbs.keys()
+    )
 
 dbs = {
     "fungi": {
@@ -43,6 +44,7 @@ dbs = {
 merged_anno_db = os.path.join(config["sylphdbpath"], "3kingdom_metadata.tsv")
 if "R2" not in config:
     raise ValueError("This is not configured to work on single-end data")
+
 
 rule all:
     input:
@@ -72,9 +74,9 @@ module utils:
 
 use rule concat_lanes_fix_names from utils as utils_sylph_concat_lanes_fix_names with:
     input:
-        fq=get_sylph_input,
+        fq=get_concat_input,
     output:
-        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
+        fq=temp("sylph/concatenated/{sample}_R{rd}.fastq.gz"),
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
@@ -130,9 +132,11 @@ rule create_taxa_profile:
 
 
 def get_addn_db(wildcards):
-    return(addn_dbs[wildcards.db]["db"])
+    return addn_dbs[wildcards.db]["db"]
+
+
 def get_addn_metadata(wildcards):
-    return(addn_dbs[wildcards.db]["metadata"])
+    return addn_dbs[wildcards.db]["metadata"]
 
 
 use rule profile as profile_addn with:
@@ -141,6 +145,7 @@ use rule profile as profile_addn with:
         db=get_addn_db,
     output:
         profile="addn_db_profiles/{db}/{sampleid}.tsv",
+
 
 use rule create_taxa_profile as create_taxa_profile_addn with:
     input:
