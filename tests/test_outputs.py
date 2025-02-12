@@ -32,6 +32,13 @@ def test_simulated_data_present():
     # TODO: test hashes of files?
     assert os.path.exists(".test/simulated/1_depth100000_equalreads.statsfastq"), "no simulated data present; see readme to simulate data"
 
+def get_dirname():
+    if running_as_github_action:
+        return "tmppreprocess-gha_equalreads"
+    else:
+        return "tmppreprocess_equalreads"
+
+
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_host_deplete_results_present():
     assert os.path.exists("tmppreprocess_equalreads/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess equalreads`"
@@ -142,7 +149,7 @@ def test_preprocess_check_dedup():
     high duplication rate here
     """
     nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"] * 2
-    with open("tmppreprocess_equalreads/reports/473_dedup.stats", "r") as inf:
+    with open(f"{get_dirname()}/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
                 ndups_found = int(line.split("\t")[1])
