@@ -32,6 +32,13 @@ def test_simulated_data_present():
     # TODO: test hashes of files?
     assert os.path.exists(".test/simulated/1_depth100000_equalreads.statsfastq"), "no simulated data present; see readme to simulate data"
 
+def get_dirname():
+    if running_as_github_action:
+        return "tmppreprocess-gha_equalreads"
+    else:
+        return "tmppreprocess_equalreads"
+
+
 @pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_simulated_host_deplete_results_present():
     assert os.path.exists("tmppreprocess_equalreads/reports/473_hostdepletion.stats"), "no host depletion results for simulated data; please run `bash test.sh preprocess equalreads`"
@@ -142,7 +149,7 @@ def test_preprocess_check_dedup():
     high duplication rate here
     """
     nreads_total = simcounts_equalreads["1_depth100000_equalreads_R1.fastq.gz"] * 2
-    with open("tmppreprocess_equalreads/reports/473_dedup.stats", "r") as inf:
+    with open(f"{get_dirname()}/reports/473_dedup.stats", "r") as inf:
         for line in inf:
             if line.startswith("Duplicates Found"):
                 ndups_found = int(line.split("\t")[1])
@@ -226,6 +233,7 @@ def test_bb_metaphlan_est_counts():
     assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"], abs_tol=2000 )
 
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_se_est_counts():
     mpares = {}
     with open("tmpbiobakery-se_equalreads/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
@@ -245,6 +253,7 @@ def test_bb_metaphlan_se_est_counts():
     assert isclose(mpares["Salmonella_enterica"], simcounts_equalreads["Salmonella_enterica"] / 2, abs_tol=2000)
     assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"] / 2, abs_tol=2000 )
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_se_even_coverate_relab():
     mpares_relab = {}
     with open("tmpbiobakery-se_equalcov/metaphlan/473_metaphlan3_profile.txt", "r") as inf:

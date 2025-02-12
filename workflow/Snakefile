@@ -99,6 +99,21 @@ use rule * from biobakery as biobakery_*
 
 
 #
+# Sylph Module
+#
+module sylph:
+    snakefile:
+        "rules/sylph.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from sylph as sylph_*
+
+
+#
 # qc Module
 #
 module qc:
