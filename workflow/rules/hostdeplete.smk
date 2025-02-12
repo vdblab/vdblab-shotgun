@@ -74,17 +74,19 @@ rule s01_bowtie2:
         e=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.e",
         o=f"logs/bowtie2_{{sample}}.{bowtie2_human_db_name}.o",
     params:
-        umapped_string=lambda wildcards, output: "--un-conc-gz "
-        + output["unmapped_reads"][0].replace(".R1.fastq.gz", ".R%.fastq.gz")
-        if is_paired()
-        else "--un-gz " + output["unmapped_reads"][0],
+        umapped_string=lambda wildcards, output: (
+            "--un-conc-gz "
+            + output["unmapped_reads"][0].replace(".R1.fastq.gz", ".R%.fastq.gz")
+            if is_paired()
+            else "--un-gz " + output["unmapped_reads"][0]
+        ),
         db_prefix=lambda wildcards, input: os.path.splitext(
             os.path.splitext(input.idx[0])[0]
         )[0],
         extra="",  # optional parameters
-        input_string=lambda wildcards, input: f"-1 {input.R1} -2 {input.R2}"
-        if is_paired()
-        else f"-U {input.R1}",
+        input_string=lambda wildcards, input: (
+            f"-1 {input.R1} -2 {input.R2}" if is_paired() else f"-U {input.R1}"
+        ),
     threads: 16
     resources:
         mem_mb=lambda wc, attempt: 12 * 1024 * attempt,
@@ -161,9 +163,11 @@ rule s03_get_unmapped:
         ),
         flagstat=temp(f"02-snap/{{sample}}.{snap_human_db_name}.bam.flagstat"),
     params:
-        bamtofastq_outputstring=lambda wc, output: f"-1 {output.unmapped_reads[0]} -2 {output.unmapped_reads[1]}"
-        if is_paired()
-        else f"-0 {output.unmapped_reads[0]}",
+        bamtofastq_outputstring=lambda wc, output: (
+            f"-1 {output.unmapped_reads[0]} -2 {output.unmapped_reads[1]}"
+            if is_paired()
+            else f"-0 {output.unmapped_reads[0]}"
+        ),
         # bamtofastq_outputstring=lambda wc, output: f"-fq {output.unmapped_reads[0]} -fq2 {output.unmapped_reads[1]}"
         # if is_paired()
         # else f"-fq {output.unmapped_reads[0]}",

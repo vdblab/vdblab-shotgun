@@ -42,7 +42,6 @@ outputs = [
     f"{config['sample']}_cazi_substrate.out",
     f"{config['sample']}_annotated_cazymes_RPM.tsv",
     abricates,
-    f"{config['sample']}.cleaned_dirs",
 ]
 if config["check_contigs"]:
     outputs.extend(
@@ -128,7 +127,8 @@ rule antismash:
         set +e -x
         antismash --cpus {threads} --allow-long-headers \
             --output-dir antismash_{wildcards.sample} {input.assembly} \
-            --genefinding-gff {input.gff} --verbose --logfile {log.o}
+            --genefinding-gff {input.gff} --verbose --logfile {log.o} \
+            --genefinding-tool none  # ignore contigs without genes: https://www.biostars.org/p/9539337/
         exitcode=$?
         if [ ! $exitcode -eq 0 ]
         then
@@ -223,6 +223,10 @@ def get_annotate_cazi_runtime(wildcards, attempt):
     return attempt * 3.5 * 60
 
 
+def get_annotate_cazi_memory(wildcards, attempt):
+    return attempt * 4 * 1024
+
+
 rule annotate_CAZI_split:
     input:
         faa="annotation/annotation_{batch}/data/cds.faa",
@@ -235,7 +239,7 @@ rule annotate_CAZI_split:
         cazi_db=config["cazi_db"],
         contig_annotation_thresh=config["contig_annotation_thresh"],
     resources:
-        mem_mb=4 * 1024,
+        mem_mb=get_annotate_cazi_memory,
         runtime=get_annotate_cazi_runtime,
     container:
         config["docker_dbcan"]
@@ -290,7 +294,7 @@ rule align_annotated_genes:
         r1=config["R1"],
         r2=config["R2"],
     output:
-        bamfile="tmp/{batch}_aligned_reads.bam",
+        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
     container:
         config["docker_bowtie2"]
     resources:
@@ -299,8 +303,8 @@ rule align_annotated_genes:
         threads=16,
         cores=16,
     params:
-        bowtie_dir="./tmp_bowtie_indices_{batch}",
-        bowtie_index="./tmp_bowtie_indices_{batch}/{batch}_bowtie2_index",
+        bowtie_dir="annotation/annotation_{batch}/bowtie",
+        bowtie_index="annotation/annotation_{batch}/bowtie/bowtie2_index",
     shell:
         """
         mkdir -p {params.bowtie_dir}
@@ -309,7 +313,6 @@ rule align_annotated_genes:
             {input.ffn} \
             {params.bowtie_index}
         bowtie2 --threads {resources.threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {resources.threads} -Sb | samtools sort -o {output.bamfile} -@ {resources.threads} 
-        rm -rf {params.bowtie_dir}
         """
 
 
@@ -317,8 +320,8 @@ rule seqkit_annotate_ffn:
     input:
         ffn="annotation/annotation_{batch}/data/cds.ffn",
     output:
-        length_file="tmp/{batch}_seqkit.length",
-        bed_file="tmp/{batch}_seqkit.bed",
+        length_file="annotation/annotation_{batch}/seqkit.length",
+        bed_file="annotation/annotation_{batch}/seqkit.bed",
     container:
         config["docker_seqkit"]
     shell:
@@ -330,11 +333,11 @@ rule seqkit_annotate_ffn:
 
 rule bedtools_coverage:
     input:
-        length_file="tmp/{batch}_seqkit.length",
-        bed_file="tmp/{batch}_seqkit.bed",
-        bamfile="tmp/{batch}_aligned_reads.bam",
+        length_file="annotation/annotation_{batch}/seqkit.length",
+        bed_file="annotation/annotation_{batch}/seqkit.bed",
+        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
     output:
-        coverage="tmp/{batch}_annotated_gene_coverage.txt",
+        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
     container:
         config["docker_bedtools"]
     shell:
@@ -345,18 +348,15 @@ rule bedtools_coverage:
 
 rule create_RPM_counts:
     input:
-        coverage="tmp/{batch}_annotated_gene_coverage.txt",
+        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
         overview="cazi_db_scan/{batch}/overview.txt",
         substrate="cazi_db_scan/{batch}/substrate.out",
         cgc="cazi_db_scan/{batch}/cgc.out",
         r1=config["R1"],
     output:
-        rpm_file="tmp/{batch}_annoted_cazymes_RPM.tsv",
+        rpm_file="cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv",
     conda:
         "../envs/annotate_output_parse.yaml"
-    log:
-        e="tmp/{batch}_create_RPM.err",
-        o="tmp/{batch}_create_RPM.out",
     script:
         "../scripts/generate_RPM_annotation_files.py"
 
@@ -366,7 +366,7 @@ rule join_CAZI:
         overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
         substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
         cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
-        rpm=expand("tmp/{batch}_annoted_cazymes_RPM.tsv", batch=BATCHES),
+        rpm=expand("cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv", batch=BATCHES),
     output:
         overview=f"{config['sample']}_cazi_overview.txt",
         substrate=f"{config['sample']}_cazi_substrate.out",
@@ -390,22 +390,4 @@ rule join_CAZI:
         join_files {output.substrate} {input.substrate}
         join_files {output.cgc} {input.cgc}
         join_files {output.rpm} {input.rpm}
-        """
-
-
-rule clean_up:
-    """"{sample}_metaerg.gff"  and the cazi merged output is used as an input to ensure
-    this is done last.
-    """
-    input:
-        agg_file="{sample}_metaerg.gff",
-        cazi=f"{config['sample']}_cazi_overview.txt",
-        rpm_file=f"{config['sample']}_annotated_cazymes_RPM.tsv",
-    output:
-        touch("{sample}.cleaned_dirs"),
-    shell:
-        """
-        #find annotation/ -name "annotation_stdin.part_*" -type d | xargs --no-run-if-empty rm -r
-        #rm -r tmp/
-        echo "commented out stuff should add it back!!"
         """
