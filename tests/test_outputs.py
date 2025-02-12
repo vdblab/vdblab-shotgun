@@ -226,6 +226,7 @@ def test_bb_metaphlan_est_counts():
     assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"], abs_tol=2000 )
 
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_se_est_counts():
     mpares = {}
     with open("tmpbiobakery-se_equalreads/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
@@ -245,6 +246,7 @@ def test_bb_metaphlan_se_est_counts():
     assert isclose(mpares["Salmonella_enterica"], simcounts_equalreads["Salmonella_enterica"] / 2, abs_tol=2000)
     assert isclose(mpares["Veillonella_rogosae"], simcounts_equalreads["Veillonella_rogosae"] / 2, abs_tol=2000 )
 
+@pytest.mark.skipif(running_as_github_action(), reason="this test not available when run as GH action")
 def test_bb_metaphlan_se_even_coverate_relab():
     mpares_relab = {}
     with open("tmpbiobakery-se_equalcov/metaphlan/473_metaphlan3_profile.txt", "r") as inf:
