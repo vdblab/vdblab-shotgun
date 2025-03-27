@@ -32,7 +32,10 @@ if not config["sams"]:
 envvars:
     "TMPDIR",
 
-ref_string = "" if "references" not in config else  "-r " + " ".join(config["references"])
+
+ref_string = (
+    "" if "references" not in config else "-r " + " ".join(config["references"])
+)
 tmpdir = Path(os.environ["TMPDIR"])
 
 
@@ -74,13 +77,17 @@ with open(config["sams"], "r") as samin:
     for line in samin:
         SAMPLES[os.path.basename(line.strip()).replace(".sam.bz2", "")] = line.strip()
 
+
 def get_sam_path(wc):
     return SAMPLES[wc.sample]
+
 
 rule all:
     input:
         expand(
-            os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"),
+            os.path.join(
+                config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"
+            ),
             sample=SAMPLES.keys(),
         ),
         expand(
@@ -98,7 +105,10 @@ rule all:
 rule sample2markers_run:
     input:
         inf=get_sam_path,
-        db=os.path.join(config["metaphlan_db"], os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl"),
+        db=os.path.join(
+            config["metaphlan_db"],
+            os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl",
+        ),
     output:
         os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"),
     threads: 8
@@ -159,17 +169,22 @@ rule strainphlan_run:
     input:
         sp_markers=rules.extract_sp_markers.output.fasta,
         sample_pkls=expand(
-            os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"),
+            os.path.join(
+                config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"
+            ),
             sample=SAMPLES.keys(),
         ),
     output:
         "strainphlan/strainphlan_{sp}_output/RAxML_bestTree.{sp}.StrainPhlAn4.tre",
     params:
-        metaphlan_pkl=os.path.join(config["metaphlan_db"], os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl"),
+        metaphlan_pkl=os.path.join(
+            config["metaphlan_db"],
+            os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl",
+        ),
         marker_in_n_samples=config["marker_in_n_samples"],
         sp="{sp}",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
-	references_str =  ref_string
+        references_str=ref_string,
     container:
         config["docker_biobakery"]
     conda:
@@ -183,7 +198,7 @@ rule strainphlan_run:
             --database {params.metaphlan_pkl} \
             --marker_in_n_samples {params.marker_in_n_samples} \
             --samples {input.sample_pkls} \
-	    {params.references_str} \
+        {params.references_str} \
             --clade_markers {input.sp_markers} \
             --output_dir {params.outdir} \
             --clade {params.sp} \
