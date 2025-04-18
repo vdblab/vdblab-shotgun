@@ -33,6 +33,9 @@ envvars:
     "TMPDIR",
 
 
+ref_string = (
+    "" if "references" not in config else "-r " + " ".join(config["references"])
+)
 tmpdir = Path(os.environ["TMPDIR"])
 
 
@@ -69,14 +72,23 @@ else:
 for t in targets:
     os.makedirs("markers_" + t, exist_ok=True)
 
-SAMPLES = [os.path.basename(x).replace(".sam.bz2", "") for x in config["sams"]]
+SAMPLES = {}
+with open(config["sams"], "r") as samin:
+    for line in samin:
+        SAMPLES[os.path.basename(line.strip()).replace(".sam.bz2", "")] = line.strip()
+
+
+def get_sam_path(wc):
+    return SAMPLES[wc.sample]
 
 
 rule all:
     input:
         expand(
-            os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.pkl"),
-            sample=SAMPLES,
+            os.path.join(
+                config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"
+            ),
+            sample=SAMPLES.keys(),
         ),
         expand(
             os.path.join(config["strainphlan_markers_dir"], "species", "{sp}.fna"),
@@ -84,25 +96,28 @@ rule all:
         ),
         expand(
             "strainphlan/strainphlan_{sp}_output/"
-            "RAxML_bestTree.{sp}.StrainPhlAn3.tre",
+            "RAxML_bestTree.{sp}.StrainPhlAn4.tre",
             sp=targets,
         ),
 
 
-# Run sample2markers for strainplan2
+# Run sample2markers for strainphlan2
 rule sample2markers_run:
     input:
-        inf=config["sams"],
-        db=config["metaphlan_db"],
+        inf=get_sam_path,
+        db=os.path.join(
+            config["metaphlan_db"],
+            os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl",
+        ),
     output:
-        os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.pkl"),
+        os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"),
     threads: 8
     container:
         config["docker_biobakery"]
     resources:
         mem_mb=lambda wildcards, attempt, input: attempt
         * 1024
-        * max(input.inf[0].size // 1000000000, 1)
+        * max(input.inf.size // 1000000000, 1)
         * 10,
         runtime=24 * 60,
     params:
@@ -154,32 +169,40 @@ rule strainphlan_run:
     input:
         sp_markers=rules.extract_sp_markers.output.fasta,
         sample_pkls=expand(
-            os.path.join(config["strainphlan_markers_dir"], "samples", "{sample}.pkl"),
-            sample=SAMPLES,
+            os.path.join(
+                config["strainphlan_markers_dir"], "samples", "{sample}.json.bz2"
+            ),
+            sample=SAMPLES.keys(),
         ),
     output:
-        "strainphlan/strainphlan_{sp}_output/RAxML_bestTree.{sp}.StrainPhlAn3.tre",
+        "strainphlan/strainphlan_{sp}_output/RAxML_bestTree.{sp}.StrainPhlAn4.tre",
     params:
-        chocophlan_db=config["choco_db"],
+        metaphlan_pkl=os.path.join(
+            config["metaphlan_db"],
+            os.path.basename(os.path.dirname(config["metaphlan_db"] + "/")) + ".pkl",
+        ),
         marker_in_n_samples=config["marker_in_n_samples"],
         sp="{sp}",
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
+        references_str=ref_string,
     container:
         config["docker_biobakery"]
     conda:
         "envs/metaphlan.yaml"
     threads: 16
     resources:
-        mem_mb=16 * 1024,
+        mem_mb=32 * 1024,
     shell:
         """
         strainphlan \
-            --database {params.chocophlan_db} \
+            --database {params.metaphlan_pkl} \
             --marker_in_n_samples {params.marker_in_n_samples} \
             --samples {input.sample_pkls} \
+        {params.references_str} \
             --clade_markers {input.sp_markers} \
             --output_dir {params.outdir} \
             --clade {params.sp} \
             --phylophlan_mode fast \
             --nproc {threads}
+
         """
