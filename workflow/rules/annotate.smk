@@ -49,18 +49,22 @@ if config["check_contigs"]:
     )
 
 
-nseqs = 200
-nparts = 10  # will be overriden on workflow start
+nseqs = 2
 
-
-onstart:
+# This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
+if not os.path.exists("tmp_nparts"):
     ncontigs = 0
     with open(config["assembly"], "r") as inf:
         for line in inf:
             if line.startswith(">"):
                 ncontigs = ncontigs + 1
     nparts = ceil(ncontigs / nseqs)
-    logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+    with open("tmp_nparts", "w") as npart_file:
+        npart_file.write(f"{nparts}\n")
+with open("tmp_nparts", "r") as npart_file:
+    nparts = int(npart_file.readline().strip())
+
+logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 
 
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
@@ -98,12 +102,18 @@ rule annotate_orfs:
         faa="annotation/annotation_{batch}/data/cds.faa",
     resources:
         mem_mb=8 * 1024,
-        runtime=45,
+        runtime=lambda wc, attempt: 45 * attempt,
     threads: 4
     params:
         metaerg_db_dir=config["metaerg_db_dir"],
     shell:
         """
+        # metaerg will reuse existing incomplete outputs if outdir is present, so we delete the whole lot if present.
+        # we could use directory(), but thats going to complicate referencing outputs in downstream rules
+        if [ -d annotation/annotation_{wildcards.batch} ];
+        then
+            rm -r annotation/annotation_{wildcards.batch}
+        fi
         # turn off strict so we don't fail even if we have the gff file.
         # currently the output_report.pl script is failing
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
@@ -115,7 +125,7 @@ rule annotate_orfs:
         then
             mv annotation/annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
         else
-            # if it successed but failed at output_report.pl, no need to do anything
+            # if it succeeded but failed at output_report.pl, no need to do anything
             echo "sample likely failed at output_report.pl but gff should be present"
             mv annotation/annotation_{wildcards.batch}/data/all.gff {output.gff}
         fi
