@@ -49,21 +49,41 @@ if config["check_contigs"]:
     )
 
 
-nseqs = 200
-nparts = 10  # will be overriden on workflow start
+nseqs = 2
 
-
-onstart:
+# This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
+if not os.path.exists("tmp_nparts"):
     ncontigs = 0
     with open(config["assembly"], "r") as inf:
         for line in inf:
             if line.startswith(">"):
                 ncontigs = ncontigs + 1
     nparts = ceil(ncontigs / nseqs)
-    logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
+    with open("tmp_nparts", "w") as npart_file:
+        npart_file.write(f"{nparts}\n")
+with open("tmp_nparts", "r") as npart_file:
+    nparts = int(npart_file.readline().strip())
+
+logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 
 
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
+
+if len(config["R1"]) == 1:
+    input_R1 = config["R1"]
+    input_R2 = config["R2"]
+else:
+    input_R1 = [f"concatenated/{config['sample']}_R1.fastq.gz"]
+    input_R2 = [f"concatenated/{config['sample']}_R2.fastq.gz"]
+
+
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
+    input:
+        fq=get_concat_input,
+    output:
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
+    log:
+        e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
 
 rule all:
@@ -82,12 +102,18 @@ rule annotate_orfs:
         faa="annotation/annotation_{batch}/data/cds.faa",
     resources:
         mem_mb=8 * 1024,
-        runtime=45,
+        runtime=lambda wc, attempt: 45 * attempt,
     threads: 4
     params:
         metaerg_db_dir=config["metaerg_db_dir"],
     shell:
         """
+        # metaerg will reuse existing incomplete outputs if outdir is present, so we delete the whole lot if present.
+        # we could use directory(), but thats going to complicate referencing outputs in downstream rules
+        if [ -d annotation/annotation_{wildcards.batch} ];
+        then
+            rm -r annotation/annotation_{wildcards.batch}
+        fi
         # turn off strict so we don't fail even if we have the gff file.
         # currently the output_report.pl script is failing
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
@@ -99,7 +125,7 @@ rule annotate_orfs:
         then
             mv annotation/annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
         else
-            # if it successed but failed at output_report.pl, no need to do anything
+            # if it succeeded but failed at output_report.pl, no need to do anything
             echo "sample likely failed at output_report.pl but gff should be present"
             mv annotation/annotation_{wildcards.batch}/data/all.gff {output.gff}
         fi
@@ -291,16 +317,16 @@ rule join_metaerg_outputs:
 rule align_annotated_genes:
     input:
         ffn="annotation/annotation_{batch}/data/cds.ffn",
-        r1=config["R1"],
-        r2=config["R2"],
+        r1=input_R1,
+        r2=input_R2,
     output:
         bamfile="annotation/annotation_{batch}/aligned_reads.bam",
     container:
         config["docker_bowtie2"]
+    threads: 16
     resources:
         mem_mb=16 * 1024,
         runtime=get_annotate_cazi_runtime,
-        threads=16,
         cores=16,
     params:
         bowtie_dir="annotation/annotation_{batch}/bowtie",
@@ -309,10 +335,10 @@ rule align_annotated_genes:
         """
         mkdir -p {params.bowtie_dir}
         bowtie2-build \
-            --threads {resources.threads} \
+            --threads {threads} \
             {input.ffn} \
             {params.bowtie_index}
-        bowtie2 --threads {resources.threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {resources.threads} -Sb | samtools sort -o {output.bamfile} -@ {resources.threads} 
+        bowtie2 --threads {threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {threads} -Sb | samtools sort -o {output.bamfile} -@ {threads}
         """
 
 
@@ -326,8 +352,8 @@ rule seqkit_annotate_ffn:
         config["docker_seqkit"]
     shell:
         """
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file} 
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file} 
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file}
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file}
         """
 
 
@@ -385,7 +411,7 @@ rule join_CAZI:
                 tail -n+2 ${{!i}} >> $output_file
             done
         }}
-        
+
         join_files {output.overview} {input.overview}
         join_files {output.substrate} {input.substrate}
         join_files {output.cgc} {input.cgc}

@@ -102,7 +102,7 @@ use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
 
 rule megahit:
     input:
-        R1=config["R1"],
+        R1=config["R1"],  # dont panic -- megahit expects multiple fastqs in the same way comma-delimeted  format that snakemake uses for lists of input
         R2=config["R2"],
     output:
         outdir=directory("megahit_{sample}"),
