@@ -322,7 +322,7 @@ rule align_annotated_genes:
     output:
         bamfile="annotation/annotation_{batch}/aligned_reads.bam",
     container:
-        config["docker_metawrap"]
+        config["docker_bowtie2"]
     threads: 16
     resources:
         mem_mb=16 * 1024,
