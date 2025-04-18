@@ -65,6 +65,22 @@ onstart:
 
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
 
+if len(config["R1"]) == 1:
+    input_R1 = config["R1"]
+    input_R2 = config["R2"]
+else:
+    input_R1 = [f"concatenated/{config['sample']}_R1.fastq.gz"]
+    input_R2 = [f"concatenated/{config['sample']}_R2.fastq.gz"]
+
+
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
+    input:
+        fq=get_concat_input,
+    output:
+        fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
+    log:
+        e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
+
 
 rule all:
     input:
@@ -291,16 +307,16 @@ rule join_metaerg_outputs:
 rule align_annotated_genes:
     input:
         ffn="annotation/annotation_{batch}/data/cds.ffn",
-        r1=config["R1"],
-        r2=config["R2"],
+        r1=input_R1,
+        r2=input_R2,
     output:
         bamfile="annotation/annotation_{batch}/aligned_reads.bam",
     container:
-        config["docker_bowtie2"]
+        config["docker_metawrap"]
+    threads: 16
     resources:
         mem_mb=16 * 1024,
         runtime=get_annotate_cazi_runtime,
-        threads=16,
         cores=16,
     params:
         bowtie_dir="annotation/annotation_{batch}/bowtie",
@@ -309,10 +325,10 @@ rule align_annotated_genes:
         """
         mkdir -p {params.bowtie_dir}
         bowtie2-build \
-            --threads {resources.threads} \
+            --threads {threads} \
             {input.ffn} \
             {params.bowtie_index}
-        bowtie2 --threads {resources.threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {resources.threads} -Sb | samtools sort -o {output.bamfile} -@ {resources.threads} 
+        bowtie2 --threads {threads} -1 {input.r1} -2 {input.r2} -x {params.bowtie_index}  | samtools view -@ {threads} -Sb | samtools sort -o {output.bamfile} -@ {threads}
         """
 
 
@@ -326,8 +342,8 @@ rule seqkit_annotate_ffn:
         config["docker_seqkit"]
     shell:
         """
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file} 
-        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file} 
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"$2}}' > {output.length_file}
+        seqkit fx2tab -l -n -i {input.ffn} | awk '{{print $1"\t"0"\t"$2}}' > {output.bed_file}
         """
 
 
@@ -385,7 +401,7 @@ rule join_CAZI:
                 tail -n+2 ${{!i}} >> $output_file
             done
         }}
-        
+
         join_files {output.overview} {input.overview}
         join_files {output.substrate} {input.substrate}
         join_files {output.cgc} {input.cgc}
