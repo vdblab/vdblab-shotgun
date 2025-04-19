@@ -49,7 +49,7 @@ if config["check_contigs"]:
     )
 
 
-nseqs = 2
+nseqs = 200
 
 # This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
 if not os.path.exists("tmp_nparts"):
