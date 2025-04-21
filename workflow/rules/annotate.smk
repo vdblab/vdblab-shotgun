@@ -52,12 +52,18 @@ if config["check_contigs"]:
 nseqs = 200
 
 # This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
+nb = None # number of bases in contig
 if not os.path.exists("tmp_nparts"):
     ncontigs = 0
     with open(config["assembly"], "r") as inf:
         for line in inf:
             if line.startswith(">"):
-                ncontigs = ncontigs + 1
+                # only increment ncontigs is contig has over 1000 bases
+                if nb is None or nb > 1000:
+                    ncontigs = ncontigs + 1
+                nb = 0
+            else:
+                nb = nb + len(line)
     nparts = ceil(ncontigs / nseqs)
     with open("tmp_nparts", "w") as npart_file:
         npart_file.write(f"{nparts}\n")
