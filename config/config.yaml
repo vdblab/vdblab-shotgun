@@ -79,6 +79,7 @@ assembler: "megahit"
 check_contigs: true
 # if checking contig length, longest contig must exceed this to proceed to annotation
 contig_annotation_thresh: 1000
+ncontigs_per_annotation_chunk: 200
 
 # deduping reads is optional so we can use a similar codebase for transcriptomics
 dedup_reads: true

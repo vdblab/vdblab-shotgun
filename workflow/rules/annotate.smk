@@ -49,7 +49,7 @@ if config["check_contigs"]:
     )
 
 
-nseqs = 200
+nseqs = config["ncontigs_per_annotation_chunk"]
 
 # This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
 nb = None # number of bases in contig
@@ -59,7 +59,7 @@ if not os.path.exists("tmp_nparts"):
         for line in inf:
             if line.startswith(">"):
                 # only increment ncontigs is contig has over 1000 bases
-                if nb is None or nb > 1000:
+                if nb is None or nb > config["contig_annotation_thresh"]:
                     ncontigs = ncontigs + 1
                 nb = 0
             else:
@@ -91,6 +91,9 @@ use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
+onstart:
+    with open("config_used.yaml", "w") as outfile:
+        yaml.dump(config, outfile)
 
 rule all:
     input:
