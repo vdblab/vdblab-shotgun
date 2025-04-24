@@ -5,6 +5,7 @@ import glob
 from math import ceil
 import yaml
 
+
 include: "common.smk"
 
 
@@ -52,7 +53,7 @@ if config["check_contigs"]:
 nseqs = config["ncontigs_per_annotation_chunk"]
 
 # This was being done in onstart, but during subsequent evaluation of the snakefile it was falling back to a default value
-nb = None # number of bases in contig
+nb = None  # number of bases in contig
 if not os.path.exists("tmp_nparts"):
     ncontigs = 0
     with open(config["assembly"], "r") as inf:
@@ -91,9 +92,11 @@ use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
 
+
 onstart:
     with open("config_used.yaml", "w") as outfile:
         yaml.dump(config, outfile)
+
 
 rule all:
     input:
@@ -106,7 +109,7 @@ rule annotate_orfs:
     input:
         assembly="tmp/{batch}.fasta",
     output:
-        outdir = temp(directory("annotation/annotation_{batch}/")),
+        outdir=temp(directory("annotation/annotation_{batch}/")),
         gff=temp("annotation/annotation_{batch}.either_all_or_master.gff"),
         ffn=temp("annotation/annotation_{batch}.cds.ffn"),
         faa=("annotation/annotation_{batch}.cds.faa"),
@@ -233,7 +236,7 @@ rule split_assembly:
         directory("tmp"),
         chunks=temp(expand("tmp/{batch}.fasta", batch=BATCHES)),
         assembly=temp("tmp-" + os.path.basename(config["assembly"])),
-        assembly_fai=temp("tmp-" + os.path.basename(config["assembly"])+".seqkit.fai"),
+        assembly_fai=temp("tmp-" + os.path.basename(config["assembly"]) + ".seqkit.fai"),
     params:
         outdir="tmp/",
         nbatches=len(BATCHES),
@@ -336,7 +339,17 @@ rule align_annotated_genes:
         r2=input_R2,
     output:
         bamfile=temp("aligned_reads.bam"),
-        index = temp(multiext("bowtie/bowtie2_index", ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2",".rev.2.bt2")),
+        index=temp(
+            multiext(
+                "bowtie/bowtie2_index",
+                ".1.bt2",
+                ".2.bt2",
+                ".3.bt2",
+                ".4.bt2",
+                ".rev.1.bt2",
+                ".rev.2.bt2",
+            )
+        ),
     container:
         config["docker_bowtie2"]
     threads: 16
@@ -357,7 +370,7 @@ rule align_annotated_genes:
 
 rule seqkit_annotate_ffn:
     input:
-        ffn=f"{config['sample']}_metaerg.ffn"
+        ffn=f"{config['sample']}_metaerg.ffn",
     output:
         length_file=f"{config['sample']}_metaerg.seqkit.length",
         bed_file=f"{config['sample']}_metaerg.seqkit.bed",

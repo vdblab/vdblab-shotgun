@@ -41,7 +41,7 @@ def make_shard_names(nshards):
 def make_assembly_split_names(nparts):
     split_names = []
     # deal with the 3 digit ones first
-    for i in range(1, min(nparts+1, 100)):
+    for i in range(1, min(nparts + 1, 100)):
         split_names.append(f"{i:03}")
     # values after 99 are not padded
     if nparts > 99:
