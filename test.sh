@@ -5,6 +5,13 @@ set -o errexit
 
 stage=$1
 rawdataset=$2
+extra=${3:-''}
+if [ -z "$extra" ]
+then
+    extra=""
+else
+    extra=$3 # use for adding --dryrun, -f somefile.jar , or other extra stuff to the command to be executed
+fi
 case $rawdataset in
     tiny)
 	echo " WARNING: this dataset will raise errors during binning/annotation and will have empty metaphlan results due to its size"
@@ -101,7 +108,7 @@ case $rawdataset in
 esac
 echo $R1
 
-common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
+common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32 $extra"
 case $stage in
 
      all)
@@ -277,7 +284,7 @@ case $stage in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --directory ${PWD}/tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
@@ -289,7 +296,7 @@ case $stage in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --directory ${PWD}/tmp${stage}_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -301,7 +308,7 @@ case $stage in
 	snakemake \
 	    $common_args \
 	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi_${rawdataset}/ \
+	    --directory ${PWD}/tmprgi_${rawdataset}/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \

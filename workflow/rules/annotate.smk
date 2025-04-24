@@ -3,7 +3,7 @@ import sys
 from shutil import rmtree
 import glob
 from math import ceil
-
+import yaml
 
 include: "common.smk"
 
@@ -72,7 +72,7 @@ with open("tmp_nparts", "r") as npart_file:
 
 logger.info(f"Breaking assembly into {nparts} {nseqs}-contig chunks")
 
-
+# this is called stdin due to how we are running seqkit
 BATCHES = [f"stdin.part_{x}" for x in make_assembly_split_names(nparts)]
 
 if len(config["R1"]) == 1:
@@ -106,9 +106,10 @@ rule annotate_orfs:
     input:
         assembly="tmp/{batch}.fasta",
     output:
-        gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
-        faa="annotation/annotation_{batch}/data/cds.faa",
+        outdir = temp(directory("annotation/annotation_{batch}/")),
+        gff=temp("annotation/annotation_{batch}.either_all_or_master.gff"),
+        ffn=temp("annotation/annotation_{batch}.cds.ffn"),
+        faa=("annotation/annotation_{batch}.cds.faa"),
     resources:
         mem_mb=8 * 1024,
         runtime=lambda wc, attempt: 45 * attempt,
@@ -118,6 +119,7 @@ rule annotate_orfs:
     shell:
         """
         # metaerg will reuse existing incomplete outputs if outdir is present, so we delete the whole lot if present.
+        # it doesn't seem to be respecting the --force arg
         # we could use directory(), but thats going to complicate referencing outputs in downstream rules
         if [ -d annotation/annotation_{wildcards.batch} ];
         then
@@ -138,6 +140,10 @@ rule annotate_orfs:
             echo "sample likely failed at output_report.pl but gff should be present"
             mv annotation/annotation_{wildcards.batch}/data/all.gff {output.gff}
         fi
+        mv annotation/annotation_{wildcards.batch}/data/cds.ffn annotation/annotation_{wildcards.batch}.cds.ffn
+        mv annotation/annotation_{wildcards.batch}/data/cds.faa annotation/annotation_{wildcards.batch}.cds.faa
+
+        find annotation/annotation_{wildcards.batch}
         """
 
 
@@ -220,14 +226,14 @@ rule annotate_AMR:
 
 rule split_assembly:
     """
-    These dummy inputs are intended to be overwritten when importing the rule
     """
     input:
         assembly=config["assembly"],
     output:
         directory("tmp"),
-        chunks=expand("tmp/{batch}.fasta", batch=BATCHES),
+        chunks=temp(expand("tmp/{batch}.fasta", batch=BATCHES)),
         assembly=temp("tmp-" + os.path.basename(config["assembly"])),
+        assembly_fai=temp("tmp-" + os.path.basename(config["assembly"])+".seqkit.fai"),
     params:
         outdir="tmp/",
         nbatches=len(BATCHES),
@@ -264,8 +270,8 @@ def get_annotate_cazi_memory(wildcards, attempt):
 
 rule annotate_CAZI_split:
     input:
-        faa="annotation/annotation_{batch}/data/cds.faa",
-        gff="annotation/annotation_{batch}/data/either_all_or_master.gff",
+        faa="annotation/annotation_{batch}.cds.faa",
+        gff="annotation/annotation_{batch}.either_all_or_master.gff",
     output:
         overview="cazi_db_scan/{batch}/overview.txt",
         substrate="cazi_db_scan/{batch}/substrate.out",
@@ -296,11 +302,11 @@ rule annotate_CAZI_split:
 rule join_metaerg_outputs:
     input:
         gff=expand(
-            "annotation/annotation_{batch}/data/either_all_or_master.gff",
+            "annotation/annotation_{batch}.either_all_or_master.gff",
             batch=BATCHES,
         ),
         ffn=expand(
-            "annotation/annotation_{batch}/data/cds.ffn",
+            "annotation/annotation_{batch}.cds.ffn",
             batch=BATCHES,
         ),
     output:
@@ -325,24 +331,22 @@ rule join_metaerg_outputs:
 
 rule align_annotated_genes:
     input:
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
+        ffn=f"{config['sample']}_metaerg.ffn",
         r1=input_R1,
         r2=input_R2,
     output:
-        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
+        bamfile=temp("aligned_reads.bam"),
+        index = temp(multiext("bowtie/bowtie2_index", ".1.bt2", ".2.bt2", ".3.bt2", ".4.bt2", ".rev.1.bt2",".rev.2.bt2")),
     container:
         config["docker_bowtie2"]
     threads: 16
     resources:
         mem_mb=16 * 1024,
         runtime=get_annotate_cazi_runtime,
-        cores=16,
     params:
-        bowtie_dir="annotation/annotation_{batch}/bowtie",
-        bowtie_index="annotation/annotation_{batch}/bowtie/bowtie2_index",
+        bowtie_index="bowtie/bowtie2_index",
     shell:
         """
-        mkdir -p {params.bowtie_dir}
         bowtie2-build \
             --threads {threads} \
             {input.ffn} \
@@ -353,10 +357,10 @@ rule align_annotated_genes:
 
 rule seqkit_annotate_ffn:
     input:
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
+        ffn=f"{config['sample']}_metaerg.ffn"
     output:
-        length_file="annotation/annotation_{batch}/seqkit.length",
-        bed_file="annotation/annotation_{batch}/seqkit.bed",
+        length_file=f"{config['sample']}_metaerg.seqkit.length",
+        bed_file=f"{config['sample']}_metaerg.seqkit.bed",
     container:
         config["docker_seqkit"]
     shell:
@@ -368,11 +372,11 @@ rule seqkit_annotate_ffn:
 
 rule bedtools_coverage:
     input:
-        length_file="annotation/annotation_{batch}/seqkit.length",
-        bed_file="annotation/annotation_{batch}/seqkit.bed",
-        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
+        length_file=f"{config['sample']}_metaerg.seqkit.length",
+        bed_file=f"{config['sample']}_metaerg.seqkit.bed",
+        bamfile="aligned_reads.bam",
     output:
-        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
+        coverage=f"{config['sample']}_metaerg.annotated_gene_coverage.txt",
     container:
         config["docker_bedtools"]
     shell:
@@ -383,13 +387,13 @@ rule bedtools_coverage:
 
 rule create_RPM_counts:
     input:
-        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
-        overview="cazi_db_scan/{batch}/overview.txt",
-        substrate="cazi_db_scan/{batch}/substrate.out",
-        cgc="cazi_db_scan/{batch}/cgc.out",
+        coverage=f"{config['sample']}_metaerg.annotated_gene_coverage.txt",
+        overview=f"{config['sample']}_cazi_overview.txt",
+        substrate=f"{config['sample']}_cazi_substrate.out",
+        cgc=f"{config['sample']}_cazi_cgc.out",
         r1=config["R1"],
     output:
-        rpm_file="cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv",
+        rpm_file=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     conda:
         "../envs/annotate_output_parse.yaml"
     script:
@@ -401,12 +405,10 @@ rule join_CAZI:
         overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
         substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
         cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
-        rpm=expand("cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv", batch=BATCHES),
     output:
         overview=f"{config['sample']}_cazi_overview.txt",
         substrate=f"{config['sample']}_cazi_substrate.out",
         cgc=f"{config['sample']}_cazi_cgc.out",
-        rpm=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     shell:
         """
         join_files(){{
@@ -424,5 +426,4 @@ rule join_CAZI:
         join_files {output.overview} {input.overview}
         join_files {output.substrate} {input.substrate}
         join_files {output.cgc} {input.cgc}
-        join_files {output.rpm} {input.rpm}
         """
