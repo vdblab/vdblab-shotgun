@@ -36,9 +36,9 @@ The `--capture=no` allows us to see print statements.
 #### USAGE:
 
 ```sh
-bash test.sh <pipeline_stage> <dataset>
+bash test.sh <pipeline_stage> <dataset> <extra args to snakemake>
 # eg
-bash test.sh preprocess tiny
+bash test.sh preprocess tiny --dryrun
 ```
 The ouput will be in a folder called `tmp<pipeline_stage>_<dataset>`.
 

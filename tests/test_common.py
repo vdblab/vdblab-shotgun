@@ -23,6 +23,8 @@ def test_make_assembly_split_names():
     split_names = make_assembly_split_names(10000)
     assert len(str(split_names[0])) == 3, "bad padding!"
     assert len(str(split_names[1001])) == 4, "bad padding!"
+    assert make_assembly_split_names(4) == ["001", "002", "003", "004"]
+    assert make_assembly_split_names(100)[99] == "100"
 
 def test_bbmap_dedup_params_flags():
     test_conditions = [
