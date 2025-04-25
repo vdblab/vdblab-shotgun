@@ -112,7 +112,7 @@ rule annotate_orfs:
         outdir=temp(directory("annotation/annotation_{batch}/")),
         gff=temp("annotation/annotation_{batch}.either_all_or_master.gff"),
         ffn=temp("annotation/annotation_{batch}.cds.ffn"),
-        faa=("annotation/annotation_{batch}.cds.faa"),
+        faa=temp("annotation/annotation_{batch}.cds.faa"),
     resources:
         mem_mb=8 * 1024,
         runtime=lambda wc, attempt: 45 * attempt,
@@ -133,12 +133,13 @@ rule annotate_orfs:
         # see issues https://github.com/xiaoli-dong/metaerg/pull/38 and
         # https://github.com/xiaoli-dong/metaerg/issues/12
         set -e
-        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir annotation/annotation_{wildcards.batch} --locustag {wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
+        metaerg.pl --cpus {threads} --dbdir {params.metaerg_db_dir} --outdir {output.outdir} --locustag {wildcards.batch} {input.assembly} --force || echo "Finished running Metaerg"
         # if metaerg successfully packaged everything up
         if [ -f "annotation/annotation_{wildcards.batch}/data/master.gff.txt" ]
         then
             mv annotation/annotation_{wildcards.batch}/data/master.gff.txt {output.gff}
         else
+            # TODO: see if this logic is still necessary
             # if it succeeded but failed at output_report.pl, no need to do anything
             echo "sample likely failed at output_report.pl but gff should be present"
             mv annotation/annotation_{wildcards.batch}/data/all.gff {output.gff}
@@ -372,7 +373,7 @@ rule seqkit_annotate_ffn:
     input:
         ffn=f"{config['sample']}_metaerg.ffn",
     output:
-        length_file=f"{config['sample']}_metaerg.seqkit.length",
+        length_file=temp(f"{config['sample']}_metaerg.seqkit.length"),
         bed_file=f"{config['sample']}_metaerg.seqkit.bed",
     container:
         config["docker_seqkit"]
