@@ -16,9 +16,6 @@ envvars:
     "TMPDIR",
 
 
-SHARDS = make_shard_names(config["nshards"])
-
-
 localrules:
     all,
 
