@@ -160,7 +160,7 @@ rule antismash:
         gff="{sample}_metaerg.gff",
     resources:
         mem_mb=16 * 1024,
-        runtime=6 * 60,
+        runtime=lambda wc, attempt: 8 * 60 * attempt,
     threads: 16
     log:
         o="logs/antismash_{sample}.log",
