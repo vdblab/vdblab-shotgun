@@ -51,7 +51,13 @@ def make_assembly_split_names(nparts):
 
 
 def get_concat_input(wc):
+    print(f"It is calling concat_input for single sample")
     return config[f"R{wc.rd}"]
+
+def get_concat_input_multisample(wc):
+    val = config[f"R{wc.rd}"][wc.sample]
+    #print(f"DEBUG: get_concat_input_multisample({wc.sample}, R{wc.rd}) = {val} | type: {type(val)}")
+    return val
 
 
 def files_to_split(wildcards):
@@ -113,6 +119,17 @@ def get_config_inputs(wc):
     else:
         return {
             "R1": config["R1"],
+        }
+
+def get_config_inputs_multisample(wc):
+    if is_paired():
+        return {
+            "R1": config["R1"][wc.sample],
+            "R2": config["R2"][wc.sample],
+        }
+    else:
+        return {
+            "R1": config["fastq"][wc.sample]["R1"],
         }
 
 

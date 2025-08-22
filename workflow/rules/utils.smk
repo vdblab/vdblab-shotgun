@@ -71,6 +71,10 @@ rule concat_lanes_fix_names:
         e="logs/concat_lanes_fix_names_{sample}.e",
     shell:
         """
+	#echo "Input files - using .fq: {input.fq}"
+	#echo "Input files - using .fq[0]: {input.fq[0]}"
+	#echo "Input files: {input.fq}" >> {log.e}
+
         case {input.fq[0]} in
         *gz )
             cat {input.fq} > {output.fq} 2>> {log.e}

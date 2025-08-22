@@ -18,12 +18,14 @@ envvars:
     "SNAKEMAKE_PROFILE",
 
 
+'''
 validate(
     config,
     str(workflow.main_snakefile).replace(
         "workflow/Snakefile", "config/config.schema.yaml"
     ),
 )
+'''
 
 SHARDS = make_shard_names(config["nshards"])
 
@@ -256,7 +258,7 @@ The wildcard_constraints below ensures that the sample wildcard never ends with 
 needing this probably means I could specify file names more cleanly :/
 """
 
-if config["stage"] == "all":
+if config["stage"] == "all" or config["stage"] == "biobakery" :
     if config["lib_layout"] != "paired":
         raise ValueError(
             f"lib_layout must be 'paired' to run 'all' stages of the pipeline; please run modules individually (eg --config stage=preprocess)"
@@ -326,6 +328,9 @@ if config["stage"] == "all":
             sample=".+(?<!shard\d\d\d)",
 
 
+#print ("OUTPUT 0")
+#print (outputs)
+
 # in "all" mode, we do NOT HLA type as we regularly lack sufficient host depth
 if config["stage"] == "all":
     outputs = [
@@ -338,9 +343,17 @@ if config["stage"] == "all":
         rules.annotate_all.input,
         # rules.hla_all.input,
     ]
+elif config["stage"] == "biobakery":
+    outputs = [
+        rules.preprocess_all.input,
+        rules.biobakery_all.input,
+    ]
 else:
-    outputs = getattr(rules, f"{config['stage']}_all").input
+    outputs = getattr(rules,f"{config['stage']}_all").input
 
+#print("OUTPUT 1")
+#print(outputs)
+#print("OUTPUT 2")
 
 rule all:
     input:

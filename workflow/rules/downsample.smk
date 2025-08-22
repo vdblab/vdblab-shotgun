@@ -65,6 +65,8 @@ module utils:
         config
 
 
+'''
+#Jul/16/2025: I commented this because this function is defined in many rules. It was given a trouble in multisample preprocess.
 use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
     input:
         fq=get_concat_input,
@@ -72,6 +74,7 @@ use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
         fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
         e="logs/concat_lanes_fix_names_{sample}_R{rd}.e",
+'''
 
 
 rule downsample_fastq:

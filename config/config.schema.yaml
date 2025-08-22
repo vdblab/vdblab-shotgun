@@ -7,8 +7,24 @@ type: object
 
 properties:
   # inputs
+  #sample:
+  #  type: [string, number]
   sample:
-    type: [string, number]
+  #type: ["string", "number", "array"]  # ✅ Allows lists
+  #items:
+  #  type: "string"
+  #fastq:
+  #  type: "object"  # ✅ fastq is a dictionary (object in JSON schema)
+  #  additionalProperties:
+  #    type: "object"
+  #    properties:
+  #      R1:
+  #        type: "string"
+  #        pattern: "^/.+\\.fastq.gz$"  # Ensures it's an absolute path ending in .fastq.gz
+  #      R2:
+  #        type: "string"
+  #        pattern: "^/.+\\.fastq.gz$"
+  #    required: ["R1", "R2"]  # Ensures both R1 and R2 are required for each sample
   R1:
     type: array
     items:

@@ -1,132 +1,101 @@
-## Inputs
-lib_layout: "paired"
-assembly: ""
-
-## bbmap
-adapters_fasta: "/data/brinkvd/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta"
-filter_params: "minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe tbo"
-
-## General Parameters
-retries: 3
-
-## bioBakery
-choco_db: "/data/brinkvd/resources/dbs/chocophlan/v201901_v31/"
-uniref90_db: "/data/brinkvd/resources/dbs/uniref90_diamond/v201901b/"
-utility_mapping_db: "/data/brinkvd/resources/dbs/utility_mapping/utility_mapping/"
-metaphlan_db: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/"
-skip_sample2markers: false
-
-## CheckM
-checkm_db: "/data/brinkvd/resources/dbs/checkm/2015_01_16/"
-
-## 4-step host depletion
-fourstep_hostremoval: true
-bowtie2_human_index_base: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz"
-bowtie2_mouse_index_base: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz"
-snap_human_index_dir: "/data/brinkvd/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/"
-snap_mouse_index_dir: "/data/brinkvd/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/"
-
-## optityper
-optityper_hla_dna: "/data/brinkvd/resources/references/human/optitype-hla-dna/07c49bf6fc/hla_reference_dna.fasta"
-optityper_hla_rna: "/data/brinkvd/resources/references/human/optitype-hla-rna/07c49bf6fc/hla_reference_rna.fasta"
-
-
-## 16S annotation
-blast_16s_db_nsq: "/data/brinkvd/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq"
-
-# classify_bins
-gtdb_db: "/data/brinkvd/resources/dbs/GTDB/214/release214/"
-
-## Kraken2
-kraken2_db: "/data/brinkvd/resources/dbs/kraken/k2_pluspf_20220908/"
-phanta_unmasked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1/unmasked_db_v1/"
-phanta_masked_db: "/data/brinkvd/resources/dbs/kraken/phanta_v1_masked/masked_db_v1/"
-skip_phanta: false
-cov_thresh_viral: 0.1
-cov_thresh_bacterial: 0.01
-minimizer_thresh_viral: 0
-minimizer_thresh_bacterial: 0
-cov_thresh_arc: 0.01
-minimizer_thresh_arc: 0
-cov_thresh_euk: 0
-minimizer_thresh_euk: 0
-single_end_krak: true
-
-## kaiju
-kaiju_nodes: "/data/brinkvd/resources/kaiju/nodes.dmp"
-kaiju_fmi: "/data/brinkvd/resources/kaiju/kaiju_db_nr_.fmi"
-
-## Sylph
-
-sylphdbpath: "/data/brinkvd/resources/dbs/sylph/20250205-3kingdom/"
+CARD_db_json: /labs/microbiome/apollo/resources/dbs/CARD/v3.2.5/card.json
+R1:
+  set1:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set1_R1.fastq.gz
+  set1and2:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set1_R1.fastq.gz
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set2_R1.fastq.gz
+  set2:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set2_R1.fastq.gz
+R2:
+  set1:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set1_R2.fastq.gz
+  set1and2:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set1_R2.fastq.gz
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set2_R2.fastq.gz
+  set2:
+  - /labs/microbiome/pipelines/coh_pipelines/samples/18193-HTB20-092_metaphlan_10k_set2_R2.fastq.gz
+adapters_fasta: /labs/microbiome/apollo/resources/references/synthetic/stephenturner-adapters/93b5f91/adapters_combined_256_unique.fasta
 addn_dbs: []
-
-## Run params
-nshards: 4
-
-## CARD
-CARD_db_json: "/data/brinkvd/resources/dbs/CARD/v3.2.5/card.json"
-
-## Annotation
-metaerg_db_dir: "/data/brinkvd/resources/dbs/metaerg/2022/db"
-
-cazi_db: "/data/brinkvd/resources/dbCAN2/v11/"
-
-## Assembly
-assembler: "megahit"
-# should the length of the contigs be checked?
-# this was implemented to deal with test data and similations with tiny assemblies that caused annotation erros
+assembler: megahit
+assembly: ''
+blast_16s_db_nsq: /labs/microbiome/apollo/resources/dbs/ncbi16S/2022/16S_ribosomal_RNA.nsq
+bmtagger_human: /labs/microbiome/apollo/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38
+bmtagger_mouse: /labs/microbiome/apollo/resources/biobakery_workflows_dbs/mm39_bmtagger
+bowtie2_human_index_base: /labs/microbiome/apollo/resources/indexes/human/CHM13/v2.0/bowtie2/chm13v2.0.fa.gz
+bowtie2_mouse_index_base: /labs/microbiome/apollo/resources/indexes/mouse/GRCm39/GCA_000001635.9/bowtie2/GCA_000001635.9_GRCm39_genomic.fna.gz
+cazi_db: /labs/microbiome/apollo/resources/dbCAN2/v11/
 check_contigs: true
-# if checking contig length, longest contig must exceed this to proceed to annotation
+checkm_db: /labs/microbiome/apollo/resources/dbs/checkm/2015_01_16/
+choco_db: /labs/microbiome/apollo/resources/dbs/chocophlan/v201901_v31/
 contig_annotation_thresh: 1000
-
-# deduping reads is optional so we can use a similar codebase for transcriptomics
+cov_thresh_arc: 0.01
+cov_thresh_bacterial: 0.01
+cov_thresh_euk: 0
+cov_thresh_viral: 0.1
 dedup_reads: true
-# platform is used to set dedup type; can be NextSeq|HiSeq|MiSeq|NovaSeq|SRA
-# if SRA, optical duplication is disabled because they stopped keeping track
-# of the original read headers.  dedup_platform is a required param, and as such is omitted here
-
-## metawrap/checkm
-# percent of allowed contamination
-metawrap_contam_thresh: 10
-# minimun completeness percentage
+directory: tmpout/
+docker_abricate: docker://staphb/abricate:1.0.0
+docker_amrfinder: docker://nickp60/amrfinder:3.10.24
+docker_antismash: docker://antismash/standalone:6.1.1
+docker_bbtools: docker://staphb/bbtools:38.97
+docker_bedtools: docker://staphb/bedtools:2.31.1
+docker_biobakery: docker://ghcr.io/vdblab/biobakery-profiler:20230418a
+docker_biopython: docker://nanozoo/biopython:1.74--b03961c
+docker_bmtagger: docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1
+docker_bowtie2: docker://ghcr.io/vdblab/bowtie2:2.5.0
+docker_coverm: docker://ghcr.io/vdblab/coverm:0.6.1
+docker_cutadapt: docker://ghcr.io/vdblab/cutadapt:3.7
+docker_dbcan: docker://ghcr.io/vdblab/dbcan3:4.1.4.12
+docker_fastqc: docker://staphb/fastqc:0.11.9
+docker_gtdbtk: docker://ecogenomic/gtdbtk:2.3.2
+docker_hla: docker://humanlongevity/hla:0.0.0
+docker_kneaddata: docker://nickp60/kneaddata-bmtagger:0.1.0
+docker_kraken: docker://lgallagh/kraken2:2.1.2
+docker_krona: docker://nanozoo/krona:2.7.1--e7615f7
+docker_megahit: docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a25453b95bf
+docker_metaerg: docker://ghcr.io/vdblab/metaerg:1.2.3d
+docker_metawrap: docker://ghcr.io/vdblab/metawrap:1.3
+docker_optitype: docker://fred2/optitype
+docker_phanta: docker://ghcr.io/vdblab/phanta:1.1.0-dev
+docker_quast: docker://staphb/quast:5.0.2
+docker_rgi: docker://ghcr.io/vdblab/rgi:6.0.0
+docker_seqkit: docker://ghcr.io/vdblab/seqkit:2.3.1
+docker_snap: docker://ghcr.io/vdblab/snap-aligner:2.0.1
+docker_sortmerna: docker://ghcr.io/vdblab/sortmerna:4.3.6
+docker_spades: docker://staphb/spades:3.15.4
+filter_params: minlen=51 qtrim=rl trimq=10 ktrim=r k=31 mink=9 hdist=1 hdist2=1 tpe
+  tbo
+fourstep_hostremoval: true
+gtdb_db: /labs/microbiome/apollo/resources/dbs/GTDB/214/release214/
+kaiju_fmi: /labs/microbiome/apollo/resources/kaiju/kaiju_db_nr_.fmi
+kaiju_nodes: /labs/microbiome/apollo/resources/kaiju/nodes.dmp
+kraken2_db: /labs/microbiome/apollo/resources/dbs/kraken/k2_pluspf_20220908/
+lib_layout: paired
+metaerg_db_dir: /labs/microbiome/apollo/resources/dbs/metaerg/2022/db
+metaphlan_db: /labs/microbiome/apollo/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/
 metawrap_compl_thresh: 70
-
-
-# containers:
-docker_abricate: "docker://staphb/abricate:1.0.0"
-docker_amrfinder: "docker://nickp60/amrfinder:3.10.24"
-docker_antismash: "docker://antismash/standalone:6.1.1"
-docker_bbtools: "docker://staphb/bbtools:38.97"
-docker_bedtools: "docker://staphb/bedtools:2.31.1"
-docker_biobakery: "docker://ghcr.io/vdblab/biobakery-profiler:20230418a"
-docker_biopython: "docker://nanozoo/biopython:1.74--b03961c"
-docker_bowtie2: "docker://ghcr.io/vdblab/bowtie2:2.5.0"
-docker_bmtagger: "docker://ghcr.io/vdblab/kneaddata-bmtagger:0.6.1"
-docker_coverm: "docker://ghcr.io/vdblab/coverm:0.6.1"
-docker_cutadapt: "docker://ghcr.io/vdblab/cutadapt:3.7"
-docker_dbcan: "docker://ghcr.io/vdblab/dbcan3:4.1.4.12"
-docker_fastqc: "docker://staphb/fastqc:0.11.9"
-docker_gtdbtk: "docker://ecogenomic/gtdbtk:2.3.2"
-docker_hla: "docker://humanlongevity/hla:0.0.0"
-docker_kneaddata: "docker://nickp60/kneaddata-bmtagger:0.1.0"
-docker_kraken: "docker://lgallagh/kraken2:2.1.2"
-docker_krona: "docker://nanozoo/krona:2.7.1--e7615f7"
-docker_megahit: "docker://ghcr.io/vdblab/megahit:5f329c6d24a1480b75145a4c14567a25453b95bf"
-docker_metaerg: "docker://ghcr.io/vdblab/metaerg:1.2.3d"
-docker_metawrap: "docker://ghcr.io/vdblab/metawrap:1.3"
-docker_optitype: "docker://fred2/optitype"
-docker_phanta: "docker://ghcr.io/vdblab/phanta:1.1.0-dev"
-docker_rgi: "docker://ghcr.io/vdblab/rgi:6.0.0"
-docker_seqkit: "docker://ghcr.io/vdblab/seqkit:2.3.1"
-docker_snap: "docker://ghcr.io/vdblab/snap-aligner:2.0.1"
-docker_sortmerna: "docker://ghcr.io/vdblab/sortmerna:4.3.6"
-docker_spades: "docker://staphb/spades:3.15.4"
-docker_quast: "docker://staphb/quast:5.0.2"
-
-# strainphlan markers dir
-strainphlan_markers_dir: "/data/brinkvd/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/marker_outputs/"
-
-# depreciated: will be removed with release 1.0
-bmtagger_human: "/data/brinkvd/resources/biobakery_workflows_dbs/kneaddata_bmatgger_hg38"
-bmtagger_mouse: "/data/brinkvd/resources/biobakery_workflows_dbs/mm39_bmtagger"
+metawrap_contam_thresh: 10
+minimizer_thresh_arc: 0
+minimizer_thresh_bacterial: 0
+minimizer_thresh_euk: 0
+minimizer_thresh_viral: 0
+nshards: 4
+optityper_hla_dna: /labs/microbiome/apollo/resources/references/human/optitype-hla-dna/07c49bf6fc/hla_reference_dna.fasta
+optityper_hla_rna: /labs/microbiome/apollo/resources/references/human/optitype-hla-rna/07c49bf6fc/hla_reference_rna.fasta
+phanta_masked_db: /labs/microbiome/apollo/resources/dbs/kraken/phanta_v1_masked/masked_db_v1/
+phanta_unmasked_db: /labs/microbiome/apollo/resources/dbs/kraken/phanta_v1/unmasked_db_v1/
+retries: 3
+sample:
+- set1
+- set2
+- set1and2
+single_end_krak: true
+skip_phanta: false
+skip_sample2markers: false
+snap_human_index_dir: /labs/microbiome/apollo/resources/indexes/human/CHM13/v2.0/snap/chm13v2.0.fa.gz/
+snap_mouse_index_dir: /labs/microbiome/apollo/resources/indexes/mouse/GRCm39/GCA_000001635.9/snap/GCA_000001635.9_GRCm39_genomic.fna.gz/
+strainphlan_markers_dir: /labs/microbiome/apollo/resources/dbs/metaphlan/mpa_vJan21_CHOCOPhlAnSGB_202103/marker_outputs/
+sylphdbpath: /labs/microbiome/apollo/resources/dbs/sylph/20250205-3kingdom/
+uniref90_db: /labs/microbiome/apollo/resources/dbs/uniref90_diamond/v201901b/
+utility_mapping_db: /labs/microbiome/apollo/resources/dbs/utility_mapping/utility_mapping/

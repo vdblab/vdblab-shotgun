@@ -32,10 +32,21 @@ localrules:
     all,
 
 
-sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
-cleaned_fastqs = expand(
-    "hostdepleted/{sample}_R{read_dir}.fastq.gz",
-    sample=config["sample"],
+
+#Old, single sample style:
+#sortmerna_outputs = f"reports/{config['sample']}_sortmerna.merged.log"
+#cleaned_fastqs = expand(
+#    "hostdepleted/{sample}_R{read_dir}.fastq.gz",
+#    sample=config["sample"],
+#    read_dir=config["readdirs"],
+#)
+
+#Testing multisample
+#pabun_cpm = expand("humann/{SAMPLE}_humann3_pathabundance_cpm.tsv",SAMPLE=config['sample'])
+
+sortmerna_outputs = expand("reports/{SAMPLE}_sortmerna.merged.log",SAMPLE=config['sample'])
+cleaned_fastqs = expand("hostdepleted/{SAMPLE}_R{read_dir}.fastq.gz",
+    SAMPLE=config["sample"],
     read_dir=config["readdirs"],
 )
 
@@ -44,18 +55,26 @@ wildcard_constraints:
     sample="[^/]+",
 
 
+print("cleaned_fastqs:", cleaned_fastqs)
+
 rule all:
     input:
         clean_fastqs=cleaned_fastqs,
-        hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
-        fastqcs_mqc=expand(
-            f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=config["readdirs"]
-        ),
-        sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
-        host_reads=expand(
-            f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",
-            rd=config["readdirs"],
-        ),
+        fastqcs_mqc=expand("reports/{SAMPLE}_R{rd}_fastqc.html", SAMPLE=config['sample'], rd=config["readdirs"]),
+	hostdeplete_stats_mqc=expand("reports/{SAMPLE}_hostdeplete.stats.summary_mqc.tsv",SAMPLE=config['sample']),
+	sortmerna_blast=expand("sortmerna/{SAMPLE}_sortmerna.blast.gz",SAMPLE=config['sample']),
+	host_reads=expand("host/{SAMPLE}_all_host_reads_R{rd}.fastq.gz",SAMPLE=config['sample'],rd=config["readdirs"]),
+
+#Jul/15/2025: I commented old inputs and made new version for multiple        
+        #hostdeplete_stats_mqc=f"reports/{config['sample']}_hostdeplete.stats.summary_mqc.tsv",
+        #fastqcs_mqc=expand(
+         #   f"reports/{config['sample']}_R{{rd}}_fastqc.html", rd=config["readdirs"]
+        #),
+        #sortmerna_blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
+        #host_reads=expand(
+        #    f"host/{config['sample']}_all_host_reads_R{{rd}}.fastq.gz",
+        #    rd=config["readdirs"],
+        #),
 
 
 # note:  we could make the concatenation conditional on how many libraries we
@@ -73,9 +92,11 @@ def get_concat_input(wc):
     return config[f"R{wc.rd}"]
 
 
-use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names with:
+#print("FUNC CHECK get_concat_input_multisample: ", callable(get_concat_input_multisample))
+
+use rule concat_lanes_fix_names from utils as utils_concat_lanes_fix_names_preprocess with:
     input:
-        fq=get_concat_input,
+        fq=get_concat_input_multisample,
     output:
         fq=temp("concatenated/{sample}_R{rd}.fastq.gz"),
     log:
@@ -283,6 +304,7 @@ def get_posttrim_inputs(wc):
     return res
 
 
+
 use rule s01_bowtie2 from hostdeplete as s01_bowtie2 with:
     input:
         unpack(get_posttrim_inputs),
@@ -482,7 +504,7 @@ rule sortmerna_run:
             > {log.o} 2> {log.e}
         """
 
-
+'''
 rule merge_sortmerna_blast:
     input:
         blast=expand(
@@ -494,6 +516,24 @@ rule merge_sortmerna_blast:
         blast=f"sortmerna/{config['sample']}_sortmerna.blast.gz",
     log:
         e=f"logs/merge_sortmerna_blast_{config['sample']}.e",
+    shell:
+        """
+        cat {input.blast} > {output.blast} 2>> {log.e}
+        """
+
+'''
+
+rule merge_sortmerna_blast:
+    input:
+        blast = lambda wc: expand(
+            "sortmerna/{sample}_shard{shard}_sortmerna.blast.gz",
+            sample=wc.sample,
+            shard=SHARDS
+        )
+    output:
+        blast = "sortmerna/{sample}_sortmerna.blast.gz"
+    log:
+        e = "logs/merge_sortmerna_blast_{sample}.e"
     shell:
         """
         cat {input.blast} > {output.blast} 2>> {log.e}

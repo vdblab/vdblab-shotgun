@@ -31,11 +31,18 @@ localrules:
     all,
 
 
-pabun_cpm = f"humann/{config['sample']}_humann3_pathabundance_cpm.tsv"
-metaphlan = f"metaphlan/{config['sample']}_metaphlan3_profile.txt"
-ko_cpm = f"humann/{config['sample']}_humann3_KO_cpm.tsv"
-metaphlan_sam = f"metaphlan/{config['sample']}.sam.bz2"
-krona = f"reports/{config['sample']}_metaphlan3_profile.txt.krona.html"
+#pabun_cpm = f"humann/{config['sample']}_humann3_pathabundance_cpm.tsv"
+#metaphlan = f"metaphlan/{config['sample']}_metaphlan3_profile.txt"
+#ko_cpm = f"humann/{config['sample']}_humann3_KO_cpm.tsv"
+#metaphlan_sam = f"metaphlan/{config['sample']}.sam.bz2"
+#krona = f"reports/{config['sample']}_metaphlan3_profile.txt.krona.html"
+
+pabun_cpm = expand("humann/{SAMPLE}_humann3_pathabundance_cpm.tsv",SAMPLE=config['sample'])
+metaphlan = expand("metaphlan/{SAMPLE}_metaphlan3_profile.txt",SAMPLE=config['sample'])
+ko_cpm = expand("humann/{SAMPLE}_humann3_KO_cpm.tsv",SAMPLE=config['sample'])
+metaphlan_sam = expand("metaphlan/{SAMPLE}.sam.bz2",SAMPLE=config['sample'])
+krona = expand("reports/{SAMPLE}_metaphlan3_profile.txt.krona.html",SAMPLE=config['sample'])
+
 
 all_inputs = [
     ko_cpm,
@@ -45,6 +52,7 @@ all_inputs = [
     metaphlan_sam,
 ]
 
+#print( all_inputs)
 
 rule all:
     input:
@@ -54,7 +62,7 @@ rule all:
 # the cat paired end reads and metaphlan and humann3 part
 rule cat_pair:
     input:
-        unpack(get_config_inputs),
+        unpack(get_config_inputs_multisample),
     output:
         joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
     conda:
