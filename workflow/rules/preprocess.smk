@@ -55,7 +55,7 @@ wildcard_constraints:
     sample="[^/]+",
 
 
-print("cleaned_fastqs:", cleaned_fastqs)
+#print("cleaned_fastqs:", cleaned_fastqs)
 
 rule all:
     input:
