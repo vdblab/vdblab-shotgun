@@ -290,11 +290,11 @@ rule join_metaerg_outputs:
 
 rule align_annotated_genes:
     input:
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
+        ffn=f"{config['sample']}_metaerg.ffn",
         r1=config["R1"],
         r2=config["R2"],
     output:
-        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
+        bamfile=f"{config['sample']}_metaerg_aligned_reads.bam",
     container:
         config["docker_bowtie2"]
     resources:
@@ -303,8 +303,8 @@ rule align_annotated_genes:
         threads=16,
         cores=16,
     params:
-        bowtie_dir="annotation/annotation_{batch}/bowtie",
-        bowtie_index="annotation/annotation_{batch}/bowtie/bowtie2_index",
+        bowtie_dir="metaerg_bowtie_align",
+        bowtie_index="metaerg_bowtie_align/bowtie2_index",
     shell:
         """
         mkdir -p {params.bowtie_dir}
@@ -318,10 +318,10 @@ rule align_annotated_genes:
 
 rule seqkit_annotate_ffn:
     input:
-        ffn="annotation/annotation_{batch}/data/cds.ffn",
+        ffn=f"{config['sample']}_metaerg.ffn",
     output:
-        length_file="annotation/annotation_{batch}/seqkit.length",
-        bed_file="annotation/annotation_{batch}/seqkit.bed",
+        length_file="seqkit.length",
+        bed_file="seqkit.bed",
     container:
         config["docker_seqkit"]
     shell:
@@ -333,11 +333,11 @@ rule seqkit_annotate_ffn:
 
 rule bedtools_coverage:
     input:
-        length_file="annotation/annotation_{batch}/seqkit.length",
-        bed_file="annotation/annotation_{batch}/seqkit.bed",
-        bamfile="annotation/annotation_{batch}/aligned_reads.bam",
+        length_file="seqkit.length",
+        bed_file="seqkit.bed",
+        bamfile=f"{config['sample']}_metaerg_aligned_reads.bam",
     output:
-        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
+        coverage="annotated_gene_coverage.txt",
     container:
         config["docker_bedtools"]
     shell:
@@ -346,32 +346,16 @@ rule bedtools_coverage:
         """
 
 
-rule create_RPM_counts:
-    input:
-        coverage="annotation/annotation_{batch}/annotated_gene_coverage.txt",
-        overview="cazi_db_scan/{batch}/overview.txt",
-        substrate="cazi_db_scan/{batch}/substrate.out",
-        cgc="cazi_db_scan/{batch}/cgc.out",
-        r1=config["R1"],
-    output:
-        rpm_file="cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv",
-    conda:
-        "../envs/annotate_output_parse.yaml"
-    script:
-        "../scripts/generate_RPM_annotation_files.py"
-
 
 rule join_CAZI:
     input:
         overview=expand("cazi_db_scan/{batch}/overview.txt", batch=BATCHES),
         substrate=expand("cazi_db_scan/{batch}/substrate.out", batch=BATCHES),
         cgc=expand("cazi_db_scan/{batch}/cgc.out", batch=BATCHES),
-        rpm=expand("cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv", batch=BATCHES),
     output:
         overview=f"{config['sample']}_cazi_overview.txt",
         substrate=f"{config['sample']}_cazi_substrate.out",
         cgc=f"{config['sample']}_cazi_cgc.out",
-        rpm=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     shell:
         """
         join_files(){{
@@ -389,5 +373,20 @@ rule join_CAZI:
         join_files {output.overview} {input.overview}
         join_files {output.substrate} {input.substrate}
         join_files {output.cgc} {input.cgc}
-        join_files {output.rpm} {input.rpm}
         """
+
+
+
+rule create_RPM_counts:
+    input:
+        coverage="annotated_gene_coverage.txt",
+        overview=f"{config['sample']}_cazi_overview.txt",
+        substrate=f"{config['sample']}_cazi_substrate.out",
+        cgc=f"{config['sample']}_cazi_cgc.out",
+        r1=config["R1"],
+    output:
+        rpm_file="cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv",
+    conda:
+        "../envs/annotate_output_parse.yaml"
+    script:
+        "../scripts/generate_RPM_annotation_files.py"
