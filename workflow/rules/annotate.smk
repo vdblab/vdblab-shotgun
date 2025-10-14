@@ -385,7 +385,7 @@ rule create_RPM_counts:
         cgc=f"{config['sample']}_cazi_cgc.out",
         r1=config["R1"],
     output:
-        rpm_file="cazi_db_scan/{batch}/annoted_cazymes_RPM.tsv",
+        rpm_file=f"{config['sample']}_annotated_cazymes_RPM.tsv",
     conda:
         "../envs/annotate_output_parse.yaml"
     script:
