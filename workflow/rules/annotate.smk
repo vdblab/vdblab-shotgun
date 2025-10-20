@@ -375,7 +375,56 @@ rule join_CAZI:
         join_files {output.cgc} {input.cgc}
         """
 
+rule coverm:
+    """ This calculates contig coverage.  
 
+    specifying inputs with --coupled and -1 -2 seem to give equivalent results.
+    Note that the output only refers tothe forward file as the sample name.
+    minimap2 is supposedly faster and more accurate than BWA, so we use that
+    as the mapper.
+    we return all the available methods as of the time of writing this rule
+    except for coverage_histogram which has to run separately
+    ("Cannot specify the coverage_histogram method with any other coverage methods")
+
+    --min-covered-fraction is required to be set to 0 for certain cov metrics
+     --genome-fasta-extension is fa since thats how metawrap outputs it
+    """
+    input:
+        R1=config["R1"],
+        R2=config["R2"],
+        mag=f"{config['sample']}_metaerg.ffn",
+    output:
+        mqc=f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_coverage_mqc.tsv',
+        bams=directory(
+            f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'
+        ),
+    params:
+        fastq_string=lambda wc, input: " ".join(
+            [
+                config["R1"][x] + " " + config["R2"][x]
+                for x in range(0, len(config["R1"]))
+            ]
+        ),
+    container:
+        config["docker_coverm"]
+    threads: 16
+    shell:
+        """
+        coverm contig \
+          --coupled {params.fastq_string} \
+          -r {input.mag}
+          --mapper minimap2-sr \
+          --methods mean relative_abundance trimmed_mean \
+            covered_bases variance length count reads_per_base rpkm tpm \
+          --output-file {output.mqc}.tmp --threads {threads} \
+          --bam-file-cache-directory {output.bams} \
+          --min-covered-fraction 0 \
+          --genome-fasta-extension fa
+        # add in the Multiqc header info
+        echo -e "# plot_type: 'table'\n# section_name: 'Bin Coverage Statistics'" > {output.mqc}
+        cat {output.mqc}.tmp >> {output.mqc}
+        rm {output.mqc}.tmp
+        """
 
 rule create_RPM_counts:
     input:
