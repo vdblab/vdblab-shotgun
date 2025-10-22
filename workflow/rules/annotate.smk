@@ -41,6 +41,7 @@ outputs = [
     f"{config['sample']}_cazi_overview.txt",
     f"{config['sample']}_cazi_substrate.out",
     f"{config['sample']}_annotated_cazymes_RPM.tsv",
+    f"{config['sample']}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_coverage_mqc.tsv'
     abricates,
 ]
 if config["check_contigs"]:
@@ -394,7 +395,7 @@ rule coverm:
         R2=config["R2"],
         mag=f"{config['sample']}_metaerg.ffn",
     output:
-        mqc=f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_coverage_mqc.tsv',
+        mqc= f"{config['sample']}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_coverage_mqc.tsv',
         bams=directory(
             f'coverm/{{sample}}_metawrap_{config["metawrap_compl_thresh"]}_{config["metawrap_contam_thresh"]}_bams/'
         ),
