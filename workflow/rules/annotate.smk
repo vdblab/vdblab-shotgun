@@ -410,9 +410,9 @@ rule coverm:
     threads: 16
     shell:
         """
-        coverm contig \
+        coverm genome \
           --coupled {params.fastq_string} \
-          -r {input.mag}
+          -f {input.mag}
           --mapper minimap2-sr \
           --methods mean relative_abundance trimmed_mean \
             covered_bases variance length count reads_per_base rpkm tpm \
