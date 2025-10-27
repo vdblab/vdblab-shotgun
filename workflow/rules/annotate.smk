@@ -41,7 +41,7 @@ outputs = [
     f"{config['sample']}_cazi_overview.txt",
     f"{config['sample']}_cazi_substrate.out",
     f"{config['sample']}_annotated_cazymes_RPM.tsv",
-    f"{config['sample']}_metawrap_coverage_mqc.tsv'
+    f"{config['sample']}_metawrap_coverage_mqc.tsv',
     abricates,
 ]
 if config["check_contigs"]:
