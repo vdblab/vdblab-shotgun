@@ -193,8 +193,6 @@ rule coverm:
     threads: 16
     shell:
         """
-        # this is due to container alias issues when executing with singularity-ce 4 but not 3.7
-        unset -f which
         coverm genome --genome-fasta-directory {params.bindir} \
           --coupled {params.fastq_string} \
           --mapper minimap2-sr \
