@@ -129,7 +129,7 @@ rule s02_snapalign:
         db_prefix=lambda wildcards, input: os.path.dirname(input.idx_genome),
         cmd=config["lib_layout"],
     resources:
-        mem_mb=lambda wc, attempt: 10 * 1024 * attempt,
+        mem_mb=lambda wc, attempt: 48 * 1024 * attempt,
         runtime=lambda wc, attempt: 1.5 * 60 * attempt,
     threads: 16  # Use at least two threads
     shell:

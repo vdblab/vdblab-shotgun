@@ -101,14 +101,13 @@ case $rawdataset in
 esac
 echo $R1
 
-common_args="--snakefile workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32"
+common_args="--snakefile  workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32 --directory tmp${stage}_${rawdataset}/"
 case $stage in
 
      all)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/,/scratch/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/,/scratch/" \
 	    --config \
 	    sample=473 \
 	    R1=$R1 \
@@ -122,8 +121,7 @@ case $stage in
 	# the --notemp is here so we can do the unittests afterward
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -136,8 +134,6 @@ case $stage in
     preprocess-se )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -157,7 +153,7 @@ case $stage in
 	    --use-singularity \
             --singularity-prefix /github/workspace/.singularity/ \
             --singularity-args '-B /github/' \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --directory tmp${stage}_${rawdataset}/
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -171,8 +167,7 @@ case $stage in
     testpreprocess )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmppreprocess_testing/   \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
@@ -185,8 +180,7 @@ case $stage in
     testpreprocess_build )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmppreprocess_testing/   \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -205,8 +199,7 @@ case $stage in
 	fi
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppreprocess_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -226,8 +219,6 @@ case $stage in
 	# just run through metaphlan in the interest of time; humann needs lots of resources
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppreprocess-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -238,35 +229,32 @@ case $stage in
 
     mtx )
 	snakemake \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --snakefile workflow/Snakefile_mtx \
-	    --directory tmp${stage}_${rawdataset}/ \
             --config \
             sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    mpa_profile=/data/brinkvd/data/shotgun/test/C011815_metaphlan3_profile.txt
+	    mpa_profile=/data1/collab004/data/shotgun/test/C011815_metaphlan3_profile.txt
 	;;
 
     kraken )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
 	    R2=$R2 \
 	    $addnconf \
-	    kraken2_db=/data/brinkvd/resources/dbs/kraken/k2_pluspf_08gb_20230314/ \
+	    kraken2_db=/data1/collab004/resources/dbs/kraken/k2_pluspf_08gb_20230314/ \
 	    stage=kraken
 	;;
     assembly )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -276,8 +264,7 @@ case $stage in
     bin)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
@@ -288,8 +275,8 @@ case $stage in
     annotate)
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    --directory tmpannotate/ \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -300,8 +287,7 @@ case $stage in
     rgi )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmprgi_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -311,8 +297,7 @@ case $stage in
     downsample|ds )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -324,8 +309,6 @@ case $stage in
     sylph )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
 	    --config sample=473a \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -335,8 +318,7 @@ case $stage in
     sylph_addn )
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
-	    --directory tmp${stage}_${rawdataset}/ \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
 	    --config sample=473a \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -350,8 +332,7 @@ case $stage in
 	do
 	    snakemake \
 		$common_args \
-		--singularity-args "-B ${PWD},/data/brinkvd/" \
-		--directory tmp${stage}_${rawdataset}/ \
+		--singularity-args "-B ${PWD},/data1/collab004/" \
 		--config sample=473 \
 		R1=$R1 \
 		R2=$R2 \
