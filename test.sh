@@ -101,13 +101,17 @@ case $rawdataset in
 esac
 echo $R1
 
-common_args="--snakefile  workflow/Snakefile  --rerun-incomplete --restart-times 0 --cores 32 --directory tmp${stage}_${rawdataset}/"
+# the -e noenv arg is important for containers that redefine `which` through their mamba configuration, like the metawrap and coverm containers
+bind_args=(
+    --singularity-args
+    "-e -B ${PWD},/data1/collab004/,/scratch/"
+)
+common_args=(--snakefile  workflow/Snakefile "${bind_args[@]}"  --rerun-incomplete --restart-times 0 --cores 32 --directory tmp${stage}_${rawdataset}/)
 case $stage in
 
      all)
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/,/scratch/" \
+	    $common_args[@] \
 	    --config \
 	    sample=473 \
 	    R1=$R1 \
@@ -120,8 +124,7 @@ case $stage in
     preprocess )
 	# the --notemp is here so we can do the unittests afterward
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -133,7 +136,7 @@ case $stage in
 	;;
     preprocess-se )
 	snakemake \
-	    $common_args \
+	    "${common_args[@]}" \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -146,14 +149,14 @@ case $stage in
     preprocess-gha )
 	# runs just to dedup for easy execution on github actions
 	snakemake \
-	    $common_args \
+	    "${common_args[@]}" \
             --cores 1 \
             --jobs 1 \
             --resources mem_mb=5000 \
 	    --use-singularity \
             --singularity-prefix /github/workspace/.singularity/ \
             --singularity-args '-B /github/' \
-	    --directory tmp${stage}_${rawdataset}/
+	    --directory tmp${stage}_${rawdataset}/ \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -166,8 +169,7 @@ case $stage in
 	;;
     testpreprocess )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/.test/473/473_IGO_12587_1_S132_L003_R1_001.fastq.gz] \
@@ -179,8 +181,7 @@ case $stage in
 	;;
     testpreprocess_build )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --notemp \
 	    --config \
 	    sample=473  \
@@ -198,8 +199,7 @@ case $stage in
 	    exit 1
 	fi
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppreprocess_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -218,7 +218,7 @@ case $stage in
 
 	# just run through metaphlan in the interest of time; humann needs lots of resources
 	snakemake \
-	    $common_args \
+	    "${common_args[@]}" \
 	    --config \
 	    sample=473  \
 	    R1=[$PWD/tmppreprocess-se_${rawdataset}/hostdepleted/473_R1.fastq.gz] \
@@ -241,8 +241,7 @@ case $stage in
 
     kraken )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config \
 	    sample=473  \
 	    R1=$R1 \
@@ -253,8 +252,7 @@ case $stage in
 	;;
     assembly )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -263,8 +261,7 @@ case $stage in
 	;;
     bin)
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config sample=473 \
 	    assembly=${PWD}/.test/473/473.assembly.fasta  \
 	    R1=$R1 \
@@ -274,9 +271,7 @@ case $stage in
 	;;
     annotate)
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
-	    --directory tmpannotate/ \
+	    "${common_args[@]}" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -286,8 +281,7 @@ case $stage in
 	;;
     rgi )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -296,8 +290,7 @@ case $stage in
 	;;
     downsample|ds )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config sample=473 \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -308,7 +301,7 @@ case $stage in
 	;;
     sylph )
 	snakemake \
-	    $common_args \
+	    "${common_args[@]}" \
 	    --config sample=473a \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -317,8 +310,7 @@ case $stage in
 	;;
     sylph_addn )
 	snakemake \
-	    $common_args \
-	    --singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 	    --config sample=473a \
 	    R1=$R1 \
 	    R2=$R2 \
@@ -331,8 +323,7 @@ case $stage in
 	for stage in all preprocess biobakery binning kraken assembly annotate rgi
 	do
 	    snakemake \
-		$common_args \
-		--singularity-args "-B ${PWD},/data1/collab004/" \
+	    "${common_args[@]}" \
 		--config sample=473 \
 		R1=$R1 \
 		R2=$R2 \

@@ -97,16 +97,7 @@ rule metawrap_binning:
         runtime=12 * 60,
     shell:
         """
-        # make local config to avoid permissions issues,
-        # as metawrap needs it to be executable and writble
-        cat <<'EOF' > config-metawrap
-mw_path=$(type -P metawrap)
-bin_path=${{mw_path%/*}}
-SOFT=${{bin_path}}/metawrap-scripts
-PIPES=${{bin_path}}/metawrap-modules
-EOF
-        chmod +x config-metawrap
-        METAWRAP_CONFIG=$PWD/config-metawrap metawrap binning -o {params.outdir} -t {threads} -a {input.assembly} --{wildcards.tool} {input.R1} {input.R2}
+        metawrap binning -o {params.outdir} -t {threads} -a {input.assembly} --{wildcards.tool} {input.R1} {input.R2}
         touch {output.stats}
         """
 
@@ -142,16 +133,7 @@ rule metawrap_refine_binning:
     shell:
         """
         export  CHECKM_DATA_PATH={params.checkm_db}
-        # make local config to avoid permissions issues,
-        # as metawrap needs it to be executable and writble
-        cat <<'EOF' > config-metawrap
-mw_path=$(type -P metawrap)
-bin_path=${{mw_path%/*}}
-SOFT=${{bin_path}}/metawrap-scripts
-PIPES=${{bin_path}}/metawrap-modules
-EOF
-        chmod +x config-metawrap
-        METAWRAP_CONFIG=$PWD/config-metawrap metawrap bin_refinement -o {params.outdir} -t {threads} -A {params.binput_dirs[0]} -B {params.binput_dirs[1]} -C {params.binput_dirs[2]} -c {params.completeness} -x {params.contamination}
+        metawrap bin_refinement -o {params.outdir} -t {threads} -A {params.binput_dirs[0]} -B {params.binput_dirs[1]} -C {params.binput_dirs[2]} -c {params.completeness} -x {params.contamination}
         echo -e "#id: 'metawrap'\n#plot_type: 'table'\n#section_name: 'Bin Refinement'" > {output.stats}_mqc.tsv && cat {output.stats} >> {output.stats}_mqc.tsv
         """
 
