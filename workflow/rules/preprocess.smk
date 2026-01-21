@@ -401,7 +401,7 @@ rule aligned_host_reads_to_fastq:
         # get the aligned reads
         samtools view {params.aligned_samflags} -b  {input.bam} | samtools sort -n - > {output.bam}
         # convert to fastq
-        samtools fastq {params.bamtofastq_outputstring} {output.bam}
+        samtools fastq --threads {threads} {params.bamtofastq_outputstring} {output.bam}
         """
 
 
