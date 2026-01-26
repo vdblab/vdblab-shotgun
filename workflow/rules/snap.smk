@@ -70,6 +70,8 @@ rule get_unmapped:
         samtools flagstat tmp_unmapped_{wildcards.sample}.bam
 
         # note this outputs uncompressed only
-        bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq {output.unmapped_R1} -fq2 {output.unmapped_R2}
+        samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq -1 {output.unmapped_R1} -2 {output.unmapped_R2}  -
+        #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq {output.unmapped_R1} -fq2 {output.unmapped_R2}
+
         rm tmp*_{wildcards.sample}.bam
         """
