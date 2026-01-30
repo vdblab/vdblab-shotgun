@@ -349,7 +349,10 @@ rule aligned_host_reads_to_fastq:
         # get the aligned reads
         samtools view -f 2 -F 512 -b -o {output.bam} {input.bam}
         # convert to fastq
-        bamToFastq -i {output.bam} -fq {output.R1} -fq2 {output.R2}
+        # write to shared memory due to poor write performance on WEKA
+        bamToFastq -i {output.bam} -fq  /dev/shm/host_tmp_{wildcards.sample}.R1.fq -fq2 /dev/shm/host_tmp_{wildcards.sample}.R2.fq
+        mv /dev/shm/host_tmp_{wildcards.sample}.R1.fq {output.R1}
+        mv /dev/shm/host_tmp_{wildcards.sample}.R2.fq {output.R2}
         """
 
 

@@ -61,7 +61,7 @@ case $mode in
 	# the --notemp is here so we can do the unittests afterward
 	snakemake \
 	    $common_args \
-	    --singularity-args "-B ${PWD},/data/brinkvd/" \
+	    --singularity-args "-B ${PWD},/data1/collab004/" \
             --directory tmppre_${rawdataset}/ \
 	    --notemp \
 	    --config \

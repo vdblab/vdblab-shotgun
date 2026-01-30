@@ -69,7 +69,9 @@ rule get_unmapped:
         samtools merge -u tmp_unmapped_{wildcards.sample}.bam tmp_unmap_map_{wildcards.sample}.bam tmp_map_unmap_{wildcards.sample}.bam tmp_unmap_unmap_{wildcards.sample}.bam
         samtools flagstat tmp_unmapped_{wildcards.sample}.bam
 
-        # note this outputs uncompressed only
-        bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq {output.unmapped_R1} -fq2 {output.unmapped_R2}
+        # note this outputs uncompressed only; we write to shared memory due to poor performance on WEKA
+        bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq  /dev/shm/tmp_{wildcards.sample}.R1.fq -fq2 /dev/shm/tmp_{wildcards.sample}.R2.fq
+        mv /dev/shm/tmp_{wildcards.sample}.R1.fq {output.unmapped_R1}
+        mv /dev/shm/tmp_{wildcards.sample}.R2.fq {output.unmapped_R2}
         rm tmp*_{wildcards.sample}.bam
         """
