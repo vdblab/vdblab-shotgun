@@ -69,9 +69,8 @@ rule get_unmapped:
         samtools merge -u tmp_unmapped_{wildcards.sample}.bam tmp_unmap_map_{wildcards.sample}.bam tmp_map_unmap_{wildcards.sample}.bam tmp_unmap_unmap_{wildcards.sample}.bam
         samtools flagstat tmp_unmapped_{wildcards.sample}.bam
 
-        # note this outputs uncompressed only
-        samtools sort -n tmp_unmapped_{wildcards.sample}.bam  | samtools fastq -1 {output.unmapped_R1} -2 {output.unmapped_R2}  -
-        #bamToFastq -i tmp_unmapped_{wildcards.sample}.bam -fq {output.unmapped_R1} -fq2 {output.unmapped_R2}
+        # note this outputs uncompressed only. #TODO: run on sorted in v0.5
+        samtools fastq -s /dev/null -1 {output.unmapped_R1} -2 {output.unmapped_R2}  tmp_unmapped_{wildcards.sample}.bam
 
         rm tmp*_{wildcards.sample}.bam
         """

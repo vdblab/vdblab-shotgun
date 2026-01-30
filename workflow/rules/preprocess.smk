@@ -349,7 +349,7 @@ rule aligned_host_reads_to_fastq:
         # get the aligned reads
         samtools view -f 2 -F 512 -b {input.bam} | samtools sort -n - > {output.bam}
         # convert to fastq
-        samtools fastq -1 {output.R1} -2 {output.R2} {output.bam}
+        samtools fastq -s /dev/null -1 {output.R1} -2 {output.R2} {output.bam}
         """
 
 
