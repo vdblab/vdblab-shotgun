@@ -88,11 +88,17 @@ rule humann3_run_uniref90:
     conda:
         "../envs/humann.yaml"
     resources:
+<<<<<<< Updated upstream
         mem_mb=lambda wildcards, attempt, input: attempt
         * 1024
         * max(input.fastq.size // 1000000000, 1)
         * 5 * attempt,
         runtime=lambda wc, attempt: 8 * 60 * attempt,
+=======
+        mem_mb=lambda wildcards, attempt, input: 36260 + attempt * 10000,
+        runtime=lambda wc, attempt: 1400*attempt,
+        restart_times=3
+>>>>>>> Stashed changes
     threads: 64
     # we have an extra log in case there is an error with humann.  Cause
     # we skip the built in logging because
@@ -269,9 +275,17 @@ rule metaphlan_run:
     conda:
         "../envs/metaphlan.yaml"
     resources:
+<<<<<<< Updated upstream
         mem_mb=lambda wildcards, attempt: 30 * 1024 * attempt,
         runtime=lambda wc, attempt: 2 * 60 * attempt,
     threads: 64
+=======
+        # first submission is given 30GB, then 45,
+        mem_mb=lambda wildcards, attempt: 20720 + attempt * 10000,
+        runtime=lambda wc, attempt: 2 * 60 * attempt,
+        restart_times=3,
+    threads: 32
+>>>>>>> Stashed changes
     log:
         e="logs/metaphlan_{sample}.e",
     shell:
