@@ -48,11 +48,25 @@ rule all:
     input:
         all_inputs,
 
+# the cat paired end reads and metaphlan and humann3 part
+rule cat_pair:
+    input:
+        R1=config["R1"],
+        R2=config["R2"],
+    output:
+        joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
+    conda:
+        "../envs/base.yaml"
+    log:
+        e="logs/cat_pair_{sample}.e",
+    shell:
+        "cat {input.R1} {input.R2} > {output.joined} 2> {log.e}"
+
 
 rule humann3_run_uniref90:
     input:
-        fastq=config["kneaddata_fastq"],
-        metaphlan_profile=config["metaphlan_profile"],
+        fastq="kneaddata/{sample}_knead_cat.fastq.gz",
+        metaphlan_profile=config["metaphlan_ab"],
         choco_db=config["choco_db"],
         uniref90_db=config["uniref90_db"],
     output:

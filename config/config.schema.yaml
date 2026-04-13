@@ -23,7 +23,7 @@ properties:
     uniqueItems: true
   stage:
     type: string
-    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla)$"
+    pattern: "^(all|biobakery|preprocess|assembly|rgi|kraken|binning|annotate|downsample|hla|humann)$"
   # run parameters
   nshards:
     type: integer
@@ -32,6 +32,8 @@ properties:
   assembler:
     type: string
     pattern: "^(spades|megahit)$"
+  metaphlan_profile:
+    type: string
   check_contigs:
     type: boolean
     default: true

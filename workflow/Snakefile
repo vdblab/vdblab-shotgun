@@ -229,6 +229,12 @@ if config["stage"] == "all":
             R1="hostdepleted/{sample}_R1.fastq.gz",
             R2="hostdepleted/{sample}_R2.fastq.gz",
 
+    use rule humann3_run_uniref90 from humann as huamnn_humann3_run_uniref90 with:
+        input:
+            R1="hostdepleted/{sample}_R1.fastq.gz",
+            R2="hostdepleted/{sample}_R2.fastq.gz",
+            metaphlan_profile="metaphlan/{sample}_metaphlan3_profile.txt"
+
     use rule RGI from rgi as rgi_RGI with:
         input:
             R1="hostdepleted/{sample}_R1.fastq.gz",
