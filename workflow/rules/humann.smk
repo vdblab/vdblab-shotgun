@@ -66,7 +66,7 @@ rule cat_pair:
 rule humann3_run_uniref90:
     input:
         fastq="kneaddata/{sample}_knead_cat.fastq.gz",
-        metaphlan_profile=config["metaphlan_ab"],
+        metaphlan_profile=config["metaphlan_profile"],
         choco_db=config["choco_db"],
         uniref90_db=config["uniref90_db"],
     output:
