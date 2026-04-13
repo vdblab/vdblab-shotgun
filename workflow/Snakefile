@@ -301,6 +301,7 @@ if config["stage"] == "all":
     outputs = [
         rules.preprocess_all.input,
         rules.biobakery_all.input,
+        rules.huamnn_all.input,
         rules.assembly_all.input,
         rules.kraken_all.input,
         rules.rgi_all.input,

@@ -54,7 +54,7 @@ rule cat_pair:
         R1=config["R1"],
         R2=config["R2"],
     output:
-        joined=temp("kneaddata/{sample}_knead_cat.fastq.gz"),
+        joined=temp("tmp_input/{sample}_cat.fastq.gz"),
     conda:
         "../envs/base.yaml"
     log:
@@ -65,7 +65,7 @@ rule cat_pair:
 
 rule humann3_run_uniref90:
     input:
-        fastq="kneaddata/{sample}_knead_cat.fastq.gz",
+        fastq="tmp_input/{sample}_cat.fastq.gz",
         metaphlan_profile=config["metaphlan_profile"],
         choco_db=config["choco_db"],
         uniref90_db=config["uniref90_db"],
