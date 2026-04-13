@@ -86,6 +86,21 @@ use rule * from biobakery as biobakery_*
 
 
 #
+# Humann Module
+#
+module humann:
+    snakefile:
+        "rules/humann.smk"
+    config:
+        config
+    skip_validation:
+        True
+
+
+use rule * from humann as humann_*
+
+
+#
 # Kraken Module
 #
 module kraken:
